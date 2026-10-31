@@ -1,0 +1,1249 @@
+# TEEFAHS CLOTHIER — FINAL PRODUCTION READINESS, COMPLETE WEBSITE POLISH, SUPABASE BACKEND VALIDATION, ADMIN DASHBOARD COMPLETION AND BUSINESS OWNER HANDOVER
+
+## PROJECT STATUS AND OVERALL OBJECTIVE
+
+We are approaching the final delivery of the existing Teefahs Clothier e-commerce website.
+
+The website has undergone several development phases, including storefront development, product catalogue creation, shopping cart implementation, administrator dashboard development, Supabase integration, database population, contact information updates, Google Maps integration and usability improvements.
+
+The latest update has successfully populated the Supabase database with catalogue information, including categories and product photographs. The database is no longer in the previously reported completely empty state.
+
+I am now preparing to deliver this website to the business owner so that she can begin using it while we continue making improvements and adding features through future GitHub updates.
+
+YOUR PRIMARY RESPONSIBILITY IS TO COMPLETE, POLISH, VALIDATE AND PREPARE THE EXISTING WEBSITE FOR REAL BUSINESS USE.
+
+This is not a request to create another website.
+
+This is not a request to replace the current design.
+
+This is not a request to start the project again.
+
+Inspect the existing project carefully, preserve all working functionality, identify incomplete or defective features, correct them and improve the overall quality.
+
+I want a professional, premium, international-standard modest fashion e-commerce website that looks like a genuine established fashion business website, not an AI-generated template.
+
+The website must be attractive, simple to navigate, trustworthy, responsive, functional and easy for an ordinary customer or non-technical business owner to use.
+
+Do not make unnecessary changes that risk breaking existing functionality.
+
+Work across the entire project, not just the homepage.
+
+---
+
+# PART 1 — COMPLETE PROJECT AUDIT BEFORE MAKING CHANGES
+
+First inspect the entire existing codebase.
+
+Review the actual files, components, routes, contexts, database integration, authentication implementation, image assets, environment configuration, package dependencies and existing application architecture.
+
+Inspect at least:
+
+- src/App.tsx
+- src/components/
+- src/pages/
+- src/context/
+- src/lib/api.ts
+- src/lib/supabase.ts
+- src/data/initialCatalogue.ts
+- src/data/assets.ts
+- src/config/shopConfig.ts
+- database/schema.sql
+- database/seed.sql
+- src/data/supabaseSeedSql.ts, if present
+- Authentication and administrator authorization components.
+- Product, category, image and variation models.
+- All existing storefront and administrator routes.
+
+Identify duplicated logic, outdated code, dead components, broken links, missing imports, inconsistent data structures, unused visual elements and possible runtime errors.
+
+Do not delete or replace components simply because a different implementation would be easier.
+
+Preserve existing working features.
+
+Where you discover multiple implementations of the same functionality, consolidate them carefully without breaking existing routes or stored data.
+
+Create a clear distinction between completed features, incomplete features and features that still require manual configuration.
+
+Do not claim that a feature is working merely because its component exists.
+
+---
+
+# PART 2 — PREMIUM STOREFRONT VISUAL REDESIGN AND POLISH
+
+Improve the complete visual presentation of Teefahs Clothier.
+
+BRAND IDENTITY:
+
+Business name: Teefahs Clothier.
+
+Brand positioning: Premium modest women's fashion.
+
+Brand message: Timeless Modesty, Effortless Elegance.
+
+Tagline: Dress modest. Look elegant. Stand out.
+
+The website should communicate elegance, confidence, quality, authenticity and trust.
+
+## 2.1 Overall visual direction
+
+Use a sophisticated luxury fashion design system.
+
+The visual appearance should feel like a professionally designed international boutique website.
+
+Use:
+
+- Elegant typography.
+- Consistent font hierarchy.
+- Refined spacing.
+- Premium editorial photography.
+- Beautiful product presentation.
+- Balanced layouts.
+- Carefully selected neutral and complementary colours.
+- Consistent button styling.
+- Subtle borders and restrained shadows.
+- Professional navigation.
+- High-quality responsive layouts.
+
+Avoid:
+
+- Excessive gradients.
+- Unnecessary glowing effects.
+- Artificial sparkle graphics.
+- AI-themed icons.
+- AI-generated badges.
+- Robot illustrations.
+- Generic dashboard graphics.
+- Excessive rounded cards.
+- Oversized decorative icons.
+- Random animations.
+- Unnecessary floating elements.
+- Fake customer reviews.
+- Invented testimonials.
+- Fake statistics.
+- Placeholder text.
+- Broken image placeholders.
+- Developer labels visible to shoppers.
+
+Remove any remaining visual elements that make the website look like an AI-generated template.
+
+Use genuine, relevant fashion and commerce iconography.
+
+Do not remove icons that communicate important functions such as shopping bag, search, menu, account, edit, delete, image upload or navigation.
+
+Keep the interface clean, natural and professional.
+
+## 2.2 Global header and navigation
+
+Improve the website header.
+
+It should contain:
+
+- Official Teefahs Clothier branding.
+- Home.
+- Shop.
+- New Arrivals.
+- Collections.
+- Gallery.
+- Our Story.
+- Contact.
+- Shopping bag with a live item counter.
+- Visible administrator entry icon as previously requested.
+
+The administrator icon must remain visible.
+
+Do not hide or remove the administrator entry point during this finalisation.
+
+Ensure the shopping bag is genuinely clickable on every public storefront route.
+
+Ensure the mobile menu opens and closes correctly.
+
+Ensure the header does not cover page content.
+
+Ensure the mobile navigation is simple enough for customers who are unfamiliar with e-commerce websites.
+
+## 2.3 Homepage
+
+Polish the homepage to create a strong first impression.
+
+The hero section should clearly communicate the brand's modest fashion identity.
+
+Use the actual supplied fashion photography.
+
+The hero must contain a clear primary shopping action.
+
+Include well-organised sections for:
+
+- Featured garments.
+- New arrivals.
+- Main shopping categories.
+- Selected editorial photographs.
+- Brand introduction.
+- A clear invitation to explore the collection.
+- Contact or social media access.
+
+Avoid cluttering the homepage with too many sections.
+
+Ensure the most important shopping actions are immediately visible.
+
+## 2.4 Shop All page
+
+Verify and polish the complete product catalogue.
+
+Customers should be able to:
+
+- Browse all published products.
+- See product photographs.
+- Read product names.
+- See selling prices in Nigerian Naira.
+- Open product details.
+- Select available sizes and colours.
+- Add products to their shopping bag.
+
+If search, filtering or sorting already exists, ensure it works correctly.
+
+Do not introduce complicated filtering that makes shopping harder.
+
+Products must come from the live Supabase catalogue when the database is available.
+
+Do not silently display outdated local fallback products as if they were live database records.
+
+## 2.5 New Arrivals
+
+Ensure the New Arrivals page displays only the correct published products marked as new arrivals.
+
+Verify the actual is_new_arrival field in Supabase.
+
+The page must not show unpublished products.
+
+Make the page visually consistent with Shop All.
+
+## 2.6 Collections and categories
+
+Display the actual active categories from Supabase.
+
+Preserve the existing eight boutique categories:
+
+- Abayas.
+- Khimars.
+- Hijabs.
+- Veils.
+- Prayer Wear.
+- Occasion Wear.
+- Caps.
+- Accessories.
+
+Verify that each category opens correctly and displays the appropriate products.
+
+If a category has no published products, display a tasteful empty state rather than a broken page.
+
+Do not invent products to fill empty categories.
+
+## 2.7 Gallery
+
+Preserve all 54 original photoshoot photographs.
+
+Ensure:
+
+- Images load correctly.
+- Images maintain their original proportions.
+- Category filtering works.
+- The image viewer opens and closes.
+- Previous and next image navigation works if implemented.
+- The interface is usable on mobile.
+- No photographs are accidentally duplicated.
+- Images have meaningful alt text where possible.
+
+Do not replace the original photoshoot photographs.
+
+## 2.8 Our Story
+
+Ensure the Our Story page is complete, attractive and readable.
+
+Use the existing brand information.
+
+Do not invent the founder's biography, business history, achievements or claims that the owner has not supplied.
+
+## 2.9 Contact page
+
+Use the following official business information:
+
+Business: Teefahs Clothier.
+
+Address:
+165 Ekoro Road, Ekoro Junction, Abule Egba, Ikeja, Lagos, Nigeria.
+
+Email:
+queenlateefalive@yahoo.com
+
+WhatsApp:
++234 802 899 1921
+
+WhatsApp chat URL:
+https://wa.me/2348028991921
+
+Official Bumpa store:
+https://teefahsclothier.bumpa.shop
+
+Instagram:
+https://instagram.com/teefahs_clothier
+
+Ensure every link works.
+
+Make email clickable using a mailto link.
+
+Make WhatsApp clickable and ensure it opens a chat with the correct Nigerian number.
+
+Preserve the Google Maps embed and Get Directions button.
+
+Verify that the map points to the supplied boutique address.
+
+Use an appropriate Google Maps directions destination based on the actual address.
+
+Do not invent a map location or coordinates.
+
+If the map cannot verify an exact shop pin, use a reliable address-based Google Maps destination.
+
+Make the map responsive on mobile.
+
+---
+
+# PART 3 — COMPLETE SUPABASE BACKEND VALIDATION
+
+This section is a critical requirement.
+
+The Supabase database has recently been populated. Do not assume every table and relationship is correct simply because some records are now visible.
+
+Inspect the actual database schema and current application queries.
+
+Project:
+
+https://mxovvqjyfgyrzjauzodh.supabase.co
+
+Project reference:
+
+mxovvqjyfgyrzjauzodh
+
+Use the existing configured environment variables.
+
+Never expose the Supabase anon key unnecessarily in logs or reports.
+
+Never expose a service-role key in frontend code.
+
+## 3.1 Verify all database tables
+
+Inspect the following tables:
+
+- categories
+- products
+- product_images
+- product_variations
+- store_settings, if used by the project
+
+Query the actual live database.
+
+Report real row counts.
+
+The initial catalogue is expected to contain:
+
+- 8 categories.
+- 11 products.
+- 54 product photographs.
+- 27 product variations.
+- 267 stock units.
+
+These are expected values from the existing catalogue, not permission to fabricate database results.
+
+If actual counts differ, investigate the reason.
+
+Do not automatically insert duplicate data.
+
+Do not automatically delete records to force the counts to match.
+
+Do not silently overwrite changes made by the owner.
+
+## 3.2 Verify relationships
+
+Check:
+
+- Products reference valid categories.
+- Product images reference valid products.
+- Variations reference valid products.
+- Main product photographs exist.
+- Product slugs are unique.
+- Required product fields are present.
+- Category references are valid.
+- Product variation identifiers are consistent.
+
+Identify orphaned records.
+
+Identify products without images.
+
+Identify products without variations.
+
+Report any data-integrity problem.
+
+## 3.3 Verify CRUD operations
+
+Test actual create, read, update and delete operations through the application.
+
+PRODUCTS:
+
+- Create a product.
+- Read product details.
+- Update product details.
+- Publish and unpublish a product.
+- Delete a test product only after an explicit confirmation and only using a reversible test record.
+
+CATEGORIES:
+
+- Create a test category if the implementation permits.
+- Edit a category.
+- Verify product-category relationships.
+- Prevent accidental deletion of categories that contain products unless reassignment is handled safely.
+
+PRODUCT IMAGES:
+
+- Upload an image.
+- Save the correct storage or image URL.
+- Set a main image.
+- Remove an image.
+- Confirm that existing product images remain intact.
+
+VARIATIONS:
+
+- Add a size and colour variation.
+- Update available stock.
+- Verify that stock changes persist after refresh.
+
+Do not use the real owner's existing garments as destructive test data.
+
+Use a temporary test record and clean it up safely after testing.
+
+## 3.4 Verify fallback behaviour
+
+The local INITIAL_PRODUCTS catalogue may remain as a recovery mechanism.
+
+However:
+
+- Do not combine local and live records and report the combined result as Supabase records.
+- Do not display fake database counts.
+- Do not silently hide Supabase errors.
+- Clearly distinguish live database data from fallback data.
+- Prevent duplicate products caused by mixing fallback and live catalogue sources.
+
+If Supabase is unavailable, display an appropriate operational warning.
+
+Do not misrepresent the database as synchronized.
+
+## 3.5 Database reliability
+
+Check:
+
+- Supabase connection handling.
+- Error messages.
+- Loading states.
+- Retry behaviour.
+- Query performance.
+- Pagination where necessary.
+- Correct filtering of published products.
+- Correct stock calculations.
+- Data persistence after refresh.
+
+Ensure that the application does not lose existing product information during ordinary website updates.
+
+Future deployments must not rerun destructive seed operations.
+
+---
+
+# PART 4 — SUPABASE SECURITY AND ACCESS CONTROL
+
+This is a commercial website. Database security must be taken seriously.
+
+Inspect the actual Row Level Security policies and table permissions.
+
+PUBLIC VISITORS:
+
+- May read published products.
+- May read active categories.
+- May read appropriate product images.
+- May read appropriate published product variations.
+- Must not be able to create products.
+- Must not be able to change prices.
+- Must not be able to alter stock.
+- Must not be able to delete products.
+- Must not be able to manage categories.
+
+ADMINISTRATOR:
+
+- May manage products.
+- May manage categories.
+- May manage product images.
+- May manage product variations.
+- May update stock.
+- May publish and unpublish products.
+
+Verify that administrator access is based on the project's actual secure authorization mechanism.
+
+Do not assume that every authenticated user is an administrator.
+
+Do not create unrestricted public write policies.
+
+Do not create a public FOR ALL policy with USING(true) and WITH CHECK(true) for commercial catalogue tables.
+
+Do not expose privileged credentials.
+
+Inspect Supabase Storage policies.
+
+Public customers may view published product images, but only authorized administrators may upload, replace or delete protected catalogue images.
+
+Do not weaken RLS to make an application function work.
+
+If a policy or configuration cannot be verified from the available project access, identify the manual Supabase action required.
+
+---
+
+# PART 5 — COMPLETE ADMIN DASHBOARD FINALISATION
+
+The administrator dashboard is for the business owner, who may not be technically experienced.
+
+Make it extremely simple to understand and operate.
+
+The owner should not need to understand SQL, database IDs, JSON, UUIDs, API calls or technical development concepts to manage her shop.
+
+## 5.1 Administrator entry point
+
+Keep the administrator icon visible on the public website.
+
+Ensure it opens the correct administrator login page.
+
+Do not expose administrator functionality to unauthenticated customers.
+
+Protect all administrator routes.
+
+Unauthenticated users must be redirected to login.
+
+## 5.2 Owner account
+
+The intended owner administrator email is:
+
+queenlateefalive@yahoo.com
+
+Prepare the authentication setup so that the owner can use this email to access the dashboard.
+
+IMPORTANT:
+
+Changing the displayed email is not sufficient.
+
+Verify the actual Supabase Authentication account.
+
+Verify the user's administrator authorization.
+
+Do not hardcode a password.
+
+Do not put a password in source code, SQL seed data, GitHub or environment variables.
+
+If the owner account does not yet exist, provide a secure invitation or account-creation procedure.
+
+If the previous developer account is no longer required, provide a safe procedure to remove or revoke its access after owner access has been tested.
+
+Do not lock out the only working administrator account.
+
+Do not change account ownership automatically without verifying the replacement account.
+
+## 5.3 Dashboard visual layout
+
+Create a clean, premium administration interface.
+
+The dashboard should have:
+
+- Clear welcome message.
+- Owner-friendly navigation.
+- Total products.
+- Published products.
+- New arrivals.
+- Active categories.
+- Stock available.
+- Quick Add Product action.
+- All Products.
+- Manage Categories.
+- Inventory.
+- Return to Store.
+- Sign Out.
+
+Use accurate live database values.
+
+Avoid unnecessary developer-oriented cards and technical information in the main dashboard viewport.
+
+Database diagnostics may remain inside a separate settings section.
+
+## 5.4 Extremely simple product creation
+
+This is one of the most important owner requirements.
+
+The owner must be able to add a new garment without feeling overwhelmed.
+
+Create a straightforward step-free or minimally stepped form.
+
+Use clear everyday labels.
+
+Required fields:
+
+1. Product Name.
+2. Selling Price.
+3. Category.
+4. Product Photograph.
+5. Available Sizes.
+6. Available Colours.
+7. Stock Available.
+8. Product Description.
+9. Publish Product.
+
+Optional fields should be clearly identified.
+
+Automate technical fields:
+
+- Generate product slug.
+- Generate IDs.
+- Set default currency to NGN.
+- Handle image associations.
+- Handle variation identifiers.
+- Validate required information.
+
+Provide immediate image previews.
+
+Allow the owner to select the main photograph.
+
+Allow removal of an incorrectly selected photograph.
+
+Use the existing 54-photo collection as an optional image selection source.
+
+Provide clear save and success feedback.
+
+Prevent accidental duplicate submissions.
+
+Display understandable validation messages.
+
+Do not ask the owner to enter technical codes or manually create UUIDs.
+
+## 5.5 Product editing
+
+Use the same simple structure for editing products.
+
+The owner must be able to:
+
+- Change product name.
+- Change selling price.
+- Change category.
+- Replace photographs.
+- Add or remove sizes.
+- Add or remove colours.
+- Update stock.
+- Edit description.
+- Mark a product as a New Arrival.
+- Publish or unpublish the product.
+
+Save changes to Supabase.
+
+Confirm successful persistence after refreshing.
+
+## 5.6 Inventory management
+
+Make inventory understandable.
+
+Show:
+
+- Product name.
+- Photograph.
+- Available variation.
+- Size.
+- Colour.
+- Quantity.
+- Stock status.
+
+Provide clear stock warnings.
+
+Do not invent stock.
+
+Do not permit negative stock.
+
+Ensure inventory changes persist in Supabase.
+
+Where possible, prevent customers from selecting unavailable variations.
+
+## 5.7 Owner-friendly confirmation messages
+
+Use simple in-app notifications and confirmation dialogs.
+
+Examples:
+
+- Product saved successfully.
+- Product updated successfully.
+- Photograph uploaded successfully.
+- Stock updated successfully.
+- Product deleted successfully.
+- Unable to save. Please try again.
+
+Do not rely on browser alert and confirm popups for routine interactions.
+
+---
+
+# PART 6 — SHOPPING BAG AND CUSTOMER CHECKOUT
+
+Preserve the existing shopping bag implementation.
+
+Test the complete customer journey.
+
+## 6.1 Add to Bag
+
+A customer must be able to:
+
+- Open a product.
+- Choose an available size.
+- Choose a colour.
+- Select a quantity.
+- Add the garment to the shopping bag.
+
+Prevent adding unavailable variations.
+
+Show clear feedback after adding an item.
+
+The shopping bag counter must update immediately.
+
+## 6.2 Shopping Bag Drawer
+
+The basket icon must be clickable from every public storefront route.
+
+The drawer must display:
+
+- Product photograph.
+- Product name.
+- Selected size.
+- Selected colour.
+- Unit price.
+- Quantity.
+- Line total.
+- Order subtotal.
+
+Include:
+
+- Increase quantity.
+- Decrease quantity.
+- Remove product.
+- Continue Shopping.
+- Proceed to Checkout.
+
+Make all controls visible and usable on mobile.
+
+## 6.3 Empty Bag / Start Over
+
+Preserve the previously implemented Empty Bag / Start Over functionality.
+
+A customer must be able to reset the shopping bag.
+
+Require confirmation before clearing all items.
+
+After confirmation:
+
+- Remove all selected products.
+- Set subtotal to zero.
+- Reset the header basket count.
+- Display the empty cart state.
+- Offer a prominent Continue Shopping action.
+
+Verify that cancelling the reset preserves the original cart contents.
+
+## 6.4 Cart persistence
+
+Test cart persistence after:
+
+- Page navigation.
+- Browser refresh.
+- Closing and reopening the cart.
+- Switching between product pages.
+
+Validate stored cart information.
+
+Avoid stale or invalid product information.
+
+Do not permit cart totals to become negative or inconsistent.
+
+## 6.5 WhatsApp checkout
+
+The business does not currently use an integrated online payment gateway.
+
+Do not claim that online payments are completed on this website.
+
+The checkout should prepare a clear WhatsApp order message.
+
+Official number:
+
++234 802 899 1921
+
+Destination:
+
+https://wa.me/2348028991921
+
+The generated message must contain:
+
+- Teefahs Clothier greeting.
+- Product names.
+- Selected sizes.
+- Selected colours.
+- Quantities.
+- Unit prices.
+- Line totals.
+- Order subtotal.
+- Customer name.
+- Customer phone.
+- Delivery address.
+- Request for availability confirmation.
+- Request for delivery and payment instructions.
+
+The customer must be able to review their order before opening WhatsApp.
+
+Ensure the message is correctly URL-encoded.
+
+Ensure the WhatsApp destination is the correct Nigerian number.
+
+Remove all references to the obsolete number 252419673981135.
+
+Do not invent customer details.
+
+If customer information is missing, provide a simple, understandable form before generating the order.
+
+After opening WhatsApp, preserve the shopping bag in case the customer returns to the website.
+
+Do not automatically clear the bag before a successful handoff.
+
+---
+
+# PART 7 — CONTACT, BUSINESS INFORMATION AND CUSTOMER TRUST
+
+Verify the official business details everywhere they appear.
+
+Business name:
+Teefahs Clothier.
+
+Email:
+queenlateefalive@yahoo.com
+
+WhatsApp:
++234 802 899 1921
+
+Physical address:
+165 Ekoro Road, Ekoro Junction, Abule Egba, Ikeja, Lagos, Nigeria.
+
+Official store:
+https://teefahsclothier.bumpa.shop
+
+Instagram:
+https://instagram.com/teefahs_clothier
+
+Check the footer, contact page, WhatsApp widget, checkout, social links and other relevant components.
+
+Do not leave outdated email addresses or telephone numbers in any customer-facing location.
+
+Ensure the Google Maps embed and directions link remain functional.
+
+Do not invent customer reviews, business awards, shipping claims, payment options, return policies or guarantees.
+
+If a policy has not been provided by the owner, do not fabricate it.
+
+---
+
+# PART 8 — MOBILE RESPONSIVENESS AND ACCESSIBILITY
+
+The website must be comfortable to use on:
+
+- Desktop computers.
+- Laptops.
+- Tablets.
+- Android phones.
+- iPhones.
+
+Test every major page at narrow mobile widths.
+
+Check:
+
+- Header layout.
+- Mobile navigation.
+- Product cards.
+- Product details.
+- Image gallery.
+- Shopping bag.
+- Checkout form.
+- Contact details.
+- Google Maps.
+- Administrator login.
+- Admin dashboard.
+- Add Product form.
+- Inventory tables.
+
+Avoid horizontal overflow.
+
+Ensure buttons have adequate touch targets.
+
+Ensure text remains readable.
+
+Ensure important actions are not hidden behind hover effects.
+
+Ensure dialogs and drawers fit within the mobile viewport.
+
+Use accessible button labels and meaningful image alt text.
+
+---
+
+# PART 9 — PERFORMANCE, QUALITY AND ERROR HANDLING
+
+Inspect the complete application for technical defects.
+
+Check:
+
+- TypeScript compilation.
+- Production build.
+- Broken imports.
+- Missing components.
+- React key warnings.
+- Console errors.
+- Failed network requests.
+- Failed image requests.
+- Incorrect route handling.
+- Unhandled promise rejections.
+- Supabase errors.
+- Invalid environment variables.
+- Duplicate event listeners.
+- Unnecessary re-renders.
+- Memory leaks in subscriptions.
+- Incorrect loading states.
+- Broken mobile interactions.
+
+Optimise image loading without changing the supplied photographs.
+
+Use lazy loading where appropriate.
+
+Do not allow a failed image to break the entire page.
+
+Provide useful empty states and loading indicators.
+
+Avoid displaying technical stack traces to customers.
+
+Do not hide important backend failures behind generic success messages.
+
+---
+
+# PART 10 — COMPLETE END-TO-END BUSINESS TESTING
+
+Perform actual testing where the development environment permits.
+
+Do not rely only on source-code inspection.
+
+Test these customer scenarios:
+
+TEST 1:
+Open the homepage and navigate to Shop.
+
+TEST 2:
+Open a product and inspect its photograph, price, sizes and colours.
+
+TEST 3:
+Add a garment to the shopping bag.
+
+TEST 4:
+Add another garment.
+
+TEST 5:
+Open the basket from different storefront routes.
+
+TEST 6:
+Increase and decrease quantities.
+
+TEST 7:
+Remove one garment.
+
+TEST 8:
+Use Continue Shopping and add another product.
+
+TEST 9:
+Refresh the page and verify cart persistence.
+
+TEST 10:
+Use Empty Bag / Start Over and confirm the bag becomes empty.
+
+TEST 11:
+Add products again and proceed to checkout.
+
+TEST 12:
+Verify the WhatsApp message and correct destination.
+
+Do not send a real customer order during testing.
+
+Test administrator scenarios:
+
+TEST 13:
+Open the administrator login page.
+
+TEST 14:
+Verify unauthenticated access is restricted.
+
+TEST 15:
+Verify owner administrator access.
+
+TEST 16:
+Open the dashboard.
+
+TEST 17:
+Add a temporary test product.
+
+TEST 18:
+Edit the test product.
+
+TEST 19:
+Upload a test photograph.
+
+TEST 20:
+Update test stock.
+
+TEST 21:
+Verify that the changes persist in Supabase after refresh.
+
+TEST 22:
+Delete the temporary test product safely after testing.
+
+TEST 23:
+Verify the dashboard still displays correct live counts.
+
+TEST 24:
+Return to the public storefront and verify that the catalogue remains correct.
+
+Do not use real products as disposable test records.
+
+If an automated browser or runtime is unavailable, clearly distinguish tests performed from tests that require my manual confirmation.
+
+---
+
+# PART 11 — GITHUB AND FUTURE MAINTENANCE READINESS
+
+This project will continue receiving updates after the owner takes delivery.
+
+Prepare the codebase for maintainable future development.
+
+Check:
+
+- GitHub repository structure.
+- Source-code organisation.
+- Environment variable handling.
+- Build scripts.
+- Production configuration.
+- Database migration files.
+- Seed scripts.
+- Dependency versions.
+- Build output.
+- README documentation.
+- Deployment instructions.
+
+Ensure:
+
+- No passwords are committed.
+- No service-role keys are committed.
+- No private authentication credentials appear in source files.
+- `.env` files are excluded from Git where appropriate.
+- `.env.example` documents required variable names without exposing secrets.
+- Database migrations are preserved.
+- Future website deployments do not automatically reset the database.
+- Existing Supabase records remain intact after code updates.
+
+Document how future updates should be made:
+
+1. Make changes in the development project.
+2. Test the changes.
+3. Commit approved changes.
+4. Push to GitHub.
+5. Allow the configured hosting platform to deploy.
+6. Verify the live website.
+
+Do not claim that GitHub or production deployment has been completed if you cannot access or verify those services.
+
+---
+
+# PART 12 — OWNER HANDOVER AND DAILY OPERATION
+
+Prepare the project so the owner can use it without needing a developer for routine tasks.
+
+The owner should understand how to:
+
+1. Open the website.
+2. Access the administrator login.
+3. Sign in using her own administrator email.
+4. Add a new garment.
+5. Upload product photographs.
+6. Set prices.
+7. Choose categories.
+8. Add sizes and colours.
+9. Update stock.
+10. Edit a garment.
+11. Publish a product.
+12. Unpublish a product.
+13. View the public storefront.
+14. Sign out securely.
+
+Prepare a simple owner-facing guide using everyday language.
+
+Do not include SQL or complex technical instructions in the daily-use guide.
+
+Keep technical maintenance instructions separate from owner instructions.
+
+---
+
+# PART 13 — FINAL VISUAL AND FUNCTIONAL REVIEW
+
+Before completing this task, inspect the website as though you are a professional e-commerce quality assurance engineer and an international fashion brand consultant.
+
+Ask:
+
+- Does the website look like a genuine fashion business?
+- Does the homepage immediately communicate the brand?
+- Are the products presented attractively?
+- Are prices easy to understand?
+- Is navigation straightforward?
+- Can a first-time customer understand how to shop?
+- Can a customer easily add products and reach checkout?
+- Can the customer reset their shopping bag?
+- Is the WhatsApp checkout destination correct?
+- Does the contact page contain the correct business information?
+- Is the Google Maps experience usable?
+- Can the owner add a product without technical assistance?
+- Does the administrator dashboard display accurate information?
+- Are database records actually persisted?
+- Are administrator permissions secure?
+- Does the website work on mobile?
+- Are there any remaining developer or AI-generated visual elements?
+- Is the application ready for a controlled business handover?
+
+Fix all defects you can safely correct within the existing project.
+
+Do not sacrifice functionality for appearance.
+
+Do not sacrifice security for convenience.
+
+Do not invent successful test results.
+
+---
+
+# PART 14 — FINAL IMPLEMENTATION REPORT AND DELIVERY CHECKPOINT
+
+After implementation, provide a detailed final report.
+
+Organise it into the following sections:
+
+A. STOREFRONT
+- Pages inspected.
+- Visual improvements made.
+- Navigation verified.
+- Product catalogue status.
+- Image status.
+- Mobile responsiveness.
+
+B. SUPABASE BACKEND
+- Actual live record counts.
+- Categories.
+- Products.
+- Product images.
+- Product variations.
+- Inventory totals.
+- Relationship verification.
+- Persistence tests.
+- RLS and permissions.
+
+C. ADMIN DASHBOARD
+- Login status.
+- Administrator authorization.
+- Owner email configuration.
+- Product creation.
+- Product editing.
+- Image upload.
+- Category management.
+- Inventory management.
+
+D. SHOPPING AND CHECKOUT
+- Add to Bag.
+- Cart Drawer.
+- Quantity controls.
+- Remove item.
+- Continue Shopping.
+- Empty Bag / Start Over.
+- Cart persistence.
+- WhatsApp checkout.
+
+E. BUSINESS INFORMATION
+- Correct WhatsApp number.
+- Correct email.
+- Correct physical address.
+- Google Maps.
+- Bumpa link.
+- Instagram.
+
+F. TECHNICAL QUALITY
+- Build result.
+- TypeScript result.
+- Console errors.
+- Failed network requests.
+- Performance issues.
+- Security issues.
+
+G. GITHUB AND DEPLOYMENT
+- Repository readiness.
+- Environment variables.
+- Build configuration.
+- Database migration safety.
+- Remaining deployment actions.
+
+H. REMAINING MANUAL ACTIONS
+List only actions that genuinely require me or the owner to perform.
+
+For every test, use one of these statuses:
+
+- PASSED — tested and confirmed.
+- FAILED — tested and did not work.
+- NOT TESTED — could not be tested.
+- MANUAL ACTION REQUIRED — needs owner or developer intervention.
+
+Do not label something PASSED simply because you wrote the code.
+
+## FINAL DELIVERY STANDARD
+
+The finished website must be:
+
+- Professionally presented.
+- Visually consistent.
+- Responsive.
+- Easy for customers to use.
+- Easy for the owner to manage.
+- Connected to the actual Supabase database.
+- Securely administered.
+- Functional for shopping and WhatsApp order submission.
+- Prepared for future GitHub updates.
+- Ready for controlled delivery to the business owner.
+
+IMPORTANT FINAL INSTRUCTIONS:
+
+1. Preserve the existing Teefahs Clothier identity.
+2. Preserve all 54 original photographs.
+3. Preserve the existing 11-garment catalogue and 8 categories.
+4. Preserve the existing cart and checkout features.
+5. Preserve the administrator dashboard entry icon.
+6. Preserve the simplified product creation workflow.
+7. Preserve the Empty Bag / Start Over feature.
+8. Preserve Google Maps and the official contact details.
+9. Do not expose private credentials.
+10. Do not create insecure database policies.
+11. Do not delete existing business data.
+12. Do not replace working features with placeholders.
+13. Do not rebuild the application unnecessarily.
+14. Do not claim that live services have been verified when you have not actually tested them.
+15. Do not deploy automatically or make irreversible production changes without explicit authorisation.
+
+The priority is to finish and stabilise the existing website, not to introduce unnecessary new features.
+
+Make the website look premium, trustworthy, authentic and ready for the owner to begin operating.
+
+I want this to be the final major development and polishing phase before handover.

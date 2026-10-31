@@ -1,0 +1,714 @@
+# TEEFAHS CLOTHIER — PHASE 3: SUPABASE DATABASE, PRODUCT MANAGEMENT AND ADMIN DASHBOARD
+
+## 1. YOUR ROLE
+
+Act as a senior full-stack engineer, Supabase database architect, e-commerce administrator experience designer, security engineer, and premium fashion e-commerce specialist.
+
+You are continuing the existing Teefahs Clothier project.
+
+The existing application already has a luxury-style storefront, responsive homepage, animated hero, category navigation, product presentation, refined calls to action, and a floating WhatsApp contact widget.
+
+The project also has:
+- A centralized asset manifest at `src/data/assets.ts`.
+- A reusable product model at `src/types/product.ts`.
+- An existing frontend framework and build configuration.
+- A design system using warm ivory, charcoal, restrained champagne-gold accents, and editorial typography.
+
+The previous implementation report says Supabase integration and product data still require configuration.
+
+Your responsibility is to build the data and administration foundation that allows the business owner to manage the storefront through a secure, user-friendly admin dashboard.
+
+**Implement this directly in the existing project. Do not rebuild the homepage or replace the current application.**
+
+## 2. FIRST: AUDIT THE EXISTING PROJECT
+
+Before modifying files, inspect:
+- The application structure and framework.
+- Existing routes and page components.
+- The current product model.
+- The asset manifest.
+- Existing product cards and category navigation.
+- The cart and WhatsApp implementation, if present.
+- Existing Supabase packages and configuration.
+- Environment variable names.
+- Existing authentication and protected routes.
+- Current database queries and types, if any.
+- Existing admin components, if any.
+- Current build and type-check scripts.
+
+Create a concise internal implementation plan based on what already exists, then proceed with the work.
+
+Do not recreate features that already work.
+
+Do not overwrite the current design with a generic admin template. The admin interface should be professional, clear, fast, and visually consistent with Teefahs Clothier.
+
+Preserve all working storefront interactions.
+
+## 3. SUPABASE CONNECTION AND CONFIGURATION
+
+Use Supabase as the primary database for the product catalogue and other appropriate store-management data.
+
+Inspect the existing project's dependencies and setup first.
+
+If the Supabase client is already configured, reuse it. Otherwise, implement a reusable Supabase client using the project's established configuration conventions.
+
+Use environment variables for public project configuration, such as:
+
+`VITE_SUPABASE_URL`
+
+`VITE_SUPABASE_ANON_KEY`
+
+Use the environment variable convention appropriate to the existing framework if it differs from the examples above.
+
+Never hardcode credentials into source files.
+
+Never expose a Supabase service-role key, database password, private API key, or other privileged secret to browser code.
+
+If Supabase credentials are not available, continue by building the integration layer and documented setup instructions. Clearly identify what remains unconfigured. Do not invent a working project URL, credentials, or a connected database.
+
+Use appropriate TypeScript types and error handling. Make database operations reusable instead of scattering direct database calls across UI components.
+
+## 4. DATABASE DESIGN
+
+Design a sensible relational schema for a modest-fashion e-commerce business.
+
+Inspect existing tables before proposing migrations. Reuse compatible existing tables where appropriate. Avoid creating duplicate tables for the same purpose.
+
+At minimum, support the following entities.
+
+### A. Products
+
+Store:
+- Stable product ID.
+- Product name.
+- Unique slug.
+- Short description.
+- Full description.
+- Category reference.
+- Main image.
+- Additional product images.
+- Base price.
+- Optional sale price.
+- Currency code.
+- Publication status.
+- Featured status.
+- Optional product SKU.
+- Search-friendly metadata where appropriate.
+- Created timestamp.
+- Updated timestamp.
+
+Use suitable database constraints and indexes, including a unique slug.
+
+Support unpublished products that remain invisible to ordinary storefront visitors.
+
+### B. Categories
+
+Store:
+- Category ID.
+- Category name.
+- Unique slug.
+- Description.
+- Optional category image.
+- Display order.
+- Active/inactive status.
+- Created and updated timestamps.
+
+Potential initial categories, subject to actual inventory:
+- Abayas.
+- Khimars.
+- Veils.
+- Hijabs.
+- Caps.
+- Accessories.
+
+Do not create misleading public categories containing no published products unless the interface intentionally supports empty categories.
+
+### C. Product variations
+
+Support products that have different sizes and colours.
+
+A variation may contain:
+- Variation ID.
+- Product ID.
+- SKU where available.
+- Size, when applicable.
+- Colour, when applicable.
+- Optional variation-specific price.
+- Optional sale price.
+- Stock quantity.
+- Active/inactive status.
+- Created and updated timestamps.
+
+Use the variation structure to distinguish stock for different sizes and colours.
+
+For example, a black abaya in size M and the same abaya in size L must be capable of having different stock quantities.
+
+Do not require sizes for products that do not use sizes. Support products with colour-only, size-only, or no variations.
+
+Prevent duplicate variation combinations for the same product where applicable.
+
+Use appropriate constraints to prevent invalid negative stock quantities.
+
+### D. Product images
+
+Support an ordered list of product images, or a normalized product-image table if that fits the existing schema better.
+
+Support:
+- Main image selection.
+- Additional gallery images.
+- Image display order.
+- Alt text.
+- Removing and replacing images.
+
+Avoid duplicating the same image URL unnecessarily.
+
+### E. Store settings
+
+Create a suitable settings structure for configurable store information, including:
+- Store display name.
+- Brand tagline.
+- Logo URL.
+- Homepage announcement.
+- Contact email, if supplied.
+- Business phone or WhatsApp destination, when verified.
+- WhatsApp catalogue URL.
+- Instagram URL.
+- Business address.
+- Default currency.
+- Storefront display preferences.
+
+Use the business information already supplied in the project where it is available. Do not invent missing contact information.
+
+Treat sensitive configuration carefully. Public storefront settings must not expose private credentials.
+
+### F. Homepage content
+
+Support editable homepage content where appropriate:
+- Hero heading.
+- Hero supporting text.
+- Hero image.
+- Primary CTA label and destination.
+- Secondary CTA label and destination.
+- Announcement text.
+- Featured product selection.
+- Featured category selection.
+- Editorial section heading and copy.
+- Publication status.
+
+Ensure editable content cannot accidentally introduce unsafe HTML or arbitrary script execution.
+
+### G. Optional future entities
+
+Do not overbuild the database. Do not add unnecessary tables for payment processing, customer accounts, reviews, shipping integrations, or order management unless the current project already has an established requirement for them.
+
+The immediate business model uses WhatsApp to discuss and confirm customer orders. Do not add an online payment gateway.
+
+## 5. DATABASE MIGRATIONS
+
+Create clear, version-controlled SQL migration files using the project's existing conventions.
+
+Migrations should:
+- Create the required tables and relationships.
+- Define primary and foreign keys.
+- Add appropriate indexes and constraints.
+- Define timestamps.
+- Support safe updates where appropriate.
+- Avoid deleting existing production data.
+- Avoid destructive resets.
+- Be repeatable only where the project's migration approach supports it.
+
+If Supabase migration tooling is already present, use it.
+
+Document exactly how the owner or developer can apply the migrations.
+
+Do not claim that migrations have been applied to a live Supabase project unless that operation was actually completed and verified.
+
+## 6. SECURE ADMIN AUTHENTICATION
+
+Create a protected admin area.
+
+Suggested route:
+
+`/admin`
+
+Use Supabase Auth if it is already available or can be integrated cleanly into the current project.
+
+The admin area must not be accessible merely because a user knows the route.
+
+Requirements:
+- Login screen.
+- Secure authentication using Supabase Auth.
+- Session handling through the supported Supabase client.
+- Logout.
+- Protected admin routes.
+- Loading state while authentication is being resolved.
+- Clear login and authorization errors.
+- Redirect unauthenticated users to the login screen.
+- Prevent non-admin authenticated customers from accessing administration functions.
+- Do not expose privileged operations in client code.
+
+Do not create a public admin registration form.
+
+Do not hardcode an administrator email and password in frontend code.
+
+Use a server-verified role, a secure authorization mechanism, or a suitable database-backed administrator allowlist. Do not trust a role supplied by an untrusted browser request.
+
+If no admin user exists yet, provide secure setup instructions for creating the first authorized administrator through the appropriate Supabase management process.
+
+## 7. ROW LEVEL SECURITY — MANDATORY
+
+Enable and configure Row Level Security on every relevant table that is exposed through the Supabase API.
+
+Create policies that follow the principle of least privilege.
+
+The intended access model is:
+
+### Public storefront
+- Read active categories.
+- Read published products.
+- Read active product variations needed for shopping.
+- Read public store settings.
+- Read published homepage content.
+- Do not modify products, categories, inventory, store settings, or homepage content.
+
+### Authorized administrators
+- Create, edit, publish, unpublish, and delete products as appropriate.
+- Manage categories.
+- Manage product images.
+- Manage variations and inventory.
+- Update permitted store settings.
+- Edit and publish homepage content.
+
+### Unauthenticated and unauthorized users
+- No administrative writes.
+- No access to private administrative records.
+- No ability to bypass authorization by calling the database API directly.
+
+Policies must check the authenticated user's trusted administrator role or another securely verified authorization mechanism.
+
+Do not assume that hiding an admin button provides security.
+
+Do not use a publicly accessible database policy that allows unrestricted writes.
+
+Do not place service-role credentials in frontend code.
+
+Include the SQL policies in the migration files and explain any required administrator bootstrap configuration.
+
+## 8. ADMIN DASHBOARD DESIGN
+
+Create a dedicated, responsive administration interface.
+
+Suggested structure:
+
+- Dashboard overview.
+- Products.
+- Categories.
+- Inventory.
+- Homepage editor.
+- Store settings.
+
+Use a sidebar on desktop and a usable responsive navigation pattern on smaller screens.
+
+The admin UI should use a restrained version of the brand's design system. It should prioritize clarity, speed, readable data tables, good form layouts, and predictable interactions.
+
+### Dashboard overview
+
+Show meaningful metrics derived from actual database data, such as:
+- Total products.
+- Published products.
+- Draft or unpublished products.
+- Active categories.
+- Low-stock variations, if stock is configured.
+- Out-of-stock variations, if stock is configured.
+
+Do not display fabricated revenue, sales totals, customer counts, or order statistics.
+
+If no data is available, display a helpful empty state rather than misleading zeros presented as completed business activity.
+
+Provide useful shortcuts such as:
+- Add New Product.
+- Manage Categories.
+- Review Inventory.
+- Edit Homepage.
+
+All dashboard shortcuts must work.
+
+## 9. PRODUCT MANAGEMENT
+
+Build a functional products-management screen.
+
+### Product listing
+
+Include:
+- Product image thumbnail.
+- Product name.
+- Category.
+- Price where configured.
+- Publication status.
+- Featured status.
+- Variation or inventory summary where useful.
+- Edit action.
+- Publish/unpublish action.
+- Delete action.
+
+Support:
+- Search by product name.
+- Filter by category.
+- Filter by publication status.
+- Useful sorting.
+- Pagination or an efficient alternative if the catalogue grows.
+
+Use real database data, not hardcoded dashboard metrics or a fake product list.
+
+### Create product
+
+Provide a form to create a product with:
+- Product name.
+- Slug.
+- Descriptions.
+- Category.
+- Main image.
+- Additional images.
+- Price and optional sale price.
+- Currency.
+- SKU where available.
+- Sizes and colours where applicable.
+- Variation-level stock.
+- Featured status.
+- Draft/published status.
+
+Validate required fields.
+
+Validate price and stock values.
+
+Handle duplicate slugs and database errors clearly.
+
+Prevent publishing a product that lacks essential information required by the storefront, while still allowing a draft to be saved when appropriate.
+
+### Edit product
+
+Allow the administrator to:
+- Edit product details.
+- Replace or reorder images.
+- Change category.
+- Update prices.
+- Add or remove variations.
+- Change variation stock.
+- Publish or unpublish a product.
+- Mark a product as featured.
+
+Changes must be saved to Supabase and reflected on the live storefront through its normal data-fetching mechanism.
+
+Do not make a visual-only admin interface whose edits disappear when the page reloads.
+
+### Delete product
+
+Use a clear confirmation step before deletion.
+
+Handle related images and variations carefully.
+
+Avoid deleting shared image files if they are still used by other products.
+
+Where permanent deletion would cause unnecessary risk, use a clearly labelled archive or unpublish workflow instead.
+
+Display a success or error message after the actual database operation completes.
+
+## 10. PRODUCT IMAGE UPLOADS AND SUPABASE STORAGE
+
+Inspect the existing asset manifest and image sources before implementing uploads.
+
+Use Supabase Storage for new product uploads if the project is configured for it.
+
+Create a documented storage bucket and suitable access policies.
+
+Requirements:
+- Upload product images from the admin dashboard.
+- Preview images before saving.
+- Allow the administrator to select a main image.
+- Support additional gallery images.
+- Allow image removal and replacement.
+- Store image references in the database.
+- Preserve useful alt text.
+- Handle file-size limits and unsupported formats.
+- Display upload progress or a clear uploading state where feasible.
+- Handle failed uploads without losing unrelated product form data.
+
+Validate file types and sizes in the frontend, and enforce appropriate controls through the upload architecture and Storage policies.
+
+Publicly visible product images may use public read access if appropriate for the selected bucket design. Upload and deletion permissions must remain restricted to authorized administrators.
+
+Do not expose a storage service secret in the browser.
+
+Do not break the existing ImageBB URLs already used in the asset manifest. Existing externally hosted product images may remain in use until the owner chooses to migrate them.
+
+Do not attempt to download or migrate all existing images automatically unless the current environment supports that operation and the owner has explicitly configured the intended workflow.
+
+## 11. INVENTORY MANAGEMENT
+
+Create an inventory interface for products with actual variation records.
+
+Display:
+- Product.
+- Variation.
+- Size, where applicable.
+- Colour, where applicable.
+- SKU where available.
+- Current stock.
+- Availability status.
+
+Allow authorized administrators to update stock.
+
+Use clear statuses such as:
+- In stock.
+- Low stock.
+- Out of stock.
+
+Make the low-stock threshold configurable if practical. Do not invent a threshold and present it as a business rule without making it editable.
+
+Ensure that:
+- Inventory changes are persisted.
+- Negative stock cannot be entered.
+- Missing inventory is not falsely represented as verified stock.
+- Public product availability reflects the configured stock state.
+- Cart validation checks available inventory where inventory tracking is enabled.
+
+Avoid implementing a complex stock reservation system in this phase unless the existing architecture already requires it.
+
+## 12. CATEGORY MANAGEMENT
+
+Allow an administrator to:
+- Create a category.
+- Edit its name and description.
+- Set its slug.
+- Assign or replace its image.
+- Change display order.
+- Activate or deactivate it.
+
+Prevent duplicate slugs.
+
+Handle products that already reference a category when that category is deactivated or removed.
+
+Ensure category edits affect storefront navigation and product filtering.
+
+## 13. HOMEPAGE CONTENT EDITOR
+
+Create an admin screen to manage supported homepage content without editing source code.
+
+Allow editing of:
+- Hero heading.
+- Hero supporting text.
+- Hero image.
+- Primary CTA label and destination.
+- Secondary CTA label and destination.
+- Announcement bar.
+- Editorial heading and body text.
+- Featured products.
+- Featured categories.
+- Visibility and publication status.
+
+Provide a preview or preview-like presentation where feasible.
+
+Validate destinations so the administrator cannot accidentally create broken internal links. Allow approved external destinations only where appropriate.
+
+Do not permit arbitrary script injection.
+
+If a field is not supported by the existing homepage component, implement it in the component and data model rather than adding a field that never affects the website.
+
+## 14. STORE SETTINGS
+
+Create a settings screen for the appropriate public-facing business details.
+
+Support editing:
+- Store name.
+- Brand tagline.
+- Logo reference.
+- Instagram link.
+- WhatsApp catalogue link.
+- Verified direct WhatsApp chat destination.
+- Business address.
+- Default currency.
+- Store announcement.
+- Contact information supplied by the owner.
+
+Do not invent a business email, phone number, delivery promise, or other missing detail.
+
+Make sure WhatsApp destinations are stored centrally and used consistently by the floating widget and the checkout process.
+
+Do not assume the catalogue URL can accept a prefilled order message.
+
+If the direct chat destination is not configured, clearly show the missing configuration in the admin interface and handle the storefront safely.
+
+## 15. LIVE STOREFRONT DATA INTEGRATION
+
+Connect the existing storefront to the database layer.
+
+The public storefront should read:
+- Published products.
+- Active categories.
+- Product images.
+- Prices.
+- Supported size and colour options.
+- Configured availability.
+- Featured products.
+- Editable homepage content.
+- Public store settings.
+
+Requirements:
+- Use a reusable data-access layer.
+- Use typed results where practical.
+- Handle loading, error, and empty states.
+- Do not show unpublished products publicly.
+- Refresh or invalidate relevant data after administrative changes.
+- Keep the page responsive while data loads.
+- Avoid fetching the same data repeatedly without need.
+- Do not scatter duplicate product arrays throughout the codebase.
+
+If Supabase credentials are missing, retain a clearly isolated development fallback using the existing asset manifest and product model. Make the application capable of switching to Supabase once valid environment variables are supplied.
+
+Never present fallback data as confirmed live database data.
+
+## 16. CURRENCY AND PRICING
+
+The business is based in Nigeria and serves customers locally and internationally.
+
+Implement the data model so prices can be stored with an explicit currency code, with NGN as the intended initial default where appropriate.
+
+Use consistent currency formatting.
+
+Do not invent foreign-exchange rates or silently convert prices using a fixed rate.
+
+Do not imply that multiple currencies are fully supported unless actual conversion or currency-specific pricing is configured.
+
+If a price is missing, use a clear contact-for-price state.
+
+Ensure the admin price form and storefront use the same source of truth.
+
+## 17. KEEP THE WHATSAPP SHOPPING EXPERIENCE WORKING
+
+The previous phase introduced a floating WhatsApp widget and improved storefront CTAs.
+
+Preserve them.
+
+If the cart and WhatsApp checkout are already implemented, verify and reuse them.
+
+If they are not yet implemented, do not silently assume they exist. Record the gap and implement only the missing functionality that fits cleanly within this phase.
+
+The final architecture should support:
+- Product selection.
+- Variation selection.
+- Cart quantity and removal.
+- Cart summary.
+- WhatsApp order message generated from real cart data.
+- A configured direct chat destination.
+- No payment gateway.
+
+Do not add an order-management system or online payment flow that the business has not requested.
+
+## 18. ERROR HANDLING AND USER EXPERIENCE
+
+Every important administrative operation should provide clear feedback.
+
+Handle:
+- Invalid form input.
+- Duplicate product slugs.
+- Missing categories.
+- Image upload failures.
+- Network errors.
+- Expired authentication sessions.
+- Unauthorized access.
+- Database constraint errors.
+- Failed saves.
+- Empty product lists.
+- Missing Supabase configuration.
+
+Use loading indicators while operations are in progress.
+
+Prevent duplicate form submissions.
+
+Only show success messages after the relevant operation succeeds.
+
+Use accessible confirmation dialogs for destructive actions.
+
+## 19. IMPLEMENTATION ORDER
+
+Work in this order, reusing the existing project:
+
+1. Inspect the codebase and existing integration.
+2. Establish or complete the Supabase client and configuration.
+3. Create typed data-access utilities.
+4. Create SQL migrations and Row Level Security policies.
+5. Add the protected admin authentication flow.
+6. Build product and category management.
+7. Build product image upload support where the environment allows it.
+8. Build variation and inventory management.
+9. Build homepage and store settings editors.
+10. Connect the public storefront to published database content.
+11. Verify that the current cart and WhatsApp experience remain intact.
+12. Run build and type checks.
+13. Fix regressions introduced by the changes.
+14. Document setup steps and remaining configuration.
+
+If the task exceeds the available execution time or context, prioritize a secure, functional foundation and clearly report what remains incomplete. Do not replace a working project with a large but nonfunctional dashboard.
+
+## 20. ACCEPTANCE TESTS
+
+Verify as much as the environment permits:
+
+### Security
+- Unauthenticated users cannot enter the admin area.
+- Unauthorized users cannot perform administrative writes.
+- Database policies enforce permissions independently of the UI.
+- No privileged secret appears in frontend code.
+
+### Product management
+- An authorized administrator can create a draft product.
+- The product can be edited and saved.
+- The product can be published.
+- The product can be unpublished.
+- The product can be assigned to a category.
+- Variation and stock data can be saved.
+- Invalid values and duplicate slugs are handled.
+
+### Image management
+- Uploads are restricted to authorized administrators.
+- Image references are stored correctly.
+- The main image and gallery order are preserved.
+- Existing external image URLs continue to work.
+
+### Storefront
+- Published products appear.
+- Unpublished products remain hidden.
+- Category filters work.
+- Product prices and variations use the database data.
+- Homepage edits appear on the storefront.
+- Loading, error, and empty states are handled.
+
+### Reliability
+- The project builds successfully where possible.
+- Type errors introduced by the changes are fixed.
+- Existing navigation and styling are preserved.
+- The floating WhatsApp widget remains functional.
+- No unrelated payment integration has been added.
+
+Do not claim that a live database operation, authentication test, upload, or policy check succeeded unless you actually executed and verified it.
+
+## 21. FINAL REPORT
+
+After implementing the changes, provide a concise report listing:
+
+1. Files created or changed.
+2. Database tables and migrations created.
+3. Security policies implemented.
+4. Admin features that work.
+5. Storefront features connected to Supabase.
+6. Build or type-check results.
+7. Tests actually performed.
+8. Anything requiring a manual action in the Supabase dashboard.
+9. Any missing environment variables.
+10. Remaining incomplete features.
+
+### FINAL DIRECTIVE
+
+Build a secure, maintainable, premium e-commerce administration foundation for Teefahs Clothier. Preserve the existing storefront and its visual quality. Make administrative changes affect real storefront data. Do not fake database connectivity, expose secrets, invent business information, or claim unverified functionality is complete.
+
+Implement directly in the current project and verify the work before reporting completion.
