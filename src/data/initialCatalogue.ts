@@ -31,9 +31,9 @@ export const INITIAL_CATEGORIES: Category[] = [
   },
   {
     id: 'c0000000-0000-0000-0000-000000000004',
-    name: 'Veils',
-    slug: 'veils',
-    description: 'Delicate niqabs and layered occasion veils with breathable softness.',
+    name: 'Niqabs & Veils',
+    slug: 'niqabs-veils',
+    description: 'Graceful single and multi-layer face veils and breathable niqabs for absolute modesty.',
     image_url: SUPPLIED_PHOTOS[36], // Veil detail
     display_order: 4,
     is_active: true,
@@ -262,7 +262,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     slug: 'amani-breathable-chiffon-veil-hijab-set',
     short_description: 'Feather-light matching niqab veil and maxi chiffon hijab.',
     description: 'Specially engineered for comfort in warmer climates. The Amani Veil Set pairs a breathable single-layer noseband veil with an expansive 200cm x 75cm matching chiffon hijab for seamless coordination.',
-    category_id: 'c0000000-0000-0000-0000-000000000004',
+    category_id: 'c0000000-0000-0000-0000-000000000003',
     main_image_url: SUPPLIED_PHOTOS[35], // 10-08-26-PM-1
     base_price: 18500,
     currency: 'NGN',
