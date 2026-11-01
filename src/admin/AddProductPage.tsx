@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { saveProduct, getActiveCategories, uploadProductImage } from '../lib/api';
+import { saveProduct, getActiveCategories, uploadProductImage, generateValidUuid } from '../lib/api';
 import { Category } from '../types/product';
 import { ASSETS } from '../data/assets';
 
@@ -185,7 +185,7 @@ export default function AddProductPage() {
       const primaryImage = photos[mainPhotoIndex] || photos[0];
       const additionalImages = photos.filter((_, idx) => idx !== mainPhotoIndex);
 
-      // Construct variations automatically from chosen sizes and colours
+      // Construct variations automatically from chosen sizes and colours using valid UUIDs
       const variations: Array<{
         id: string;
         product_id: string;
@@ -199,11 +199,10 @@ export default function AddProductPage() {
       const activeSizes = selectedSizes.length > 0 ? selectedSizes : ['Standard'];
       const activeColours = selectedColours.length > 0 ? selectedColours : ['Original'];
 
-      let varCounter = 0;
       for (const sz of activeSizes) {
         for (const clr of activeColours) {
           variations.push({
-            id: `var-${Date.now()}-${varCounter++}`,
+            id: generateValidUuid(),
             product_id: '',
             size: sz,
             colour: clr,
@@ -224,8 +223,8 @@ export default function AddProductPage() {
         sale_price: salePrice ? parseFloat(salePrice) : undefined,
         currency: 'NGN',
         main_image_url: primaryImage,
-        images: additionalImages.map((url, idx) => ({
-          id: `img-${Date.now()}-${idx}`,
+        images: additionalImages.map((url) => ({
+          id: generateValidUuid(),
           image_url: url,
         })),
         is_published: isPublished,

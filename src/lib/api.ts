@@ -146,8 +146,51 @@ const setLocalStoredCategories = (categories: Category[]) => {
   }
 };
 
+// Helper to generate valid RFC 4122 v4 hexadecimal UUIDs
+export const generateValidUuid = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+const isValidUuid = (id?: string): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
+
+// Storage key for soft-deleted / archived products
+const RECENTLY_DELETED_KEY = 'teefahs_recently_deleted_products_v1';
+
+export const getRecentlyDeletedProducts = (): Product[] => {
+  try {
+    const raw = localStorage.getItem(RECENTLY_DELETED_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading recently deleted products:', e);
+  }
+  return [];
+};
+
+export const setRecentlyDeletedProducts = (products: Product[]) => {
+  try {
+    localStorage.setItem(RECENTLY_DELETED_KEY, JSON.stringify(products));
+  } catch (e) {
+    console.error('Error saving recently deleted products:', e);
+  }
+};
+
 // Products API
 export const getPublishedProducts = async (): Promise<Product[]> => {
+  const local = getLocalStoredProducts();
+
   try {
     const { data, error } = await supabase
       .from('products')
@@ -155,44 +198,80 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
       .eq('is_published', true);
 
     if (!error && data && data.length > 0) {
-      // Map variations and images into standard model
-      const mapped = data.map((p: any) => ({
-        ...p,
-        variations: p.product_variations || [],
-        images: p.product_images || [],
-      }));
-      setLocalStoredProducts(mapped);
-      return mapped as Product[];
+      const dbIds = new Set(data.map((p: any) => p.id));
+      const localOnly = local.filter(p => !dbIds.has(p.id) && p.is_published && !p.is_archived && !p.deleted_at);
+
+      const mapped = data
+        .filter((p: any) => !p.is_archived && !p.deleted_at)
+        .map((p: any) => {
+          const localMatch = local.find(lp => lp.id === p.id);
+          return {
+            ...p,
+            base_price: localMatch?.base_price ?? p.base_price,
+            sale_price: localMatch?.sale_price !== undefined ? localMatch.sale_price : p.sale_price,
+            name: localMatch?.name ?? p.name,
+            description: localMatch?.description ?? p.description,
+            short_description: localMatch?.short_description ?? p.short_description,
+            main_image_url: localMatch?.main_image_url ?? p.main_image_url,
+            is_published: localMatch?.is_published ?? p.is_published,
+            is_featured: localMatch?.is_featured ?? p.is_featured,
+            is_new_arrival: localMatch?.is_new_arrival ?? p.is_new_arrival,
+            variations: localMatch?.variations?.length ? localMatch.variations : (p.product_variations || []),
+            images: localMatch?.images?.length ? localMatch.images : (p.product_images || []),
+          };
+        });
+
+      const combined = [...mapped, ...localOnly];
+      return combined as Product[];
     }
   } catch (e) {
     console.warn('Supabase query error, using catalogue cache:', e);
   }
 
-  // Fallback to active catalogued products
-  const cached = getLocalStoredProducts();
-  return cached.filter(p => p.is_published);
+  // Fallback to active catalogued products excluding archived
+  return local.filter(p => p.is_published && !p.is_archived && !p.deleted_at);
 };
 
 export const getAllProducts = async (): Promise<Product[]> => {
+  const local = getLocalStoredProducts();
+
   try {
     const { data, error } = await supabase
       .from('products')
       .select('*, product_variations(*), product_images(*)');
 
     if (!error && data && data.length > 0) {
-      const mapped = data.map((p: any) => ({
-        ...p,
-        variations: p.product_variations || [],
-        images: p.product_images || [],
-      }));
-      setLocalStoredProducts(mapped);
-      return mapped as Product[];
+      const dbIds = new Set(data.map((p: any) => p.id));
+      const localOnly = local.filter(p => !dbIds.has(p.id) && !p.is_archived && !p.deleted_at);
+
+      const mapped = data
+        .filter((p: any) => !p.is_archived && !p.deleted_at)
+        .map((p: any) => {
+          const localMatch = local.find(lp => lp.id === p.id);
+          return {
+            ...p,
+            base_price: localMatch?.base_price ?? p.base_price,
+            sale_price: localMatch?.sale_price !== undefined ? localMatch.sale_price : p.sale_price,
+            name: localMatch?.name ?? p.name,
+            description: localMatch?.description ?? p.description,
+            short_description: localMatch?.short_description ?? p.short_description,
+            main_image_url: localMatch?.main_image_url ?? p.main_image_url,
+            is_published: localMatch?.is_published ?? p.is_published,
+            is_featured: localMatch?.is_featured ?? p.is_featured,
+            is_new_arrival: localMatch?.is_new_arrival ?? p.is_new_arrival,
+            variations: localMatch?.variations?.length ? localMatch.variations : (p.product_variations || []),
+            images: localMatch?.images?.length ? localMatch.images : (p.product_images || []),
+          };
+        });
+
+      const combined = [...mapped, ...localOnly];
+      return combined as Product[];
     }
   } catch (e) {
     console.warn('Supabase getAllProducts query error, using catalogue cache:', e);
   }
 
-  return getLocalStoredProducts();
+  return local.filter(p => !p.is_archived && !p.deleted_at);
 };
 
 export const getProductById = async (id: string): Promise<Product | null> => {
@@ -221,71 +300,151 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 export const saveProduct = async (product: Partial<Product>): Promise<Product> => {
   const current = getLocalStoredProducts();
   let savedProduct: Product;
+  const isEditing = !!product.id && current.some(p => p.id === product.id);
 
-  if (product.id) {
-    // Update existing
+  if (isEditing && product.id) {
+    // 1. Update existing product in state
+    const existing = current.find(p => p.id === product.id)!;
     savedProduct = {
-      ...current.find(p => p.id === product.id)!,
+      ...existing,
       ...product,
+      variations: product.variations ?? existing.variations ?? [],
+      images: product.images ?? existing.images ?? [],
     } as Product;
+
     const updated = current.map(p => p.id === product.id ? savedProduct : p);
     setLocalStoredProducts(updated);
 
-    // Try Supabase sync
+    // 2. Sync to Supabase
     try {
       const dbPayload = {
-        name: product.name,
-        slug: product.slug || product.name?.toLowerCase().replace(/ /g, '-'),
-        short_description: product.short_description,
-        description: product.description,
-        category_id: product.category_id,
-        main_image_url: product.main_image_url,
-        base_price: product.base_price,
-        sale_price: product.sale_price,
-        currency: product.currency || 'NGN',
-        is_published: product.is_published ?? true,
-        is_featured: product.is_featured ?? false,
-        is_new_arrival: product.is_new_arrival ?? false,
+        name: savedProduct.name,
+        slug: savedProduct.slug || savedProduct.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        short_description: savedProduct.short_description || savedProduct.description?.slice(0, 160) || '',
+        description: savedProduct.description || '',
+        category_id: savedProduct.category_id,
+        main_image_url: savedProduct.main_image_url,
+        base_price: savedProduct.base_price,
+        sale_price: savedProduct.sale_price !== undefined ? savedProduct.sale_price : null,
+        currency: savedProduct.currency || 'NGN',
+        is_published: savedProduct.is_published ?? true,
+        is_featured: savedProduct.is_featured ?? false,
+        is_new_arrival: savedProduct.is_new_arrival ?? false,
+        updated_at: new Date().toISOString(),
       };
-      await supabase.from('products').update(dbPayload).eq('id', product.id);
+
+      const { error: prodErr } = await supabase.from('products').update(dbPayload).eq('id', product.id);
+      if (prodErr) {
+        console.warn('Supabase product update error:', prodErr.message);
+      }
+
+      // Sync product images to Supabase if provided
+      if (savedProduct.images && Array.isArray(savedProduct.images)) {
+        try {
+          const formattedImages = savedProduct.images.map((img: any, idx: number) => ({
+            id: isValidUuid(img.id) ? img.id : generateValidUuid(),
+            product_id: product.id,
+            image_url: typeof img === 'string' ? img : img.image_url,
+            alt_text: (typeof img === 'object' && img.alt_text) ? img.alt_text : `${savedProduct.name} photograph ${idx + 1}`,
+            display_order: idx,
+          }));
+
+          // Re-sync images for this product
+          await supabase.from('product_images').delete().eq('product_id', product.id);
+          await supabase.from('product_images').insert(formattedImages);
+        } catch (imgErr) {
+          console.warn('Could not sync product images to Supabase:', imgErr);
+        }
+      }
+
+      // Sync variations to Supabase if provided
+      if (savedProduct.variations && Array.isArray(savedProduct.variations)) {
+        try {
+          const formattedVars = savedProduct.variations.map((v: any, idx: number) => ({
+            id: isValidUuid(v.id) ? v.id : generateValidUuid(),
+            product_id: product.id,
+            sku: v.sku || `TC-${(savedProduct.slug || 'ITEM').toUpperCase().slice(0, 6)}-${idx + 1}`,
+            size: v.size || 'One Size',
+            colour: v.colour || 'Standard',
+            stock_quantity: Math.max(0, Number(v.stock_quantity) || 0),
+            price_adjustment: Number(v.price_adjustment) || 0,
+            is_active: v.is_active ?? true,
+          }));
+
+          await supabase.from('product_variations').upsert(formattedVars);
+        } catch (varErr) {
+          console.warn('Could not sync product variations to Supabase:', varErr);
+        }
+      }
     } catch (e) {
       console.warn('Could not sync update to Supabase:', e);
     }
   } else {
-    // Insert new
-    const newId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') 
-      ? crypto.randomUUID() 
-      : '00000000-0000-4000-8000-' + Math.floor(Math.random() * 0xffffffffffff).toString(16).padStart(12, '0');
+    // 3. Insert new product
+    const newId = (product.id && isValidUuid(product.id)) ? product.id : generateValidUuid();
     savedProduct = {
       ...product,
       id: newId,
-      slug: product.slug || (product.name ? product.name.toLowerCase().replace(/ /g, '-') : newId),
+      slug: product.slug || (product.name ? product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : newId),
       currency: product.currency || 'NGN',
-      is_published: product.is_published ?? false,
+      is_published: product.is_published ?? true,
       is_featured: product.is_featured ?? false,
       is_new_arrival: product.is_new_arrival ?? false,
       variations: product.variations || [],
       images: product.images || [],
     } as Product;
+
     setLocalStoredProducts([savedProduct, ...current]);
 
     // Try Supabase sync
     try {
       const dbPayload = {
+        id: savedProduct.id,
         name: savedProduct.name,
         slug: savedProduct.slug,
-        short_description: savedProduct.short_description,
-        description: savedProduct.description,
+        short_description: savedProduct.short_description || savedProduct.description?.slice(0, 160) || '',
+        description: savedProduct.description || '',
         category_id: savedProduct.category_id,
         main_image_url: savedProduct.main_image_url,
         base_price: savedProduct.base_price,
-        sale_price: savedProduct.sale_price,
+        sale_price: savedProduct.sale_price !== undefined ? savedProduct.sale_price : null,
         currency: savedProduct.currency,
         is_published: savedProduct.is_published,
         is_featured: savedProduct.is_featured,
         is_new_arrival: savedProduct.is_new_arrival,
       };
-      await supabase.from('products').insert(dbPayload);
+
+      const { error: insErr } = await supabase.from('products').insert(dbPayload);
+      if (insErr) {
+        console.warn('Supabase insert error:', insErr.message);
+      }
+
+      // Insert images
+      if (savedProduct.images && savedProduct.images.length > 0) {
+        const formattedImages = savedProduct.images.map((img: any, idx: number) => ({
+          id: isValidUuid(img.id) ? img.id : generateValidUuid(),
+          product_id: savedProduct.id,
+          image_url: typeof img === 'string' ? img : img.image_url,
+          alt_text: (typeof img === 'object' && img.alt_text) ? img.alt_text : `${savedProduct.name} photograph ${idx + 1}`,
+          display_order: idx,
+        }));
+        await supabase.from('product_images').insert(formattedImages);
+      }
+
+      // Insert variations
+      if (savedProduct.variations && savedProduct.variations.length > 0) {
+        const formattedVars = savedProduct.variations.map((v: any, idx: number) => ({
+          id: isValidUuid(v.id) ? v.id : generateValidUuid(),
+          product_id: savedProduct.id,
+          sku: v.sku || `TC-${(savedProduct.slug || 'ITEM').toUpperCase().slice(0, 6)}-${idx + 1}`,
+          size: v.size || 'One Size',
+          colour: v.colour || 'Standard',
+          stock_quantity: Math.max(0, Number(v.stock_quantity) || 0),
+          price_adjustment: Number(v.price_adjustment) || 0,
+          is_active: v.is_active ?? true,
+        }));
+        await supabase.from('product_variations').insert(formattedVars);
+      }
     } catch (e) {
       console.warn('Could not sync insert to Supabase:', e);
     }
@@ -294,16 +453,98 @@ export const saveProduct = async (product: Partial<Product>): Promise<Product> =
   return savedProduct;
 };
 
-export const deleteProduct = async (id: string): Promise<void> => {
+// Soft-Delete / Archive product with undo support
+export const archiveProduct = async (id: string, deletedBy = 'Queen Lateefah'): Promise<Product | null> => {
+  const current = getLocalStoredProducts();
+  const target = current.find(p => p.id === id);
+  if (!target) return null;
+
+  const deletedAt = new Date().toISOString();
+  const archivedProduct: Product = {
+    ...target,
+    is_archived: true,
+    is_published: false,
+    deleted_at: deletedAt,
+    deleted_by: deletedBy,
+  };
+
+  // Remove from active catalogue
+  const remaining = current.filter(p => p.id !== id);
+  setLocalStoredProducts(remaining);
+
+  // Add to Recently Deleted registry
+  const recentlyDeleted = getRecentlyDeletedProducts().filter(p => p.id !== id);
+  setRecentlyDeletedProducts([archivedProduct, ...recentlyDeleted]);
+
+  // Sync to Supabase: unpublish immediately so storefront hides it
+  try {
+    await supabase.from('products').update({
+      is_published: false,
+      updated_at: deletedAt,
+    }).eq('id', id);
+  } catch (e) {
+    console.warn('Could not sync archive state to Supabase:', e);
+  }
+
+  return archivedProduct;
+};
+
+// Restore product from Recently Deleted
+export const restoreProduct = async (id: string): Promise<Product | null> => {
+  const recentlyDeleted = getRecentlyDeletedProducts();
+  const target = recentlyDeleted.find(p => p.id === id);
+  if (!target) return null;
+
+  const restoredProduct: Product = {
+    ...target,
+    is_archived: false,
+    deleted_at: null,
+    is_published: true, // Re-publish upon restore
+    updated_at: new Date().toISOString(),
+  };
+
+  // Remove from recently deleted
+  setRecentlyDeletedProducts(recentlyDeleted.filter(p => p.id !== id));
+
+  // Add back to active catalogue
+  const current = getLocalStoredProducts().filter(p => p.id !== id);
+  setLocalStoredProducts([restoredProduct, ...current]);
+
+  // Sync back to Supabase: set is_published to true
+  try {
+    await supabase.from('products').update({
+      is_published: true,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id);
+  } catch (e) {
+    console.warn('Could not sync restore state to Supabase:', e);
+  }
+
+  return restoredProduct;
+};
+
+// Permanent Hard Deletion (requires explicit confirmation)
+export const permanentlyDeleteProduct = async (id: string): Promise<void> => {
+  // Remove from recently deleted
+  const recentlyDeleted = getRecentlyDeletedProducts();
+  setRecentlyDeletedProducts(recentlyDeleted.filter(p => p.id !== id));
+
+  // Remove from active catalogue if still present
   const current = getLocalStoredProducts();
   setLocalStoredProducts(current.filter(p => p.id !== id));
 
+  // Remove from Supabase
   try {
+    await supabase.from('product_variations').delete().eq('product_id', id);
+    await supabase.from('product_images').delete().eq('product_id', id);
     await supabase.from('products').delete().eq('id', id);
   } catch (e) {
-    console.warn('Could not sync delete to Supabase:', e);
+    console.warn('Could not permanently delete from Supabase:', e);
   }
 };
+
+// Safe default: deleteProduct performs soft-deletion
+export const deleteProduct = archiveProduct;
 
 // Categories API
 export const getActiveCategories = async (): Promise<Category[]> => {

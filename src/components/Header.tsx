@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, Search, Menu, X, Shield, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, Lock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data/assets';
 import { useCart } from '../context/CartContext';
@@ -28,7 +28,17 @@ export default function Header() {
         <div className="flex items-center justify-between gap-6 px-6 py-4 max-w-7xl mx-auto">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src={ASSETS.logo} alt="Teefahs Clothier" className="h-8 md:h-9 w-auto" />
+            <img 
+              src={ASSETS.logo} 
+              alt="Teefahs Clothier" 
+              className="h-8 md:h-9 w-auto object-contain"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.endsWith('/logo.png')) {
+                  target.src = '/logo.png';
+                }
+              }}
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -69,13 +79,15 @@ export default function Header() {
               )}
             </button>
 
-            {/* Admin Link (Desktop) */}
+            {/* Admin Portal (Lock icon - visible on mobile, tablet & desktop) */}
             <Link
               to="/admin"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider bg-stone-100 hover:bg-emerald-900 hover:text-white text-stone-800 border border-stone-300 rounded transition-colors shadow-2xs"
+              className="p-2 text-stone-700 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors flex items-center justify-center min-w-[40px] min-h-[40px] border border-stone-200/80 md:border-transparent md:px-2.5"
+              aria-label="Admin Portal"
+              title="Admin Portal"
             >
-              <Shield size={13} className="text-emerald-700 group-hover:text-white" />
-              <span>Admin</span>
+              <Lock size={18} className="stroke-[1.8] text-stone-800" />
+              <span className="hidden md:inline text-[11px] font-semibold uppercase tracking-wider ml-1.5 text-stone-800">Admin</span>
             </Link>
 
             {/* Mobile Menu Hamburger */}
@@ -135,7 +147,17 @@ export default function Header() {
           <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-6 z-10 overflow-y-auto">
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-stone-200">
-                <img src={ASSETS.logo} alt="Teefahs Clothier" className="h-7 w-auto" />
+                <img 
+                  src={ASSETS.logo} 
+                  alt="Teefahs Clothier" 
+                  className="h-7 w-auto object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.src.endsWith('/logo.png')) {
+                      target.src = '/logo.png';
+                    }
+                  }}
+                />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-1 text-stone-500 hover:text-stone-900"
@@ -225,7 +247,7 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 bg-stone-900 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-sm shadow-xs"
               >
-                <Shield size={15} />
+                <Lock size={15} />
                 Admin Dashboard
               </Link>
               <div className="mt-4 text-center">

@@ -27,6 +27,9 @@ CREATE TABLE products (
   is_published BOOLEAN DEFAULT false,
   is_featured BOOLEAN DEFAULT false,
   is_new_arrival BOOLEAN DEFAULT false,
+  deleted_at TIMESTAMPTZ DEFAULT NULL,
+  is_archived BOOLEAN DEFAULT false,
+  deleted_by TEXT DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -42,7 +42,10 @@ export default function AdminDashboard() {
   const [copiedSql, setCopiedSql] = useState(false);
 
   // Authenticated store owner identity
-  const adminEmail = localStorage.getItem('teefahs_admin_email') || 'queenlateefalive@yahoo.com';
+  const storedAdminEmail = localStorage.getItem('teefahs_admin_email');
+  const adminEmail = (storedAdminEmail && !storedAdminEmail.toLowerCase().includes('greatezirim'))
+    ? storedAdminEmail
+    : 'queenlateefalive@yahoo.com';
   const rawRole = localStorage.getItem('teefahs_admin_role') || 'Store Owner';
   const adminRole = rawRole.toLowerCase().includes('temporal') ? 'Store Owner' : rawRole;
 

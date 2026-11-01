@@ -59,7 +59,7 @@ export const SUPPLIED_PHOTOS: string[] = [
 ];
 
 export const ASSETS = {
-  logo: '/public/assets/aistudio/Teefahs_Clothier__Timeless_Modesty_2a5ead08.png',
+  logo: '/assets/aistudio/Teefahs_Clothier__Timeless_Modesty_2a5ead08.png',
   heroImages: [
     SUPPLIED_PHOTOS[0], // WhatsApp-Image-2026-10-21-at-6-02-24-AM-1
     SUPPLIED_PHOTOS[1], // WhatsApp-Image-2026-10-21-at-6-02-24-AM-2

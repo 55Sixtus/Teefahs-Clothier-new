@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { getProductById, saveProduct, deleteProduct, getActiveCategories, uploadProductImage } from '../lib/api';
+import { getProductById, saveProduct, archiveProduct, getActiveCategories, uploadProductImage, generateValidUuid } from '../lib/api';
 import { Category } from '../types/product';
 import { ASSETS } from '../data/assets';
 
@@ -42,6 +42,8 @@ export default function EditProductPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [existingVariations, setExistingVariations] = useState<any[]>([]);
+  const [existingImages, setExistingImages] = useState<any[]>([]);
 
   // 1. Core Simple Product Details
   const [name, setName] = useState('');
@@ -85,11 +87,13 @@ export default function EditProductPage() {
           setSlug(prod.slug || '');
           setCategoryId(prod.category_id || (cats[0]?.id || ''));
           setPrice(prod.base_price?.toString() || '');
-          setSalePrice(prod.sale_price ? prod.sale_price.toString() : '');
+          setSalePrice(prod.sale_price !== undefined && prod.sale_price !== null ? prod.sale_price.toString() : '');
           setDescription(prod.description || prod.short_description || '');
           setIsPublished(prod.is_published ?? true);
           setIsFeatured(prod.is_featured ?? false);
           setIsNewArrival(prod.is_new_arrival ?? false);
+          setExistingVariations(prod.variations || []);
+          setExistingImages(prod.images || []);
 
           // Build photo list
           const photoList: string[] = [];
@@ -237,6 +241,7 @@ export default function EditProductPage() {
       const variations: Array<{
         id: string;
         product_id: string;
+        sku?: string;
         size: string;
         colour: string;
         price_adjustment: number;
@@ -244,20 +249,36 @@ export default function EditProductPage() {
         is_active: boolean;
       }> = [];
 
-      let varCounter = 0;
       for (const sz of activeSizes) {
         for (const clr of activeColours) {
+          const match = existingVariations.find(v => v.size === sz && v.colour === clr);
           variations.push({
-            id: `var-${id}-${varCounter++}`,
+            id: match?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(match.id)
+              ? match.id
+              : generateValidUuid(),
             product_id: id,
+            sku: match?.sku || `TC-${(slug || name).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)}-${sz.toUpperCase()}`,
             size: sz,
             colour: clr,
-            price_adjustment: 0,
-            stock_quantity: Math.max(1, Math.round(stockAvailable / (activeSizes.length * activeColours.length))),
+            price_adjustment: match?.price_adjustment || 0,
+            stock_quantity: match?.stock_quantity !== undefined 
+              ? match.stock_quantity 
+              : Math.max(1, Math.round(stockAvailable / (activeSizes.length * activeColours.length))),
             is_active: true,
           });
         }
       }
+
+      const formattedImages = additionalImages.map((url, idx) => {
+        const match = existingImages.find(img => (typeof img === 'string' ? img : img.image_url) === url);
+        return {
+          id: match?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(match.id)
+            ? match.id
+            : generateValidUuid(),
+          image_url: url,
+          alt_text: `${name} photograph ${idx + 1}`,
+        };
+      });
 
       await saveProduct({
         id,
@@ -270,10 +291,7 @@ export default function EditProductPage() {
         sale_price: salePrice ? parseFloat(salePrice) : undefined,
         currency: 'NGN',
         main_image_url: primaryImage,
-        images: additionalImages.map((url, idx) => ({
-          id: `img-${id}-${idx}`,
-          image_url: url,
-        })),
+        images: formattedImages,
         is_published: isPublished,
         is_featured: isFeatured,
         is_new_arrival: isNewArrival,
@@ -283,7 +301,7 @@ export default function EditProductPage() {
       setSuccessMsg('Product details successfully updated!');
       setTimeout(() => {
         navigate('/admin/products');
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Could not update the product.');
@@ -298,10 +316,15 @@ export default function EditProductPage() {
     setShowDeleteConfirm(false);
 
     try {
-      await deleteProduct(id);
-      navigate('/admin/products');
+      await archiveProduct(id, 'Queen Lateefah');
+      navigate('/admin/products', {
+        state: {
+          archivedProductName: name,
+          archivedProductId: id,
+        },
+      });
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to delete product.');
+      setErrorMsg(err.message || 'Failed to move product to Recently Deleted.');
       setDeleting(false);
     }
   };
@@ -805,9 +828,9 @@ export default function EditProductPage() {
               <Trash2 size={20} />
             </div>
             <div className="text-center">
-              <h3 className="font-serif text-lg text-stone-900">Delete This Garment?</h3>
+              <h3 className="font-serif text-lg text-stone-900">Move to Recently Deleted?</h3>
               <p className="text-xs text-stone-600 mt-2 leading-relaxed">
-                Are you sure you want to permanently delete <strong>"{name}"</strong>? This will remove it from the catalogue and database.
+                Garment <strong>"{name}"</strong> will be removed from the public storefront. You can restore it anytime with all its photos, variations, and prices intact from the <strong>Recently Deleted</strong> tab.
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2">
@@ -824,7 +847,7 @@ export default function EditProductPage() {
                 disabled={deleting}
                 className="flex-1 py-2.5 bg-red-600 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-red-700 transition-colors shadow-xs"
               >
-                {deleting ? 'Deleting...' : 'Yes, Delete'}
+                {deleting ? 'Moving...' : 'Move to Deleted'}
               </button>
             </div>
           </div>

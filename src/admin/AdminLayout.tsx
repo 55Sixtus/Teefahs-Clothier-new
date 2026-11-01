@@ -25,7 +25,10 @@ export default function AdminLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const isLocalAuthorized = localStorage.getItem('teefahs_admin_authorized') === 'true';
-  const adminEmail = localStorage.getItem('teefahs_admin_email') || user?.email || 'queenlateefalive@yahoo.com';
+  const rawStoredEmail = localStorage.getItem('teefahs_admin_email');
+  const adminEmail = (rawStoredEmail && !rawStoredEmail.toLowerCase().includes('greatezirim'))
+    ? rawStoredEmail 
+    : (user?.email || 'queenlateefalive@yahoo.com');
   const rawRole = localStorage.getItem('teefahs_admin_role') || 'Store Owner';
   const adminRole = rawRole.toLowerCase().includes('temporal') ? 'Store Owner' : rawRole;
   const isAuthenticated = !!user || isLocalAuthorized;
@@ -113,7 +116,17 @@ export default function AdminLayout() {
           {/* Brand header */}
           <div className="pb-5 mb-5 border-b border-stone-800">
             <Link to="/" className="inline-block mb-3" title="Return to Storefront Home">
-              <img src={ASSETS.logo} alt="Teefahs Clothier" className="h-7 w-auto invert brightness-200" />
+              <img 
+                src={ASSETS.logo} 
+                alt="Teefahs Clothier" 
+                className="h-7 w-auto invert brightness-200 object-contain" 
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.endsWith('/logo.png')) {
+                    target.src = '/logo.png';
+                  }
+                }}
+              />
             </Link>
             <div className="flex items-center gap-2 text-[11px] text-emerald-400 uppercase tracking-widest font-semibold">
               <Shield size={13} />

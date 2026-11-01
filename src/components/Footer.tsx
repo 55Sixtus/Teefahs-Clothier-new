@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MessageCircle, Instagram, Shield, Mail, MapPin, Globe } from 'lucide-react';
+import { MessageCircle, Instagram, Lock, Mail, MapPin, Globe } from 'lucide-react';
 import { ASSETS } from '../data/assets';
 import { SHOP_CONFIG } from '../config/shopConfig';
 
@@ -10,7 +10,17 @@ export default function Footer() {
         {/* Brand Column */}
         <div className="flex flex-col gap-3.5 sm:col-span-2 md:col-span-1">
           <Link to="/" className="inline-block">
-            <img src={ASSETS.logo} alt="Teefahs Clothier" className="h-9 w-auto invert brightness-200" />
+            <img 
+              src={ASSETS.logo} 
+              alt="Teefahs Clothier" 
+              className="h-9 w-auto invert brightness-200 object-contain"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.endsWith('/logo.png')) {
+                  target.src = '/logo.png';
+                }
+              }}
+            />
           </Link>
           <p className="text-xs text-stone-400 leading-relaxed font-light">
             Timeless Modesty, Effortless Elegance.
@@ -123,7 +133,7 @@ export default function Footer() {
             to="/admin"
             className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 border border-stone-800 text-stone-200 text-xs uppercase tracking-wider font-semibold rounded hover:bg-emerald-950 hover:text-emerald-300 transition-colors"
           >
-            <Shield size={14} className="text-emerald-400" />
+            <Lock size={14} className="text-emerald-400" />
             Admin Dashboard
           </Link>
         </div>

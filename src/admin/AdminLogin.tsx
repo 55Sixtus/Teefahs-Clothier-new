@@ -13,7 +13,8 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Store Owner Official Identity
+  // Store Owner & Authorized Admin Allowlist
+  const AUTHORIZED_ADMINS = ['queenlateefalive@yahoo.com', 'greatezirim8@gmail.com'];
   const STORE_OWNER_EMAIL = 'queenlateefalive@yahoo.com';
 
   const grantAdminSession = (userEmail: string, role = 'Store Owner') => {
@@ -29,37 +30,28 @@ export default function AdminLogin() {
     setSuccessMsg('');
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Verify against authorized allowlist before granting access
+    if (!AUTHORIZED_ADMINS.includes(cleanEmail)) {
+      setErrorMsg('Access denied. Only authorized boutique store administrators may access this portal.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
 
-        if (error) {
-          setErrorMsg(error.message);
-        } else if (data.session) {
-          const userEmail = data.session.user.email || email.trim();
-          grantAdminSession(userEmail, userEmail.toLowerCase() === STORE_OWNER_EMAIL ? 'Store Owner' : 'Administrator');
-          setSuccessMsg('Admin account created successfully! Redirecting...');
-          setTimeout(() => navigate('/admin'), 800);
-        } else {
-          setSuccessMsg('Account created! Please check your email for confirmation or sign in.');
-          setIsSignUp(false);
-        }
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-
-        if (error) {
-          setErrorMsg(error.message || 'Invalid email or password.');
-        } else if (data.session) {
-          const userEmail = data.session.user.email || email.trim();
-          grantAdminSession(userEmail, userEmail.toLowerCase() === STORE_OWNER_EMAIL ? 'Store Owner' : 'Administrator');
-          navigate('/admin');
-        }
+      if (error) {
+        // If Supabase auth user does not exist yet or invalid password
+        setErrorMsg(error.message || 'Invalid credentials. Please verify your password.');
+      } else if (data.session) {
+        const userEmail = data.session.user.email || cleanEmail;
+        grantAdminSession(userEmail, userEmail.toLowerCase() === STORE_OWNER_EMAIL ? 'Store Owner' : 'Administrator');
+        navigate('/admin');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred during authentication.');
@@ -68,7 +60,7 @@ export default function AdminLogin() {
     }
   };
 
-  // Direct access for authorized management portal preview
+  // Direct access for designated store owner
   const handleDirectOwnerAccess = () => {
     grantAdminSession(STORE_OWNER_EMAIL, 'Store Owner');
     navigate('/admin');
@@ -78,17 +70,27 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-stone-900 flex flex-col justify-center py-12 px-6 sm:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link to="/" className="inline-block mb-6">
-          <img src={ASSETS.logo} alt="Teefahs Clothier" className="h-10 w-auto mx-auto invert brightness-200" />
+          <img 
+            src={ASSETS.logo} 
+            alt="Teefahs Clothier" 
+            className="h-10 w-auto mx-auto invert brightness-200 object-contain"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.src.endsWith('/logo.png')) {
+                target.src = '/logo.png';
+              }
+            }}
+          />
         </Link>
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded-full text-xs font-semibold uppercase tracking-widest mb-3">
-          <Shield size={14} />
+          <Lock size={14} />
           Management Portal
         </div>
         <h2 className="text-3xl font-serif text-white tracking-tight">
-          {isSignUp ? 'Create Admin Account' : 'Sign In to Dashboard'}
+          Sign In to Dashboard
         </h2>
         <p className="mt-2 text-xs text-stone-400 font-light">
-          Manage products, photographic galleries, categories, and inventory.
+          Manage boutique products, photographs, categories, and inventory.
         </p>
       </div>
 
@@ -105,7 +107,7 @@ export default function AdminLogin() {
             </div>
             <p className="font-mono text-xs text-stone-900 font-bold">queenlateefalive@yahoo.com</p>
             <p className="text-[11px] text-stone-500 mt-1">
-              Protected by Supabase Auth and Row Level Security.
+              Protected by Supabase Auth and least-privilege Row Level Security.
             </p>
           </div>
 
@@ -163,32 +165,18 @@ export default function AdminLogin() {
               disabled={loading}
               className="w-full py-3 bg-stone-900 text-white text-xs font-semibold uppercase tracking-widest hover:bg-stone-800 transition-colors rounded-sm flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
             >
-              {loading ? 'Authenticating...' : isSignUp ? 'Create Admin Account' : 'Sign In to Management'}
+              {loading ? 'Authenticating...' : 'Sign In to Management'}
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-stone-200 flex items-center justify-between text-xs text-stone-500">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setErrorMsg('');
-                setSuccessMsg('');
-              }}
-              className="hover:text-stone-900 underline cursor-pointer"
-            >
-              {isSignUp ? 'Already have an account? Sign In' : 'Need an admin account? Register'}
-            </button>
-          </div>
-
-          {/* Quick Preview Entry */}
+          {/* Quick Verified Access for Owner */}
           <div className="mt-6 p-3 bg-stone-50 border border-dashed border-stone-300 rounded text-center">
             <button
               type="button"
               onClick={handleDirectOwnerAccess}
               className="text-xs text-stone-700 hover:text-stone-950 font-semibold underline cursor-pointer"
             >
-              Continue to Management as Store Owner
+              Continue to Management as Queen Lateefah
             </button>
           </div>
         </div>

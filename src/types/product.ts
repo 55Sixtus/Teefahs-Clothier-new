@@ -35,4 +35,10 @@ export interface Product {
   is_new_arrival: boolean;
   variations?: ProductVariation[];
   images?: { id: string; image_url: string; alt_text?: string }[];
+  deleted_at?: string | null;
+  is_archived?: boolean;
+  deleted_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
+
