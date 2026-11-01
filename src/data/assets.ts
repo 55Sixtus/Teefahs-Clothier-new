@@ -1,6 +1,5 @@
 // Official supplied photoshoot photographs for Teefahs Clothier
-// All 54 verified live ImageBB links provided by the owner
-
+// Batch 1: All 54 verified live ImageBB links provided by the owner
 export const SUPPLIED_PHOTOS: string[] = [
   'https://i.ibb.co/svjCMgcM/Whats-App-Image-2026-10-21-at-6-02-24-AM-1.jpg', // 0
   'https://i.ibb.co/nMyTBTm6/Whats-App-Image-2026-10-21-at-6-02-24-AM-2.jpg', // 1
@@ -58,6 +57,62 @@ export const SUPPLIED_PHOTOS: string[] = [
   'https://i.ibb.co/LD1GK301/Whats-App-Image-2026-10-21-at-10-08-30-PM.jpg',  // 53
 ];
 
+// Batch 2: Official photoshoot images for 5 newly added boutique pieces
+export const NEW_PRODUCT_PHOTOS = {
+  malaysianHijabs: [
+    'https://i.ibb.co/j9xMh9TX/Whats-App-Image-2026-11-01-at-9-46-26-PM.jpg',
+    'https://i.ibb.co/cS76LskC/Whats-App-Image-2026-11-01-at-9-46-27-PM-1.jpg',
+    'https://i.ibb.co/JWTCZ9hJ/Whats-App-Image-2026-11-01-at-9-46-27-PM-2.jpg',
+    'https://i.ibb.co/wr0PWg5g/Whats-App-Image-2026-11-01-at-9-46-27-PM-3.jpg',
+    'https://i.ibb.co/LDDjfSSV/Whats-App-Image-2026-11-01-at-9-46-27-PM.jpg',
+    'https://i.ibb.co/9982Lh56/Whats-App-Image-2026-11-01-at-9-46-28-PM-1.jpg',
+    'https://i.ibb.co/cXNnLfsv/Whats-App-Image-2026-11-01-at-9-46-28-PM-2.jpg',
+    'https://i.ibb.co/bj7k71V2/Whats-App-Image-2026-11-01-at-9-46-28-PM-3.jpg',
+    'https://i.ibb.co/xS5rD0Zt/Whats-App-Image-2026-11-01-at-9-46-28-PM.jpg',
+  ],
+  luxeJerseyVeil: [
+    'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
+    'https://i.ibb.co/P0wN5PL/Whats-App-Image-2026-11-01-at-9-53-08-PM.jpg',
+    'https://i.ibb.co/8DPKFhwK/Whats-App-Image-2026-11-01-at-9-53-09-PM-1.jpg',
+    'https://i.ibb.co/wr0ry1fR/Whats-App-Image-2026-11-01-at-9-53-09-PM-2.jpg',
+    'https://i.ibb.co/fdK231WX/Whats-App-Image-2026-11-01-at-9-53-09-PM-3.jpg',
+    'https://i.ibb.co/xSvcZTYN/Whats-App-Image-2026-11-01-at-9-53-09-PM.jpg',
+    'https://i.ibb.co/Zp5sWkXw/Whats-App-Image-2026-11-01-at-9-53-10-PM-1.jpg',
+    'https://i.ibb.co/nqjv8pRr/Whats-App-Image-2026-11-01-at-9-53-10-PM-2.jpg',
+    'https://i.ibb.co/QFc34cc1/Whats-App-Image-2026-11-01-at-9-53-10-PM.jpg',
+  ],
+  khadeejahHijab: [
+    'https://i.ibb.co/1J8jyJCY/Whats-App-Image-2026-11-01-at-10-00-40-PM-1.jpg',
+    'https://i.ibb.co/BH1gTs4K/Whats-App-Image-2026-11-01-at-10-00-40-PM-2.jpg',
+    'https://i.ibb.co/mCtXQKMN/Whats-App-Image-2026-11-01-at-10-00-40-PM.jpg',
+    'https://i.ibb.co/5HKcm6V/Whats-App-Image-2026-11-01-at-10-00-41-PM-1.jpg',
+    'https://i.ibb.co/kVHp6WdV/Whats-App-Image-2026-11-01-at-10-00-41-PM-2.jpg',
+    'https://i.ibb.co/W4Lwzmc0/Whats-App-Image-2026-11-01-at-10-00-41-PM-3.jpg',
+    'https://i.ibb.co/jvcWkT2N/Whats-App-Image-2026-11-01-at-10-00-41-PM.jpg',
+    'https://i.ibb.co/tpGQLk1d/Whats-App-Image-2026-11-01-at-10-00-42-PM.jpg',
+  ],
+  aishaLuxeAllWhite: [
+    'https://i.ibb.co/Y4wNTMfR/Whats-App-Image-2026-11-01-at-10-02-20-PM-1.jpg',
+    'https://i.ibb.co/8nDYJTpf/Whats-App-Image-2026-11-01-at-10-02-20-PM-2.jpg',
+    'https://i.ibb.co/qYxtKSVs/Whats-App-Image-2026-11-01-at-10-02-20-PM.jpg',
+  ],
+  jacquardJerseyLaserCutHijab: [
+    'https://i.ibb.co/qLr2DZ8V/Whats-App-Image-2026-11-01-at-10-05-01-PM-1.jpg',
+    'https://i.ibb.co/1YM61nhZ/Whats-App-Image-2026-11-01-at-10-05-01-PM-2.jpg',
+    'https://i.ibb.co/VW5SjDHP/Whats-App-Image-2026-11-01-at-10-05-01-PM.jpg',
+    'https://i.ibb.co/HDDKyq3P/Whats-App-Image-2026-11-01-at-10-05-02-PM-1.jpg',
+    'https://i.ibb.co/93mjtCgG/Whats-App-Image-2026-11-01-at-10-05-02-PM.jpg',
+  ],
+};
+
+export const ALL_NEW_PHOTOS_FLAT = [
+  ...NEW_PRODUCT_PHOTOS.malaysianHijabs,
+  ...NEW_PRODUCT_PHOTOS.luxeJerseyVeil,
+  ...NEW_PRODUCT_PHOTOS.khadeejahHijab,
+  ...NEW_PRODUCT_PHOTOS.aishaLuxeAllWhite,
+  ...NEW_PRODUCT_PHOTOS.jacquardJerseyLaserCutHijab,
+];
+
 export const ASSETS = {
   logo: '/assets/aistudio/Teefahs_Clothier__Timeless_Modesty_2a5ead08.png',
   heroImages: [
@@ -65,8 +120,8 @@ export const ASSETS = {
     SUPPLIED_PHOTOS[1], // WhatsApp-Image-2026-10-21-at-6-02-24-AM-2
     SUPPLIED_PHOTOS[2], // WhatsApp-Image-2026-10-21-at-6-02-24-AM
   ],
-  // All 51 product & gallery photos
-  productImages: SUPPLIED_PHOTOS.slice(3),
-  // All 54 supplied photos for the Gallery
-  allSuppliedPhotos: SUPPLIED_PHOTOS,
+  // All product & gallery photos
+  productImages: [...SUPPLIED_PHOTOS.slice(3), ...ALL_NEW_PHOTOS_FLAT],
+  // Complete collection photos for the Gallery
+  allSuppliedPhotos: [...SUPPLIED_PHOTOS, ...ALL_NEW_PHOTOS_FLAT],
 };

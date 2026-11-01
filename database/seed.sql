@@ -1,26 +1,29 @@
 -- ==============================================================================
--- TEEFAHS CLOTHIER — SECURE ROW LEVEL SECURITY & PRODUCTION CATALOGUE SEED
+-- TEEFAHS CLOTHIER — PRODUCTION CATALOGUE SEED & DATABASE SYNCHRONIZATION
 -- ==============================================================================
--- Run this script in your Supabase SQL Editor:
+-- Project Reference: mxovvqjyfgyrzjauzodh
+-- Execute in Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/mxovvqjyfgyrzjauzodh/sql
 --
 -- Features:
--- 1. Hardened Row Level Security (RLS) with strict least-privilege policies:
---    - Public / Anonymous visitors: READ-ONLY access to published products, active categories,
+-- 1. Hardened Row Level Security (RLS) with strict least-privilege architecture:
+--    - Public / Anonymous visitors: Read-only access to published products, active categories,
 --      associated gallery photographs, and active variations.
 --    - Authenticated Store Administrators: Full management permissions verified via
 --      secure role check and verified store owner email (queenlateefalive@yahoo.com).
---    - No public write/update/delete permissions whatsoever.
--- 2. Safely populates the official boutique catalogue:
---    - 8 boutique categories
---    - 11 distinct modest garments
---    - 27 size and colour variations
---    - 54 original photoshoot photographs
---    - 267 total verified stock inventory units
--- 3. Employs dynamic foreign-key resolution (using slugs) to prevent hardcoded UUID mismatches.
--- 4. Uses unique constraints and non-destructive upserts (no DELETE statements).
---    Subsequent executions will NEVER delete newly added products or wipe modified stock!
--- 5. Wrapped in a transaction with an automated post-seed verification diagnostic.
+--    - No public write/update/delete permissions.
+-- 2. Populates and maintains the complete boutique catalogue:
+--    - 8 core boutique categories (Abayas, Khimars, Hijabs, Veils, Prayer Wear, Occasion Wear, Caps, Accessories)
+--    - 16 total garments (11 original editorial pieces + 5 newly supplied products)
+--    - 33 size and colour variations with inventory stock
+--    - 88 authentic photographs (54 original photoshoot + 34 new product photographs)
+-- 3. Category Correction:
+--    - Category 4 is 'Veils' (slug: 'veils') with Luxe Jersey Veil cover photograph.
+--    - 'Amani Breathable Chiffon Veil & Hijab Set' is reassigned to 'Hijabs'.
+--    - 'Luxe Jersey Veil' is accurately placed in 'Veils'.
+-- 4. Dynamic foreign-key resolution using slugs ensures zero UUID mismatches.
+-- 5. Safe upserts (ON CONFLICT DO UPDATE): Will never delete newly created products,
+--    wipe custom inventory stock, or overwrite admin edits.
 -- ==============================================================================
 
 BEGIN;
@@ -117,28 +120,23 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
--- Seed verified store owner and administrative accounts
 INSERT INTO admin_users (email, role, is_active)
 VALUES
   ('queenlateefalive@yahoo.com', 'admin', true),
   ('greatezirim8@gmail.com', 'admin', true)
 ON CONFLICT (email) DO UPDATE SET is_active = true, role = 'admin';
 
--- Secure admin verification function (SECURITY DEFINER allows reading admin_users table)
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
-  -- 1. Check verified store owner & admin emails in JWT
   IF LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN ('queenlateefalive@yahoo.com', 'greatezirim8@gmail.com') THEN
     RETURN TRUE;
   END IF;
 
-  -- 2. Check JWT app_metadata role
   IF (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' THEN
     RETURN TRUE;
   END IF;
 
-  -- 3. Check admin_users table
   IF EXISTS (
     SELECT 1 FROM admin_users 
     WHERE LOWER(email) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
@@ -151,14 +149,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. LEAST-PRIVILEGE ROW LEVEL SECURITY (RLS) POLICIES
+-- 5. LEAST-PRIVILEGE ROW LEVEL SECURITY POLICIES
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_variations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
 
--- Drop all legacy and permissive policies
+-- Drop legacy policies
 DROP POLICY IF EXISTS "Public can read published products" ON products;
 DROP POLICY IF EXISTS "Public can read active categories" ON categories;
 DROP POLICY IF EXISTS "Public read all categories" ON categories;
@@ -191,7 +189,6 @@ DROP POLICY IF EXISTS "Admin manage images" ON product_images;
 DROP POLICY IF EXISTS "Admin manage store_settings" ON store_settings;
 DROP POLICY IF EXISTS "Public read store_settings" ON store_settings;
 
--- PUBLIC READ-ONLY POLICIES (No write/update/delete permissions for unauthenticated visitors)
 CREATE POLICY "Public can read active categories" ON categories
 FOR SELECT USING (is_active = true);
 
@@ -220,7 +217,6 @@ FOR SELECT USING (
 CREATE POLICY "Public read store_settings" ON store_settings
 FOR SELECT USING (true);
 
--- AUTHENTICATED ADMINISTRATOR POLICIES (Strictly protected by is_admin())
 CREATE POLICY "Admin manage categories" ON categories
 FOR ALL TO authenticated
 USING (is_admin())
@@ -251,12 +247,17 @@ FOR SELECT TO authenticated
 USING (is_admin());
 
 -- 6. POPULATE 8 CORE BOUTIQUE CATEGORIES
+-- Ensure Category 4 is 'Veils' (slug: 'veils') with Luxe Jersey Veil cover
+UPDATE categories 
+SET slug = 'veils', name = 'Veils', image_url = 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg'
+WHERE slug = 'niqabs-veils';
+
 INSERT INTO categories (name, slug, description, image_url, display_order, is_active)
 VALUES
   ('Abayas', 'abayas', 'Graceful, tailored silhouettes crafted with premium Dubai crepe and chiffon.', 'https://i.ibb.co/fV8gWmZy/Whats-App-Image-2026-10-21-at-6-02-25-AM-1.jpg', 1, true),
   ('Khimars', 'khimars', 'Flowing French and classic cut khimars offering modest chest-to-hip coverage.', 'https://i.ibb.co/MyZCn5jM/Whats-App-Image-2026-10-21-at-6-02-27-AM-1.jpg', 2, true),
   ('Hijabs', 'hijabs', 'Feather-light modal, chiffon, and silk hijabs with non-slip drape.', 'https://i.ibb.co/VWgQX9qg/Whats-App-Image-2026-10-21-at-10-08-26-PM-1.jpg', 3, true),
-  ('Niqabs & Veils', 'niqabs-veils', 'Graceful single and multi-layer face veils and breathable niqabs for absolute modesty.', 'https://i.ibb.co/fKpM72k/Whats-App-Image-2026-10-21-at-10-08-26-PM-2.jpg', 4, true),
+  ('Veils', 'veils', 'Delicate single and multi-layer stretch jersey veils and breathable niqabs for modest elegance.', 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg', 4, true),
   ('Prayer Wear', 'prayer-wear', 'Full-coverage two-piece prayer dresses designed for serene devotion.', 'https://i.ibb.co/GQG167rP/Whats-App-Image-2026-10-21-at-6-02-28-AM-1.jpg', 5, true),
   ('Occasion Wear', 'occasion-wear', 'Opulent embellished gowns and embroidered kimonos for celebrations.', 'https://i.ibb.co/nsxCQwdF/Whats-App-Image-2026-10-21-at-10-08-22-PM.jpg', 6, true),
   ('Caps', 'caps', 'Ergonomic tie-back under-caps and volumizing cotton caps.', 'https://i.ibb.co/W4VFJzHG/Whats-App-Image-2026-10-21-at-10-08-29-PM-1.jpg', 7, true),
@@ -268,7 +269,12 @@ ON CONFLICT (slug) DO UPDATE SET
   display_order = EXCLUDED.display_order,
   is_active = EXCLUDED.is_active;
 
--- 7. POPULATE 11 OFFICIAL PHOTOSHOOT GARMENTS (Dynamic category foreign keys)
+-- 7. REASSIGN AMANI SET TO HIJABS CATEGORY
+UPDATE products 
+SET category_id = (SELECT id FROM categories WHERE slug = 'hijabs' LIMIT 1)
+WHERE slug = 'amani-breathable-chiffon-veil-hijab-set';
+
+-- 8. POPULATE ALL 16 BOUTIQUE GARMENTS (11 Original + 5 New)
 INSERT INTO products (name, slug, short_description, description, category_id, main_image_url, base_price, currency, is_published, is_featured, is_new_arrival)
 VALUES
   (
@@ -413,6 +419,72 @@ VALUES
     true,
     true,
     true
+  ),
+  -- 5 NEW BOUTIQUE PRODUCTS SUPPLIED BY STORE OWNER
+  (
+    'Malaysian Hijabs',
+    'malaysian-hijabs',
+    'Breathable lightweight Malaysian drape with floral embroidery and full XL coverage.',
+    'Directly sourced premium Malaysian hijab tailored from lightweight breathable fabric with delicate tone-on-tone embroidery. Designed for graceful everyday modesty and effortless drape.',
+    (SELECT id FROM categories WHERE slug = 'hijabs' LIMIT 1),
+    'https://i.ibb.co/j9xMh9TX/Whats-App-Image-2026-11-01-at-9-46-26-PM.jpg',
+    11000,
+    'NGN',
+    true,
+    true,
+    true
+  ),
+  (
+    'Luxe Jersey Veil',
+    'luxe-jersey-veil',
+    'Ultra-soft stretch jersey veil offering breathable comfort and non-slip drape.',
+    'Impeccably crafted from premium four-way stretch jersey, the Luxe Jersey Veil delivers a weightless non-slip hold that requires minimal pinning. Engineered for all-day comfort and serene coverage.',
+    (SELECT id FROM categories WHERE slug = 'veils' LIMIT 1),
+    'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
+    6000,
+    'NGN',
+    true,
+    true,
+    true
+  ),
+  (
+    'Khadeejah Hijab',
+    'khadeejah-hijab',
+    'Grand 4XL maxi hijab offering opulent full-length coverage and serene comfort.',
+    'An iconic modest silhouette designed for regal full coverage. The Khadeejah Hijab in 4XL provides sweeping chest-to-hip coverage crafted from soft breathable Medina-blend chiffon.',
+    (SELECT id FROM categories WHERE slug = 'hijabs' LIMIT 1),
+    'https://i.ibb.co/1J8jyJCY/Whats-App-Image-2026-11-01-at-10-00-40-PM-1.jpg',
+    16000,
+    'NGN',
+    true,
+    true,
+    true
+  ),
+  (
+    'Aisha Luxe All-White',
+    'aisha-luxe-all-white',
+    'Pristine pure white 4XL maxi hijab in luminous silk-touch finish with ruffled hem.',
+    'Designed for Umrah, bridal occasions, and serene Friday gatherings. The Aisha Luxe All-White 4XL hijab features delicate ruffled bordering along the hemline in immaculate luminous white weave.',
+    (SELECT id FROM categories WHERE slug = 'hijabs' LIMIT 1),
+    'https://i.ibb.co/Y4wNTMfR/Whats-App-Image-2026-11-01-at-10-02-20-PM-1.jpg',
+    15000,
+    'NGN',
+    true,
+    true,
+    true
+  ),
+  (
+    'Jacquard Jersey Laser-Cut Hijab',
+    'jacquard-jersey-laser-cut-hijab',
+    'Textured jacquard jersey hijab with precision laser-cut scalloped hem.',
+    'An architectural piece combining fine textured jacquard patterns with intricate laser-cut scalloped trim. Offers generous coverage, zero slip, and timeless modest refinement in XL and 2XL.',
+    (SELECT id FROM categories WHERE slug = 'hijabs' LIMIT 1),
+    'https://i.ibb.co/qLr2DZ8V/Whats-App-Image-2026-11-01-at-10-05-01-PM-1.jpg',
+    12000,
+    'NGN',
+    true,
+    true,
+    true
   )
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
@@ -425,8 +497,7 @@ ON CONFLICT (slug) DO UPDATE SET
   is_featured = EXCLUDED.is_featured,
   is_new_arrival = EXCLUDED.is_new_arrival;
 
--- 8. POPULATE 27 PRODUCT VARIATIONS (Sizes, Colours, 267 Stock Units)
--- Safe upsert: preserves existing stock modifications made by the business owner
+-- 9. POPULATE 33 PRODUCT VARIATIONS (Sizes & Inventory Units)
 INSERT INTO product_variations (product_id, size, colour, stock_quantity, is_active)
 VALUES
   ((SELECT id FROM products WHERE slug = 'noor-embroidered-luxury-abaya' LIMIT 1), '52', 'Midnight Black', 8, true),
@@ -455,12 +526,18 @@ VALUES
   ((SELECT id FROM products WHERE slug = 'rukayyah-zip-front-hooded-prayer-abaya' LIMIT 1), 'Standard (Length 56)', 'Slate Grey', 11, true),
   ((SELECT id FROM products WHERE slug = 'rukayyah-zip-front-hooded-prayer-abaya' LIMIT 1), 'Tall (Length 60)', 'Slate Grey', 8, true),
   ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'Standard', 'Nude Biscotti', 20, true),
-  ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'Standard', 'Charcoal Black', 18, true)
+  ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'Standard', 'Charcoal Black', 18, true),
+  -- 5 New Products Variations
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'XL', 'Boutique Collection', 15, true),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'Medium', 'Sage Olive', 20, true),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), '4XL', 'Blush Rose', 12, true),
+  ((SELECT id FROM products WHERE slug = 'aisha-luxe-all-white' LIMIT 1), '4XL', 'Pristine White', 10, true),
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), 'XL', 'Laser-Cut Pattern', 12, true),
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), '2XL', 'Laser-Cut Pattern', 12, true)
 ON CONFLICT (product_id, size, colour) DO UPDATE SET
   is_active = EXCLUDED.is_active;
 
--- 9. POPULATE 54 ORIGINAL PHOTOSHOOT GALLERY PHOTOGRAPHS
--- Safe upsert: avoids duplicate photographs and preserves newly added gallery images
+-- 10. POPULATE ALL 88 AUTHENTIC BOUTIQUE PHOTOGRAPHS (54 Original + 34 New Batch)
 INSERT INTO product_images (product_id, image_url, alt_text, display_order)
 VALUES
   ((SELECT id FROM products WHERE slug = 'noor-embroidered-luxury-abaya' LIMIT 1), 'https://i.ibb.co/svjCMgcM/Whats-App-Image-2026-10-21-at-6-02-24-AM-1.jpg', 'Editorial portrait - Noor Abaya', 0),
@@ -516,7 +593,47 @@ VALUES
   ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'https://i.ibb.co/RTLpp04p/Whats-App-Image-2026-10-21-at-10-08-29-PM-2.jpg', 'Under-cap tie detail', 1),
   ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'https://i.ibb.co/bgWVWHns/Whats-App-Image-2026-10-21-at-10-08-29-PM-3.jpg', 'Modal fabric softness', 2),
   ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'https://i.ibb.co/FL49XHmy/Whats-App-Image-2026-10-21-at-10-08-29-PM.jpg', 'Styling flexibility', 3),
-  ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'https://i.ibb.co/LD1GK301/Whats-App-Image-2026-10-21-at-10-08-30-PM.jpg', 'Colour swatch options', 4)
+  ((SELECT id FROM products WHERE slug = 'zainab-luxe-modal-hijab-under-cap-set' LIMIT 1), 'https://i.ibb.co/LD1GK301/Whats-App-Image-2026-10-21-at-10-08-30-PM.jpg', 'Colour swatch options', 4),
+  -- 5 NEW PRODUCTS PHOTOGRAPHS (34 IMAGES)
+  -- 1. Malaysian Hijabs (9 images)
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/j9xMh9TX/Whats-App-Image-2026-11-01-at-9-46-26-PM.jpg', 'Malaysian Hijabs - View 1', 0),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/cS76LskC/Whats-App-Image-2026-11-01-at-9-46-27-PM-1.jpg', 'Malaysian Hijabs - View 2', 1),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/JWTCZ9hJ/Whats-App-Image-2026-11-01-at-9-46-27-PM-2.jpg', 'Malaysian Hijabs - View 3', 2),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/wr0PWg5g/Whats-App-Image-2026-11-01-at-9-46-27-PM-3.jpg', 'Malaysian Hijabs - View 4', 3),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/LDDjfSSV/Whats-App-Image-2026-11-01-at-9-46-27-PM.jpg', 'Malaysian Hijabs - View 5', 4),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/9982Lh56/Whats-App-Image-2026-11-01-at-9-46-28-PM-1.jpg', 'Malaysian Hijabs - View 6', 5),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/cXNnLfsv/Whats-App-Image-2026-11-01-at-9-46-28-PM-2.jpg', 'Malaysian Hijabs - View 7', 6),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/bj7k71V2/Whats-App-Image-2026-11-01-at-9-46-28-PM-3.jpg', 'Malaysian Hijabs - View 8', 7),
+  ((SELECT id FROM products WHERE slug = 'malaysian-hijabs' LIMIT 1), 'https://i.ibb.co/xS5rD0Zt/Whats-App-Image-2026-11-01-at-9-46-28-PM.jpg', 'Malaysian Hijabs - View 9', 8),
+  -- 2. Luxe Jersey Veil (9 images)
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg', 'Luxe Jersey Veil - View 1', 0),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/P0wN5PL/Whats-App-Image-2026-11-01-at-9-53-08-PM.jpg', 'Luxe Jersey Veil - View 2', 1),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/8DPKFhwK/Whats-App-Image-2026-11-01-at-9-53-09-PM-1.jpg', 'Luxe Jersey Veil - View 3', 2),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/wr0ry1fR/Whats-App-Image-2026-11-01-at-9-53-09-PM-2.jpg', 'Luxe Jersey Veil - View 4', 3),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/fdK231WX/Whats-App-Image-2026-11-01-at-9-53-09-PM-3.jpg', 'Luxe Jersey Veil - View 5', 4),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/xSvcZTYN/Whats-App-Image-2026-11-01-at-9-53-09-PM.jpg', 'Luxe Jersey Veil - View 6', 5),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/Zp5sWkXw/Whats-App-Image-2026-11-01-at-9-53-10-PM-1.jpg', 'Luxe Jersey Veil - View 7', 6),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/nqjv8pRr/Whats-App-Image-2026-11-01-at-9-53-10-PM-2.jpg', 'Luxe Jersey Veil - View 8', 7),
+  ((SELECT id FROM products WHERE slug = 'luxe-jersey-veil' LIMIT 1), 'https://i.ibb.co/QFc34cc1/Whats-App-Image-2026-11-01-at-9-53-10-PM.jpg', 'Luxe Jersey Veil - View 9', 8),
+  -- 3. Khadeejah Hijab (8 images)
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/1J8jyJCY/Whats-App-Image-2026-11-01-at-10-00-40-PM-1.jpg', 'Khadeejah Hijab - View 1', 0),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/BH1gTs4K/Whats-App-Image-2026-11-01-at-10-00-40-PM-2.jpg', 'Khadeejah Hijab - View 2', 1),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/mCtXQKMN/Whats-App-Image-2026-11-01-at-10-00-40-PM.jpg', 'Khadeejah Hijab - View 3', 2),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/5HKcm6V/Whats-App-Image-2026-11-01-at-10-00-41-PM-1.jpg', 'Khadeejah Hijab - View 4', 3),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/kVHp6WdV/Whats-App-Image-2026-11-01-at-10-00-41-PM-2.jpg', 'Khadeejah Hijab - View 5', 4),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/W4Lwzmc0/Whats-App-Image-2026-11-01-at-10-00-41-PM-3.jpg', 'Khadeejah Hijab - View 6', 5),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/jvcWkT2N/Whats-App-Image-2026-11-01-at-10-00-41-PM.jpg', 'Khadeejah Hijab - View 7', 6),
+  ((SELECT id FROM products WHERE slug = 'khadeejah-hijab' LIMIT 1), 'https://i.ibb.co/tpGQLk1d/Whats-App-Image-2026-11-01-at-10-00-42-PM.jpg', 'Khadeejah Hijab - View 8', 7),
+  -- 4. Aisha Luxe All-White (3 images)
+  ((SELECT id FROM products WHERE slug = 'aisha-luxe-all-white' LIMIT 1), 'https://i.ibb.co/Y4wNTMfR/Whats-App-Image-2026-11-01-at-10-02-20-PM-1.jpg', 'Aisha Luxe All-White - View 1', 0),
+  ((SELECT id FROM products WHERE slug = 'aisha-luxe-all-white' LIMIT 1), 'https://i.ibb.co/8nDYJTpf/Whats-App-Image-2026-11-01-at-10-02-20-PM-2.jpg', 'Aisha Luxe All-White - View 2', 1),
+  ((SELECT id FROM products WHERE slug = 'aisha-luxe-all-white' LIMIT 1), 'https://i.ibb.co/qYxtKSVs/Whats-App-Image-2026-11-01-at-10-02-20-PM.jpg', 'Aisha Luxe All-White - View 3', 2),
+  -- 5. Jacquard Jersey Laser-Cut Hijab (5 images)
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), 'https://i.ibb.co/qLr2DZ8V/Whats-App-Image-2026-11-01-at-10-05-01-PM-1.jpg', 'Jacquard Jersey Laser-Cut Hijab - View 1', 0),
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), 'https://i.ibb.co/1YM61nhZ/Whats-App-Image-2026-11-01-at-10-05-01-PM-2.jpg', 'Jacquard Jersey Laser-Cut Hijab - View 2', 1),
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), 'https://i.ibb.co/VW5SjDHP/Whats-App-Image-2026-11-01-at-10-05-01-PM.jpg', 'Jacquard Jersey Laser-Cut Hijab - View 3', 2),
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), 'https://i.ibb.co/HDDKyq3P/Whats-App-Image-2026-11-01-at-10-05-02-PM-1.jpg', 'Jacquard Jersey Laser-Cut Hijab - View 4', 3),
+  ((SELECT id FROM products WHERE slug = 'jacquard-jersey-laser-cut-hijab' LIMIT 1), 'https://i.ibb.co/93mjtCgG/Whats-App-Image-2026-11-01-at-10-05-02-PM.jpg', 'Jacquard Jersey Laser-Cut Hijab - View 5', 4)
 ON CONFLICT (product_id, image_url) DO UPDATE SET
   alt_text = EXCLUDED.alt_text,
   display_order = EXCLUDED.display_order;
@@ -524,7 +641,7 @@ ON CONFLICT (product_id, image_url) DO UPDATE SET
 COMMIT;
 
 -- ==============================================================================
--- 10. POST-SEED INTEGRITY & RECORD VERIFICATION REPORT
+-- 11. POST-SEED INTEGRITY & RECORD VERIFICATION REPORT
 -- ==============================================================================
 SELECT 
   (SELECT count(*) FROM categories) AS total_categories,

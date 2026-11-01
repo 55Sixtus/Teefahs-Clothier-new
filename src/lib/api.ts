@@ -3,8 +3,8 @@ import { Product, Category, ProductVariation } from '../types/product';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/initialCatalogue';
 
 // Local storage keys for caching and optimistic updates
-const LOCAL_PRODUCTS_KEY = 'teefahs_products_v7_clean_uuid';
-const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v7_clean_uuid';
+const LOCAL_PRODUCTS_KEY = 'teefahs_products_v8_supasource';
+const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v8_supasource';
 
 export interface DatabaseDiagnostics {
   status: 'fully_synchronized' | 'partially_populated' | 'connected_empty' | 'permission_denied' | 'connection_error';
@@ -192,36 +192,64 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
   const local = getLocalStoredProducts();
 
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, product_variations(*), product_images(*)')
-      .eq('is_published', true);
+    const [{ data, error }, { data: catData }] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*, product_variations(*), product_images(*)')
+        .eq('is_published', true),
+      supabase.from('categories').select('id, slug, name'),
+    ]);
 
     if (!error && data && data.length > 0) {
       const dbIds = new Set(data.map((p: any) => p.id));
-      const localOnly = local.filter(p => !dbIds.has(p.id) && p.is_published && !p.is_archived && !p.deleted_at);
+      const dbSlugs = new Set(data.map((p: any) => p.slug).filter(Boolean));
+      const liveCats = (catData && catData.length > 0) ? catData : INITIAL_CATEGORIES;
+      const hijabsCat = liveCats.find(c => c.slug === 'hijabs');
+      const veilsCat = liveCats.find(c => c.slug === 'veils');
 
       const mapped = data
         .filter((p: any) => !p.is_archived && !p.deleted_at)
         .map((p: any) => {
-          const localMatch = local.find(lp => lp.id === p.id);
+          const localMatch = local.find(lp => lp.id === p.id || (lp.slug && lp.slug === p.slug));
+
+          // Normalization: Amani Chiffon Veil & Hijab Set belongs in Hijabs
+          let categoryId = p.category_id || localMatch?.category_id;
+          if (p.slug === 'amani-breathable-chiffon-veil-hijab-set' && hijabsCat) {
+            categoryId = hijabsCat.id;
+          }
+
           return {
             ...p,
-            base_price: localMatch?.base_price ?? p.base_price,
-            sale_price: localMatch?.sale_price !== undefined ? localMatch.sale_price : p.sale_price,
-            name: localMatch?.name ?? p.name,
-            description: localMatch?.description ?? p.description,
-            short_description: localMatch?.short_description ?? p.short_description,
-            main_image_url: localMatch?.main_image_url ?? p.main_image_url,
-            is_published: localMatch?.is_published ?? p.is_published,
-            is_featured: localMatch?.is_featured ?? p.is_featured,
-            is_new_arrival: localMatch?.is_new_arrival ?? p.is_new_arrival,
-            variations: localMatch?.variations?.length ? localMatch.variations : (p.product_variations || []),
-            images: localMatch?.images?.length ? localMatch.images : (p.product_images || []),
+            category_id: categoryId,
+            base_price: p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0),
+            sale_price: p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : localMatch?.sale_price,
+            name: p.name || localMatch?.name || '',
+            description: p.description || localMatch?.description || '',
+            short_description: p.short_description || localMatch?.short_description || '',
+            main_image_url: p.main_image_url || localMatch?.main_image_url || '',
+            is_published: p.is_published !== undefined ? p.is_published : (localMatch?.is_published ?? true),
+            is_featured: p.is_featured !== undefined ? p.is_featured : (localMatch?.is_featured ?? false),
+            is_new_arrival: p.is_new_arrival !== undefined ? p.is_new_arrival : (localMatch?.is_new_arrival ?? false),
+            variations: (p.product_variations && p.product_variations.length > 0) ? p.product_variations : (localMatch?.variations || []),
+            images: (p.product_images && p.product_images.length > 0) ? p.product_images : (localMatch?.images || []),
           };
         });
 
+      // Include catalogue products not yet seeded into Supabase
+      const localOnly = local
+        .filter(p => !dbIds.has(p.id) && !dbSlugs.has(p.slug) && p.is_published && !p.is_archived && !p.deleted_at)
+        .map(p => {
+          if (p.slug === 'luxe-jersey-veil' && veilsCat) {
+            return { ...p, category_id: veilsCat.id };
+          }
+          if ((p.slug.includes('hijab') || p.slug.includes('white')) && hijabsCat) {
+            return { ...p, category_id: hijabsCat.id };
+          }
+          return p;
+        });
+
       const combined = [...mapped, ...localOnly];
+      setLocalStoredProducts(combined);
       return combined as Product[];
     }
   } catch (e) {
@@ -236,35 +264,61 @@ export const getAllProducts = async (): Promise<Product[]> => {
   const local = getLocalStoredProducts();
 
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, product_variations(*), product_images(*)');
+    const [{ data, error }, { data: catData }] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*, product_variations(*), product_images(*)'),
+      supabase.from('categories').select('id, slug, name'),
+    ]);
 
     if (!error && data && data.length > 0) {
       const dbIds = new Set(data.map((p: any) => p.id));
-      const localOnly = local.filter(p => !dbIds.has(p.id) && !p.is_archived && !p.deleted_at);
+      const dbSlugs = new Set(data.map((p: any) => p.slug).filter(Boolean));
+      const liveCats = (catData && catData.length > 0) ? catData : INITIAL_CATEGORIES;
+      const hijabsCat = liveCats.find(c => c.slug === 'hijabs');
+      const veilsCat = liveCats.find(c => c.slug === 'veils');
 
       const mapped = data
         .filter((p: any) => !p.is_archived && !p.deleted_at)
         .map((p: any) => {
-          const localMatch = local.find(lp => lp.id === p.id);
+          const localMatch = local.find(lp => lp.id === p.id || (lp.slug && lp.slug === p.slug));
+
+          let categoryId = p.category_id || localMatch?.category_id;
+          if (p.slug === 'amani-breathable-chiffon-veil-hijab-set' && hijabsCat) {
+            categoryId = hijabsCat.id;
+          }
+
           return {
             ...p,
-            base_price: localMatch?.base_price ?? p.base_price,
-            sale_price: localMatch?.sale_price !== undefined ? localMatch.sale_price : p.sale_price,
-            name: localMatch?.name ?? p.name,
-            description: localMatch?.description ?? p.description,
-            short_description: localMatch?.short_description ?? p.short_description,
-            main_image_url: localMatch?.main_image_url ?? p.main_image_url,
-            is_published: localMatch?.is_published ?? p.is_published,
-            is_featured: localMatch?.is_featured ?? p.is_featured,
-            is_new_arrival: localMatch?.is_new_arrival ?? p.is_new_arrival,
-            variations: localMatch?.variations?.length ? localMatch.variations : (p.product_variations || []),
-            images: localMatch?.images?.length ? localMatch.images : (p.product_images || []),
+            category_id: categoryId,
+            base_price: p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0),
+            sale_price: p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : localMatch?.sale_price,
+            name: p.name || localMatch?.name || '',
+            description: p.description || localMatch?.description || '',
+            short_description: p.short_description || localMatch?.short_description || '',
+            main_image_url: p.main_image_url || localMatch?.main_image_url || '',
+            is_published: p.is_published !== undefined ? p.is_published : (localMatch?.is_published ?? true),
+            is_featured: p.is_featured !== undefined ? p.is_featured : (localMatch?.is_featured ?? false),
+            is_new_arrival: p.is_new_arrival !== undefined ? p.is_new_arrival : (localMatch?.is_new_arrival ?? false),
+            variations: (p.product_variations && p.product_variations.length > 0) ? p.product_variations : (localMatch?.variations || []),
+            images: (p.product_images && p.product_images.length > 0) ? p.product_images : (localMatch?.images || []),
           };
         });
 
+      const localOnly = local
+        .filter(p => !dbIds.has(p.id) && !dbSlugs.has(p.slug) && !p.is_archived && !p.deleted_at)
+        .map(p => {
+          if (p.slug === 'luxe-jersey-veil' && veilsCat) {
+            return { ...p, category_id: veilsCat.id };
+          }
+          if ((p.slug.includes('hijab') || p.slug.includes('white')) && hijabsCat) {
+            return { ...p, category_id: hijabsCat.id };
+          }
+          return p;
+        });
+
       const combined = [...mapped, ...localOnly];
+      setLocalStoredProducts(combined);
       return combined as Product[];
     }
   } catch (e) {
@@ -556,8 +610,19 @@ export const getActiveCategories = async (): Promise<Category[]> => {
       .order('display_order');
 
     if (!error && data && data.length > 0) {
-      setLocalStoredCategories(data as Category[]);
-      return data as Category[];
+      const normalized = (data as Category[]).map(c => {
+        if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
+          return {
+            ...c,
+            name: 'Veils',
+            slug: 'veils',
+            image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
+          };
+        }
+        return c;
+      });
+      setLocalStoredCategories(normalized);
+      return normalized;
     }
   } catch (e) {
     console.warn('Supabase categories error, using catalogue cache:', e);
@@ -575,8 +640,19 @@ export const getAllCategories = async (): Promise<Category[]> => {
       .order('display_order');
 
     if (!error && data && data.length > 0) {
-      setLocalStoredCategories(data as Category[]);
-      return data as Category[];
+      const normalized = (data as Category[]).map(c => {
+        if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
+          return {
+            ...c,
+            name: 'Veils',
+            slug: 'veils',
+            image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
+          };
+        }
+        return c;
+      });
+      setLocalStoredCategories(normalized);
+      return normalized;
     }
   } catch (e) {
     console.warn('Supabase getAllCategories error, using cache:', e);
