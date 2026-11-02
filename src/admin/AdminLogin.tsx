@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase';
 import { ASSETS } from '../data/assets';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('queenlateefalive@yahoo.com');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -188,7 +188,7 @@ export default function AdminLogin() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="queenlateefalive@yahoo.com"
-                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:outline-none focus:border-stone-900 font-medium"
+                  className="w-full pl-9 pr-3 py-3 text-sm bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-stone-900 font-semibold text-stone-900 shadow-2xs"
                 />
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function AdminLogin() {
                 <label className="block text-xs uppercase tracking-wider font-semibold text-stone-700">
                   Admin Password
                 </label>
-                <span className="text-[10px] text-stone-400 font-normal">Strictly Required</span>
+                <span className="text-[10px] text-emerald-700 font-semibold">Visible for easy typing</span>
               </div>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
@@ -208,7 +208,7 @@ export default function AdminLogin() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your admin password"
-                  className="w-full pl-9 pr-10 py-2.5 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:outline-none focus:border-stone-900 font-medium"
+                  className="w-full pl-9 pr-10 py-3 text-sm bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-stone-900 font-semibold text-stone-900 shadow-2xs"
                 />
                 <button
                   type="button"

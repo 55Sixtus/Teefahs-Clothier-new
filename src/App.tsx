@@ -54,6 +54,44 @@ function HomePage() {
         <CategoryGrid limit={4} />
       </section>
 
+      {/* Dedicated Section: The Signature Hijab & Veil Collection (User Request & Uploaded Photo) */}
+      <section className="py-20 px-6 max-w-7xl mx-auto w-full">
+        <div className="bg-stone-900 text-white rounded-sm overflow-hidden shadow-2xl border border-stone-800 grid grid-cols-1 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-7 p-8 sm:p-12 md:p-16 flex flex-col justify-center">
+            <span className="text-xs uppercase tracking-[0.25em] text-amber-400 font-semibold block mb-3">
+              Dedicated Collection
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-white mb-6 leading-tight">
+              The Signature Hijab &amp; Veil Array
+            </h2>
+            <p className="text-stone-300 text-sm md:text-base leading-relaxed mb-8 font-light max-w-xl">
+              Discover our exclusive multi-colour curation of premium Malaysian stretch hijabs, luxe jersey veils, and embroidered French khimars. Crafted for supreme comfort, breathable draping, and flawless modesty.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                to="/shop?category=hijabs"
+                className="px-8 py-4 bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold uppercase tracking-widest transition-colors rounded-xs shadow-md"
+              >
+                Explore Hijab Collection
+              </Link>
+              <Link
+                to="/shop"
+                className="px-8 py-4 border border-stone-600 hover:border-stone-400 text-white text-xs font-semibold uppercase tracking-widest transition-colors rounded-xs"
+              >
+                View All Catalogue
+              </Link>
+            </div>
+          </div>
+          <div className="lg:col-span-5 relative aspect-[4/5] bg-stone-950 overflow-hidden">
+            <img
+              src="/assets/aistudio/IMG-20261102-WA0053_49aba0d0.jpg"
+              alt="Teefahs Clothier Signature Hijab & Veil Collection"
+              className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Section 2: Signature Featured Pieces */}
       <FeaturedProducts 
         title="Signature Featured Pieces" 
