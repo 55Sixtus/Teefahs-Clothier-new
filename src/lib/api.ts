@@ -3,8 +3,8 @@ import { Product, Category, ProductVariation } from '../types/product';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/initialCatalogue';
 
 // Local storage keys for caching and optimistic updates
-const LOCAL_PRODUCTS_KEY = 'teefahs_products_v8_supasource';
-const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v8_supasource';
+const LOCAL_PRODUCTS_KEY = 'teefahs_products_v9_accurate';
+const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v9_accurate';
 
 export interface DatabaseDiagnostics {
   status: 'fully_synchronized' | 'partially_populated' | 'connected_empty' | 'permission_denied' | 'connection_error';
@@ -208,7 +208,7 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
       const veilsCat = liveCats.find(c => c.slug === 'veils');
 
       const mapped = data
-        .filter((p: any) => !p.is_archived && !p.deleted_at)
+        .filter((p: any) => !p.is_archived && !p.deleted_at && p.slug !== 'veil')
         .map((p: any) => {
           const localMatch = local.find(lp => lp.id === p.id || (lp.slug && lp.slug === p.slug));
 
@@ -279,7 +279,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
       const veilsCat = liveCats.find(c => c.slug === 'veils');
 
       const mapped = data
-        .filter((p: any) => !p.is_archived && !p.deleted_at)
+        .filter((p: any) => !p.is_archived && !p.deleted_at && p.slug !== 'veil')
         .map((p: any) => {
           const localMatch = local.find(lp => lp.id === p.id || (lp.slug && lp.slug === p.slug));
 

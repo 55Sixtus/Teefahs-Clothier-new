@@ -17,6 +17,7 @@ import AddProductPage from './admin/AddProductPage';
 import EditProductPage from './admin/EditProductPage';
 import CategoriesPage from './admin/CategoriesPage';
 import InventoryPage from './admin/InventoryPage';
+import MediaStoragePage from './admin/MediaStoragePage';
 import ShopPage from './components/ShopPage';
 import NewArrivalsPage from './components/NewArrivalsPage';
 import CollectionsPage from './components/CollectionsPage';
@@ -145,6 +146,7 @@ export default function App() {
             <Route path="products/edit/:id" element={<EditProductPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="media" element={<MediaStoragePage />} />
           </Route>
         </Routes>
       </CartProvider>

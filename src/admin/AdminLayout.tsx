@@ -6,13 +6,15 @@ import {
   PlusCircle, 
   FolderTree, 
   Boxes, 
+  Image as ImageIcon,
   ExternalLink, 
   LogOut, 
   Menu, 
   X,
   Shield,
   Home,
-  ArrowLeft
+  ArrowLeft,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -24,38 +26,54 @@ export default function AdminLayout() {
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const isLocalAuthorized = localStorage.getItem('teefahs_admin_authorized') === 'true';
+  // Validate session token and active expiration
+  const isAuthorizedFlag = localStorage.getItem('teefahs_admin_authorized') === 'true';
+  const sessionToken = localStorage.getItem('teefahs_admin_session_token');
+  const expiresAtStr = localStorage.getItem('teefahs_admin_expires_at');
+  const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : 0;
+  const isSessionValid = isAuthorizedFlag && !!sessionToken && Date.now() < expiresAt;
+
   const rawStoredEmail = localStorage.getItem('teefahs_admin_email');
   const adminEmail = (rawStoredEmail && !rawStoredEmail.toLowerCase().includes('greatezirim'))
     ? rawStoredEmail 
     : (user?.email || 'queenlateefalive@yahoo.com');
   const rawRole = localStorage.getItem('teefahs_admin_role') || 'Store Owner';
   const adminRole = rawRole.toLowerCase().includes('temporal') ? 'Store Owner' : rawRole;
-  const isAuthenticated = !!user || isLocalAuthorized;
+  
+  // Dashboard is strictly locked: requires a valid, unexpired authenticated session
+  const isAuthenticated = isSessionValid;
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
+      // Clear expired or invalid credentials
+      localStorage.removeItem('teefahs_admin_authorized');
+      localStorage.removeItem('teefahs_admin_session_token');
+      localStorage.removeItem('teefahs_admin_expires_at');
+      localStorage.removeItem('teefahs_admin_email');
+      localStorage.removeItem('teefahs_admin_role');
       navigate('/admin/login');
     }
-  }, [user, loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-900 flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs uppercase tracking-widest text-stone-400">Loading Admin Portal...</span>
+          <span className="text-xs uppercase tracking-widest text-stone-400">Verifying Admin Access...</span>
         </div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return null; // Will redirect via useEffect
+    return null; // Will redirect via useEffect to /admin/login
   }
 
   const handleLogout = async () => {
     localStorage.removeItem('teefahs_admin_authorized');
+    localStorage.removeItem('teefahs_admin_session_token');
+    localStorage.removeItem('teefahs_admin_expires_at');
     localStorage.removeItem('teefahs_admin_email');
     localStorage.removeItem('teefahs_admin_role');
     localStorage.removeItem('teefahs_admin_login_at');
@@ -73,6 +91,7 @@ export default function AdminLayout() {
     { label: 'Add Product', to: '/admin/products/add', icon: PlusCircle },
     { label: 'Categories', to: '/admin/categories', icon: FolderTree },
     { label: 'Inventory', to: '/admin/inventory', icon: Boxes },
+    { label: 'Media & Storage', to: '/admin/media', icon: ImageIcon },
   ];
 
   const isActive = (item: typeof navItems[0]) => {

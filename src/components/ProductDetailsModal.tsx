@@ -243,39 +243,44 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
 
             {/* Actions */}
             <div className="pt-4 border-t border-stone-100 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={isOutOfStock}
-                className={`w-full py-3.5 text-xs font-medium uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${
-                  isOutOfStock
-                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
-                    : 'bg-stone-900 text-white hover:bg-stone-800'
-                }`}
-              >
-                {isOutOfStock ? (
-                  <span>Out of Stock in this Variation</span>
-                ) : addedNotice ? (
-                  <>
-                    <Check size={16} className="text-emerald-400" />
-                    Added to Bag!
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag size={16} />
-                    Add to Bag (₦{((product.base_price || 0) * quantity).toLocaleString()})
-                  </>
-                )}
-              </button>
+              {isOutOfStock ? (
+                <a
+                  href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-3.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <MessageCircle size={16} className="text-amber-300" />
+                  <span>Pre-Order via WhatsApp (₦{((product.base_price || 0) * quantity).toLocaleString()})</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="w-full py-3.5 text-xs font-medium uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-stone-900 text-white hover:bg-stone-800 shadow-sm cursor-pointer"
+                >
+                  {addedNotice ? (
+                    <>
+                      <Check size={16} className="text-emerald-400" />
+                      Added to Bag!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={16} />
+                      Add to Bag (₦{((product.base_price || 0) * quantity).toLocaleString()})
+                    </>
+                  )}
+                </button>
+              )}
 
               <a
                 href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-3 border border-emerald-600 text-emerald-800 text-xs font-medium uppercase tracking-widest hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 border border-emerald-700 text-emerald-900 hover:text-emerald-950 text-xs font-semibold uppercase tracking-widest hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
               >
                 <MessageCircle size={16} className="text-emerald-600" />
-                Inquire on WhatsApp
+                {isOutOfStock ? 'Chat with Queen Lateefah' : 'Inquire on WhatsApp'}
               </a>
             </div>
           </div>

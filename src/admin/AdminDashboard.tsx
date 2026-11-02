@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, 
   CheckCircle2, 
@@ -7,16 +7,18 @@ import {
   FolderTree, 
   Tag, 
   PlusCircle, 
-  ExternalLink,
-  Boxes,
-  Home,
-  Database,
-  RefreshCw,
-  Edit2,
-  Eye,
-  AlertCircle,
-  AlertTriangle,
-  ChevronRight
+  ExternalLink, 
+  Boxes, 
+  Home, 
+  Database, 
+  RefreshCw, 
+  Edit2, 
+  Eye, 
+  AlertCircle, 
+  AlertTriangle, 
+  ChevronRight,
+  Lock,
+  Image as ImageIcon
 } from 'lucide-react';
 import { 
   getAllProducts, 
@@ -33,6 +35,8 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [dbDiag, setDbDiag] = useState<DatabaseDiagnostics | null>(null);
 
+  const navigate = useNavigate();
+
   // Authenticated store owner identity
   const storedAdminEmail = localStorage.getItem('teefahs_admin_email');
   const adminEmail = (storedAdminEmail && !storedAdminEmail.toLowerCase().includes('greatezirim'))
@@ -44,6 +48,15 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleLockDashboard = () => {
+    localStorage.removeItem('teefahs_admin_authorized');
+    localStorage.removeItem('teefahs_admin_session_token');
+    localStorage.removeItem('teefahs_admin_expires_at');
+    localStorage.removeItem('teefahs_admin_email');
+    localStorage.removeItem('teefahs_admin_role');
+    navigate('/admin/login');
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -128,11 +141,21 @@ export default function AdminDashboard() {
             <span>Return to Store</span>
           </Link>
 
+          <button
+            type="button"
+            onClick={handleLockDashboard}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-stone-800 hover:bg-stone-900 text-amber-300 hover:text-amber-200 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors shadow-2xs cursor-pointer border border-stone-700"
+            title="Lock admin portal and require password on next entry"
+          >
+            <Lock size={13} className="text-amber-400" />
+            <span>Lock Portal</span>
+          </button>
+
           <Link
             to="/admin/products/add"
-            className="inline-flex items-center gap-2 px-5 py-2 bg-stone-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors shadow-xs"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-950 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-emerald-900 transition-colors shadow-xs border border-emerald-800"
           >
-            <PlusCircle size={15} />
+            <PlusCircle size={15} className="text-emerald-400" />
             <span>Add New Product</span>
           </Link>
         </div>
@@ -251,7 +274,7 @@ export default function AdminDashboard() {
       {/* 4. QUICK ADMINISTRATION ACTIONS */}
       <div className="bg-white p-6 border border-stone-200 rounded-sm shadow-2xs space-y-4">
         <h2 className="text-base font-serif text-stone-900 font-medium">Quick Management Shortcuts</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Action 1: Add New Product */}
           <Link
             to="/admin/products/add"
@@ -312,7 +335,27 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
-          {/* Action 4: Return to Store */}
+          {/* Action 4: Media & Storage Manager */}
+          <Link
+            to="/admin/media"
+            className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-sm hover:border-emerald-400 hover:bg-emerald-100/60 transition-all flex flex-col justify-between group"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mb-3 text-emerald-800 group-hover:scale-105 transition-transform border border-emerald-300">
+                <ImageIcon size={18} />
+              </div>
+              <h3 className="font-semibold text-sm text-stone-900 mb-1">Media Storage</h3>
+              <p className="text-[11px] text-stone-600 font-light leading-relaxed">
+                Inspect 88+ CDN images, optimize storage, and copy URLs.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-semibold mt-4">
+              <span>Manage Media</span>
+              <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+
+          {/* Action 5: Return to Store */}
           <Link
             to="/"
             target="_blank"

@@ -24,6 +24,25 @@ export default function Header() {
 
   return (
     <>
+      {/* Luxury Announcement Bar */}
+      <div className="bg-gradient-to-r from-emerald-950 via-stone-900 to-emerald-950 text-white text-[11px] py-2 px-4 border-b border-amber-500/20 text-center flex flex-wrap items-center justify-center gap-2 sm:gap-3 z-50 relative">
+        <span className="inline-flex items-center gap-1.5 font-medium text-stone-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span className="text-amber-300 font-semibold tracking-wider uppercase text-[10px] sm:text-[11px]">Official Store of Queen Lateefah</span>
+        </span>
+        <span className="hidden sm:inline text-stone-600">&bull;</span>
+        <span className="hidden sm:inline text-stone-300 font-light">Nationwide Express Delivery Across Nigeria</span>
+        <span className="hidden md:inline text-stone-600">&bull;</span>
+        <a 
+          href="https://wa.me/2348028991921" 
+          target="_blank" 
+          rel="noreferrer" 
+          className="text-amber-300 hover:text-white font-semibold flex items-center gap-1 underline underline-offset-2 transition-colors"
+        >
+          WhatsApp: +234 802 899 1921
+        </a>
+      </div>
+
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-2xs">
         <div className="flex items-center justify-between gap-6 px-6 py-4 max-w-7xl mx-auto">
           {/* Brand Logo */}

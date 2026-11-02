@@ -360,8 +360,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '00000000-0000-0000-0000-000000000012',
     name: 'Malaysian Hijabs',
     slug: 'malaysian-hijabs',
-    short_description: 'Breathable lightweight Malaysian drape with floral embroidery and full XL coverage.',
-    description: 'Directly sourced premium Malaysian hijab tailored from lightweight breathable fabric with delicate tone-on-tone embroidery. Designed for graceful everyday modesty and effortless drape.',
+    short_description: 'Malaysian hijab in size XL.',
+    description: 'Malaysian hijab in size XL.',
     category_id: 'c0000000-0000-0000-0000-000000000003', // Hijabs
     main_image_url: NEW_PRODUCT_PHOTOS.malaysianHijabs[0],
     base_price: 11000,
@@ -376,15 +376,15 @@ export const INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-12-1', product_id: '00000000-0000-0000-0000-000000000012', size: 'XL', colour: 'Boutique Collection', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-12-1', product_id: '00000000-0000-0000-0000-000000000012', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
     ],
   },
   {
     id: '00000000-0000-0000-0000-000000000013',
     name: 'Luxe Jersey Veil',
     slug: 'luxe-jersey-veil',
-    short_description: 'Ultra-soft stretch jersey veil offering breathable comfort and non-slip drape.',
-    description: 'Impeccably crafted from premium four-way stretch jersey, the Luxe Jersey Veil delivers a weightless non-slip hold that requires minimal pinning. Engineered for all-day comfort and serene coverage.',
+    short_description: 'Luxe jersey veil in size Medium.',
+    description: 'Luxe jersey veil in size Medium.',
     category_id: 'c0000000-0000-0000-0000-000000000004', // Veils
     main_image_url: NEW_PRODUCT_PHOTOS.luxeJerseyVeil[0],
     base_price: 6000,
@@ -399,15 +399,15 @@ export const INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-13-1', product_id: '00000000-0000-0000-0000-000000000013', size: 'Medium', colour: 'Sage Olive', price_adjustment: 0, stock_quantity: 20, is_active: true },
+      { id: 'var-13-1', product_id: '00000000-0000-0000-0000-000000000013', size: 'Medium', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
     ],
   },
   {
     id: '00000000-0000-0000-0000-000000000014',
     name: 'Khadeejah Hijab',
     slug: 'khadeejah-hijab',
-    short_description: 'Grand 4XL maxi hijab offering opulent full-length coverage and serene comfort.',
-    description: 'An iconic modest silhouette designed for regal full coverage. The Khadeejah Hijab in 4XL provides sweeping chest-to-hip coverage crafted from soft breathable Medina-blend chiffon.',
+    short_description: 'Khadeejah hijab in size 4XL.',
+    description: 'Khadeejah hijab in size 4XL.',
     category_id: 'c0000000-0000-0000-0000-000000000003', // Hijabs
     main_image_url: NEW_PRODUCT_PHOTOS.khadeejahHijab[0],
     base_price: 16000,
@@ -422,15 +422,15 @@ export const INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-14-1', product_id: '00000000-0000-0000-0000-000000000014', size: '4XL', colour: 'Blush Rose', price_adjustment: 0, stock_quantity: 12, is_active: true },
+      { id: 'var-14-1', product_id: '00000000-0000-0000-0000-000000000014', size: '4XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
     ],
   },
   {
     id: '00000000-0000-0000-0000-000000000015',
     name: 'Aisha Luxe All-White',
     slug: 'aisha-luxe-all-white',
-    short_description: 'Pristine pure white 4XL maxi hijab in luminous silk-touch finish with ruffled hem.',
-    description: 'Designed for Umrah, bridal occasions, and serene Friday gatherings. The Aisha Luxe All-White 4XL hijab features delicate ruffled bordering along the hemline in immaculate luminous white weave.',
+    short_description: 'Aisha luxe all-white hijab in size 4XL.',
+    description: 'Aisha luxe all-white hijab in size 4XL.',
     category_id: 'c0000000-0000-0000-0000-000000000003', // Hijabs
     main_image_url: NEW_PRODUCT_PHOTOS.aishaLuxeAllWhite[0],
     base_price: 15000,
@@ -445,15 +445,15 @@ export const INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-15-1', product_id: '00000000-0000-0000-0000-000000000015', size: '4XL', colour: 'Pristine White', price_adjustment: 0, stock_quantity: 10, is_active: true },
+      { id: 'var-15-1', product_id: '00000000-0000-0000-0000-000000000015', size: '4XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
     ],
   },
   {
     id: '00000000-0000-0000-0000-000000000016',
     name: 'Jacquard Jersey Laser-Cut Hijab',
     slug: 'jacquard-jersey-laser-cut-hijab',
-    short_description: 'Textured jacquard jersey hijab with precision laser-cut scalloped hem.',
-    description: 'An architectural piece combining fine textured jacquard patterns with intricate laser-cut scalloped trim. Offers generous coverage, zero slip, and timeless modest refinement in XL and 2XL.',
+    short_description: 'Jacquard jersey laser-cut hijab available in sizes XL and 2XL.',
+    description: 'Jacquard jersey laser-cut hijab available in sizes XL and 2XL.',
     category_id: 'c0000000-0000-0000-0000-000000000003', // Hijabs
     main_image_url: NEW_PRODUCT_PHOTOS.jacquardJerseyLaserCutHijab[0],
     base_price: 12000,
@@ -468,8 +468,8 @@ export const INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-16-1', product_id: '00000000-0000-0000-0000-000000000016', size: 'XL', colour: 'Laser-Cut Pattern', price_adjustment: 0, stock_quantity: 12, is_active: true },
-      { id: 'var-16-2', product_id: '00000000-0000-0000-0000-000000000016', size: '2XL', colour: 'Laser-Cut Pattern', price_adjustment: 0, stock_quantity: 12, is_active: true },
+      { id: 'var-16-1', product_id: '00000000-0000-0000-0000-000000000016', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+      { id: 'var-16-2', product_id: '00000000-0000-0000-0000-000000000016', size: '2XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
     ],
   },
 ];
