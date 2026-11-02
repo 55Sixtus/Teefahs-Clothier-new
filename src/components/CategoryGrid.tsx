@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { getActiveCategories, getPublishedProducts } from '../lib/api';
 import { Category, Product } from '../types/product';
+import { SUPPLIED_PHOTOS } from '../data/assets';
 
 export default function CategoryGrid({ limit }: { limit?: number }) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,7 +36,7 @@ export default function CategoryGrid({ limit }: { limit?: number }) {
           >
             {/* Background Image */}
             <img
-              src={category.image_url || 'https://placehold.co/600x800?text=Category'}
+              src={category.image_url || SUPPLIED_PHOTOS[0]}
               alt={category.name}
               className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out opacity-85 group-hover:opacity-95"
             />

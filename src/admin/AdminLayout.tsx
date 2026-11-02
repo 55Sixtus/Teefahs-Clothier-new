@@ -201,7 +201,7 @@ export default function AdminLayout() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
                 <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">{adminRole}</span>
               </div>
               <p className="text-[11px] text-stone-300 truncate font-mono" title={adminEmail}>

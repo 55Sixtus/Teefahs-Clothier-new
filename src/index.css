@@ -3,45 +3,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 html {
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 body {
   @apply bg-stone-50 text-stone-900 transition-colors duration-300;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 html.dark body {
   @apply bg-stone-950 text-stone-100;
-}
-
-/* Luminous Glow Keyframes for Magnificent Lighting */
-@keyframes shimmer-glow {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.95;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes rainbow-aurora {
-  0% {
-    filter: hue-rotate(0deg);
-  }
-  50% {
-    filter: hue-rotate(45deg);
-  }
-  100% {
-    filter: hue-rotate(0deg);
-  }
-}
-
-.animate-shimmer-glow {
-  animation: shimmer-glow 4s ease-in-out infinite;
-}
-
-.animate-aurora {
-  animation: rainbow-aurora 8s ease-in-out infinite;
 }

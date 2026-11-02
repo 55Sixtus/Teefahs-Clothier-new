@@ -6,7 +6,6 @@ import CategoryGrid from './components/CategoryGrid';
 import Footer from './components/Footer';
 import WhatsAppWidget from './components/WhatsAppWidget';
 import CartDrawer from './components/CartDrawer';
-import { DatabaseDebugger } from './components/DatabaseDebugger';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -31,10 +30,9 @@ import { ASSETS } from './data/assets';
 function HomePage() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
-      <DatabaseDebugger />
       <Header />
 
-      {/* Hero Header (Luminous & Brightened with Colorful Lighting Mode Toggle) */}
+      {/* Hero Header */}
       <Hero />
 
       {/* Section 1: Shop By Category */}

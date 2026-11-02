@@ -7,7 +7,7 @@ import {
   ExternalLink, 
   Search, 
   Filter, 
-  Sparkles,
+  Zap,
   HardDrive,
   Info,
   Maximize2,
@@ -190,7 +190,7 @@ export default function MediaStoragePage() {
         <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
-              <Sparkles size={18} />
+              <Zap size={18} />
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-amber-950">CDN Acceleration</p>

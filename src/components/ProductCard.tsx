@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ShoppingBag, Eye, Check, AlertCircle } from 'lucide-react';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
+import { SUPPLIED_PHOTOS } from '../data/assets';
 import ProductDetailsModal from './ProductDetailsModal';
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -30,7 +31,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
   const imageSrc = !imgError && product.main_image_url
     ? product.main_image_url
-    : product.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&auto=format&fit=crop&q=80';
+    : product.images?.[0]?.image_url || SUPPLIED_PHOTOS[0];
 
   return (
     <>

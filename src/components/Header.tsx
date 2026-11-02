@@ -26,19 +26,18 @@ export default function Header() {
   return (
     <>
       {/* Luxury Announcement Bar */}
-      <div className="bg-gradient-to-r from-emerald-950 via-stone-900 to-emerald-950 text-white text-[11px] py-2 px-4 border-b border-amber-500/20 text-center flex flex-wrap items-center justify-center gap-2 sm:gap-3 z-50 relative">
-        <span className="inline-flex items-center gap-1.5 font-medium text-stone-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-          <span className="text-amber-300 font-semibold tracking-wider uppercase text-[10px] sm:text-[11px]">Official Store of Queen Lateefah</span>
+      <div className="bg-stone-900 text-stone-200 text-[11px] py-2 px-4 border-b border-stone-800 text-center flex flex-wrap items-center justify-center gap-2 sm:gap-3 z-50 relative">
+        <span className="font-medium tracking-wider uppercase text-[10px] sm:text-[11px] text-stone-200">
+          Official Boutique of Queen Lateefah
         </span>
-        <span className="hidden sm:inline text-stone-600">&bull;</span>
+        <span className="hidden sm:inline text-stone-500">·</span>
         <span className="hidden sm:inline text-stone-300 font-light">Nationwide Express Delivery Across Nigeria</span>
-        <span className="hidden md:inline text-stone-600">&bull;</span>
+        <span className="hidden md:inline text-stone-500">·</span>
         <a 
           href="https://wa.me/2348028991921" 
           target="_blank" 
           rel="noreferrer" 
-          className="text-amber-300 hover:text-white font-semibold flex items-center gap-1 underline underline-offset-2 transition-colors"
+          className="text-amber-300 hover:text-white font-medium flex items-center gap-1 transition-colors"
         >
           WhatsApp: +234 802 899 1921
         </a>
@@ -191,11 +190,11 @@ export default function Header() {
                 </button>
               </div>
 
-              {/* Magnificent Lighting Mode Toggle in Mobile Menu */}
+              {/* Appearance Mode Toggle in Mobile Menu */}
               <div className="my-4 p-3 bg-stone-50 dark:bg-stone-900 rounded border border-stone-200 dark:border-stone-800 flex items-center justify-between">
                 <div>
                   <span className="block text-[11px] font-semibold uppercase tracking-wider text-stone-800 dark:text-stone-200">
-                    Atmosphere
+                    Appearance
                   </span>
                   <span className="text-[10px] text-stone-500 dark:text-stone-400">Light / Dark</span>
                 </div>

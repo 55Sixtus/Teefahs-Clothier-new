@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Check, ShoppingBag, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
+import { SUPPLIED_PHOTOS } from '../data/assets';
 
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 
@@ -31,7 +32,7 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
     });
   }
   if (allImages.length === 0) {
-    allImages.push('https://placehold.co/600x800?text=Teefahs+Clothier');
+    allImages.push(SUPPLIED_PHOTOS[0]);
   }
 
   // Available sizes & colours from variations

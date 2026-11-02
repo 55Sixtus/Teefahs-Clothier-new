@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
+import { SUPPLIED_PHOTOS } from '../data/assets';
 
 export default function CartDrawer() {
   const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -210,7 +211,7 @@ export default function CartDrawer() {
                   const isMax = item.quantity >= maxStock;
                   const unitPrice = item.product.base_price || 0;
                   const lineTotal = unitPrice * item.quantity;
-                  const itemImg = item.product.main_image_url || item.product.images?.[0]?.image_url || 'https://placehold.co/400x500?text=Garment';
+                  const itemImg = item.product.main_image_url || item.product.images?.[0]?.image_url || SUPPLIED_PHOTOS[0];
 
                   return (
                     <div 
