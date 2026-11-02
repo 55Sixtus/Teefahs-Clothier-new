@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data/assets';
 import { useCart } from '../context/CartContext';
 import { SHOP_CONFIG } from '../config/shopConfig';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
   const { cart, toggleCart } = useCart();
@@ -43,14 +44,14 @@ export default function Header() {
         </a>
       </div>
 
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-2xs">
-        <div className="flex items-center justify-between gap-6 px-6 py-4 max-w-7xl mx-auto">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-stone-950/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-850 shadow-2xs transition-colors duration-300">
+        <div className="flex items-center justify-between gap-4 md:gap-6 px-4 sm:px-6 py-3.5 max-w-7xl mx-auto">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <img 
               src={ASSETS.logo} 
               alt="Teefahs Clothier" 
-              className="h-8 md:h-9 w-auto object-contain"
+              className="h-8 md:h-9 w-auto object-contain dark:brightness-200 dark:invert transition-all"
               onError={(e) => {
                 const target = e.currentTarget;
                 if (!target.src.endsWith('/logo.png')) {
@@ -61,38 +62,43 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-7 text-[12px] font-medium text-stone-700 uppercase tracking-widest">
-            <Link to="/" className="hover:text-stone-900 transition-colors">Home</Link>
-            <Link to="/shop" className="hover:text-stone-900 transition-colors">Shop All</Link>
-            <Link to="/new-arrivals" className="hover:text-stone-900 transition-colors">New Arrivals</Link>
-            <Link to="/collections" className="hover:text-stone-900 transition-colors">Collections</Link>
-            <Link to="/gallery" className="hover:text-stone-900 transition-colors">Gallery</Link>
-            <Link to="/our-story" className="hover:text-stone-900 transition-colors">Our Story</Link>
-            <Link to="/contact" className="hover:text-stone-900 transition-colors">Contact</Link>
+          <nav className="hidden lg:flex items-center gap-7 text-[12px] font-medium text-stone-700 dark:text-stone-300 uppercase tracking-widest">
+            <Link to="/" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Home</Link>
+            <Link to="/shop" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Shop All</Link>
+            <Link to="/new-arrivals" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">New Arrivals</Link>
+            <Link to="/collections" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Collections</Link>
+            <Link to="/gallery" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Gallery</Link>
+            <Link to="/our-story" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Our Story</Link>
+            <Link to="/contact" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Contact</Link>
           </nav>
 
-          {/* Utilities: Search, Bag, Admin, Mobile Toggle */}
-          <div className="flex items-center gap-4">
+          {/* Utilities: Magnificent Lighting Switch, Search, Bag, Admin, Mobile Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Magnificent Lighting Mode Toggle Switch */}
+            <div className="flex items-center">
+              <ThemeToggle variant="header" />
+            </div>
+
             {/* Search Trigger */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-1.5 text-stone-700 hover:text-stone-900 transition-colors"
+              className="p-2 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
               aria-label="Search garments"
             >
-              <Search size={19} />
+              <Search size={18} />
             </button>
 
             {/* Cart Trigger Button */}
             <button
               type="button"
               onClick={() => toggleCart()}
-              className="relative p-2.5 rounded-full text-stone-800 hover:text-stone-950 hover:bg-stone-100 active:scale-95 transition-all duration-150 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-700/40"
+              className="relative p-2.5 rounded-full text-stone-800 dark:text-stone-200 hover:text-stone-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 transition-all duration-150 cursor-pointer min-w-[42px] min-h-[42px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-700/40"
               aria-label={`Open shopping bag (${itemCount} items)`}
               title="Open shopping bag"
             >
-              <ShoppingBag size={21} className="stroke-[1.75]" />
+              <ShoppingBag size={20} className="stroke-[1.75]" />
               {itemCount > 0 && (
-                <span className="absolute top-1 right-1 bg-stone-900 text-white text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full font-bold shadow-xs pointer-events-none ring-2 ring-white">
+                <span className="absolute top-1 right-1 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full font-bold shadow-xs pointer-events-none ring-2 ring-white dark:ring-stone-950">
                   {itemCount}
                 </span>
               )}
@@ -101,18 +107,18 @@ export default function Header() {
             {/* Admin Portal (Lock icon - visible on mobile, tablet & desktop) */}
             <Link
               to="/admin"
-              className="p-2 text-stone-700 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-colors flex items-center justify-center min-w-[40px] min-h-[40px] border border-stone-200/80 md:border-transparent md:px-2.5"
+              className="p-2 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 rounded-full transition-colors flex items-center justify-center min-w-[40px] min-h-[40px] border border-stone-200/80 dark:border-stone-800 md:border-transparent md:px-2.5"
               aria-label="Admin Portal"
               title="Admin Portal"
             >
-              <Lock size={18} className="stroke-[1.8] text-stone-800" />
-              <span className="hidden md:inline text-[11px] font-semibold uppercase tracking-wider ml-1.5 text-stone-800">Admin</span>
+              <Lock size={17} className="stroke-[1.8] text-stone-800 dark:text-stone-300" />
+              <span className="hidden md:inline text-[11px] font-semibold uppercase tracking-wider ml-1.5 text-stone-800 dark:text-stone-300">Admin</span>
             </Link>
 
             {/* Mobile Menu Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 text-stone-800 hover:text-stone-950 transition-colors"
+              className="lg:hidden p-1.5 text-stone-800 dark:text-stone-200 hover:text-stone-950 dark:hover:text-white transition-colors"
               aria-label="Open navigation menu"
             >
               <Menu size={22} />
@@ -163,13 +169,13 @@ export default function Header() {
           />
 
           {/* Drawer content */}
-          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-6 z-10 overflow-y-auto">
+          <div className="relative w-4/5 max-w-xs bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-100 h-full shadow-2xl flex flex-col justify-between p-6 z-10 overflow-y-auto transition-colors">
             <div>
-              <div className="flex items-center justify-between pb-6 border-b border-stone-200">
+              <div className="flex items-center justify-between pb-6 border-b border-stone-200 dark:border-stone-800">
                 <img 
                   src={ASSETS.logo} 
                   alt="Teefahs Clothier" 
-                  className="h-7 w-auto object-contain"
+                  className="h-7 w-auto object-contain dark:brightness-200 dark:invert"
                   onError={(e) => {
                     const target = e.currentTarget;
                     if (!target.src.endsWith('/logo.png')) {
@@ -179,34 +185,45 @@ export default function Header() {
                 />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1 text-stone-500 hover:text-stone-900"
+                  className="p-1 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
                 >
                   <X size={22} />
                 </button>
               </div>
 
+              {/* Magnificent Lighting Mode Toggle in Mobile Menu */}
+              <div className="my-4 p-3 bg-stone-50 dark:bg-stone-900 rounded border border-stone-200 dark:border-stone-800 flex items-center justify-between">
+                <div>
+                  <span className="block text-[11px] font-semibold uppercase tracking-wider text-stone-800 dark:text-stone-200">
+                    Atmosphere
+                  </span>
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400">Light / Dark</span>
+                </div>
+                <ThemeToggle variant="header" />
+              </div>
+
               {/* Quick Shopping Bag trigger in mobile menu */}
-              <div className="py-4 border-b border-stone-100">
+              <div className="py-2 border-b border-stone-100 dark:border-stone-800">
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     toggleCart();
                   }}
-                  className="w-full flex items-center justify-between p-3 bg-stone-50 hover:bg-stone-100 rounded border border-stone-200 text-stone-900 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-3 bg-stone-50 dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 rounded border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5">
-                    <ShoppingBag size={17} className="text-emerald-800" />
+                    <ShoppingBag size={17} className="text-emerald-800 dark:text-emerald-400" />
                     <span>Shopping Bag</span>
                   </div>
-                  <span className="px-2 py-0.5 bg-stone-900 text-white rounded-full text-[10px] font-bold">
+                  <span className="px-2 py-0.5 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 rounded-full text-[10px] font-bold">
                     {itemCount} {itemCount === 1 ? 'item' : 'items'}
                   </span>
                 </button>
               </div>
 
               {/* Navigation links */}
-              <nav className="flex flex-col gap-5 py-6 text-sm font-medium uppercase tracking-widest text-stone-800">
+              <nav className="flex flex-col gap-4 py-5 text-sm font-medium uppercase tracking-widest text-stone-800 dark:text-stone-200">
                 <Link
                   to="/"
                   onClick={() => setMobileMenuOpen(false)}

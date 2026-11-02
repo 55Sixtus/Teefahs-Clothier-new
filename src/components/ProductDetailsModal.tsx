@@ -72,15 +72,15 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
       <div 
-        className="relative w-full max-w-4xl bg-white shadow-2xl rounded-sm overflow-hidden my-8"
+        className="relative w-full max-w-4xl bg-white dark:bg-stone-900 border border-transparent dark:border-stone-800 shadow-2xl rounded-sm overflow-hidden my-8 transition-colors"
         onClick={e => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 text-stone-500 hover:text-stone-900 bg-white/80 rounded-full transition-colors"
+          className="absolute top-4 right-4 z-20 p-2 text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white bg-white/80 dark:bg-stone-800/90 rounded-full transition-colors"
           aria-label="Close modal"
         >
           <X size={22} />
@@ -88,8 +88,8 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
 
         <div className="grid grid-cols-1 md:grid-cols-2 max-h-[90vh] overflow-y-auto">
           {/* Left Column: Image Gallery */}
-          <div className="bg-stone-100 flex flex-col justify-between p-6">
-            <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-200 shadow-inner rounded-sm">
+          <div className="bg-stone-100 dark:bg-stone-950 flex flex-col justify-between p-6">
+            <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-200 dark:bg-stone-800 shadow-inner rounded-sm">
               <img
                 src={currentImage}
                 alt={product.name}
@@ -99,13 +99,13 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                 <>
                   <button
                     onClick={() => setSelectedImageIndex(prev => (prev === 0 ? allImages.length - 1 : prev - 1))}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 text-stone-800 shadow-sm hover:bg-white"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-stone-900/90 text-stone-800 dark:text-stone-200 shadow-sm hover:bg-white dark:hover:bg-stone-800"
                   >
                     <ChevronLeft size={18} />
                   </button>
                   <button
                     onClick={() => setSelectedImageIndex(prev => (prev === allImages.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 text-stone-800 shadow-sm hover:bg-white"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-stone-900/90 text-stone-800 dark:text-stone-200 shadow-sm hover:bg-white dark:hover:bg-stone-800"
                   >
                     <ChevronRight size={18} />
                   </button>
@@ -121,7 +121,7 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
                     className={`relative w-16 h-20 flex-shrink-0 overflow-hidden border-2 transition-all ${
-                      selectedImageIndex === idx ? 'border-stone-900 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
+                      selectedImageIndex === idx ? 'border-amber-500 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
                     <img src={img} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover object-top" />
@@ -132,7 +132,7 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
           </div>
 
           {/* Right Column: Product Details & Controls */}
-          <div className="p-8 flex flex-col justify-between bg-white">
+          <div className="p-8 flex flex-col justify-between bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100">
             <div>
               {product.is_new_arrival && (
                 <span className="inline-block px-2.5 py-0.5 mb-3 text-[10px] uppercase tracking-widest font-semibold bg-emerald-800 text-white">
@@ -140,30 +140,30 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                 </span>
               )}
 
-              <h2 className="text-2xl md:text-3xl font-serif text-stone-900 leading-snug">
+              <h2 className="text-2xl md:text-3xl font-serif text-stone-900 dark:text-white leading-snug">
                 {product.name}
               </h2>
 
               <div className="flex items-baseline gap-3 my-3">
-                <span className="text-2xl font-semibold text-stone-900">
+                <span className="text-2xl font-semibold text-stone-900 dark:text-amber-300">
                   ₦{product.base_price ? product.base_price.toLocaleString() : 'Price upon request'}
                 </span>
                 {product.sale_price && (
-                  <span className="text-base line-through text-stone-400">
+                  <span className="text-base line-through text-stone-400 dark:text-stone-500">
                     ₦{product.sale_price.toLocaleString()}
                   </span>
                 )}
               </div>
 
-              <div className="text-sm text-stone-600 border-t border-b border-stone-100 py-4 my-4 leading-relaxed">
+              <div className="text-sm text-stone-600 dark:text-stone-300 border-t border-b border-stone-100 dark:border-stone-800 py-4 my-4 leading-relaxed font-light">
                 {product.description || product.short_description || 'Handcrafted modest attire designed with the utmost care, premium stitching, and modest elegance.'}
               </div>
 
               {/* Sizes */}
               {sizes.length > 0 && (
                 <div className="mb-5">
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-stone-700 mb-2">
-                    Select Size: <span className="font-normal text-stone-900">{currentSize}</span>
+                  <label className="block text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                    Select Size: <span className="font-normal text-stone-900 dark:text-amber-300">{currentSize}</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {sizes.map(sz => (
@@ -173,8 +173,8 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                         onClick={() => setSelectedSize(sz)}
                         className={`px-3.5 py-1.5 text-xs font-medium border transition-colors ${
                           currentSize === sz
-                            ? 'border-stone-900 bg-stone-900 text-white'
-                            : 'border-stone-200 text-stone-700 hover:border-stone-400'
+                            ? 'border-amber-400 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 font-bold'
+                            : 'border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500'
                         }`}
                       >
                         {sz}
@@ -187,8 +187,8 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
               {/* Colours */}
               {colours.length > 0 && (
                 <div className="mb-5">
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-stone-700 mb-2">
-                    Select Colour: <span className="font-normal text-stone-900">{currentColour}</span>
+                  <label className="block text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                    Select Colour: <span className="font-normal text-stone-900 dark:text-amber-300">{currentColour}</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {colours.map(col => (
@@ -198,8 +198,8 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                         onClick={() => setSelectedColour(col)}
                         className={`px-3 py-1.5 text-xs font-medium border transition-colors ${
                           currentColour === col
-                            ? 'border-stone-900 bg-stone-100 text-stone-900 font-semibold'
-                            : 'border-stone-200 text-stone-600 hover:border-stone-400'
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-semibold'
+                            : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500'
                         }`}
                       >
                         {col}
@@ -211,27 +211,27 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
 
               {/* Quantity */}
               <div className="mb-6 flex items-center gap-4">
-                <span className="text-xs uppercase tracking-wider font-semibold text-stone-700">Quantity:</span>
-                <div className="flex items-center border border-stone-200">
+                <span className="text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300">Quantity:</span>
+                <div className="flex items-center border border-stone-200 dark:border-stone-700">
                   <button
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1 || isOutOfStock}
-                    className="px-3 py-1 text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     -
                   </button>
-                  <span className="px-4 py-1 text-sm font-medium text-stone-900">{isOutOfStock ? 0 : quantity}</span>
+                  <span className="px-4 py-1 text-sm font-medium text-stone-900 dark:text-stone-100">{isOutOfStock ? 0 : quantity}</span>
                   <button
                     type="button"
                     onClick={() => setQuantity(Math.min(variationStock, quantity + 1))}
                     disabled={quantity >= variationStock || isOutOfStock}
-                    className="px-3 py-1 text-stone-600 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
                 </div>
-                <span className={`text-xs font-medium ${isOutOfStock ? 'text-red-700' : 'text-emerald-700'}`}>
+                <span className={`text-xs font-medium ${isOutOfStock ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
                   {isOutOfStock
                     ? 'Sold out in this variation'
                     : variationStock < 5
@@ -242,7 +242,7 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
             </div>
 
             {/* Actions */}
-            <div className="pt-4 border-t border-stone-100 flex flex-col gap-3">
+            <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col gap-3">
               {isOutOfStock ? (
                 <a
                   href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
@@ -257,11 +257,11 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                 <button
                   type="button"
                   onClick={handleAdd}
-                  className="w-full py-3.5 text-xs font-medium uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-stone-900 text-white hover:bg-stone-800 shadow-sm cursor-pointer"
+                  className="w-full py-3.5 text-xs font-medium uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 font-bold shadow-sm cursor-pointer"
                 >
                   {addedNotice ? (
                     <>
-                      <Check size={16} className="text-emerald-400" />
+                      <Check size={16} className="text-emerald-400 dark:text-stone-950" />
                       Added to Bag!
                     </>
                   ) : (
@@ -277,9 +277,9 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                 href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-3 border border-emerald-700 text-emerald-900 hover:text-emerald-950 text-xs font-semibold uppercase tracking-widest hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 border border-emerald-700 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-200 text-xs font-semibold uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors flex items-center justify-center gap-2"
               >
-                <MessageCircle size={16} className="text-emerald-600" />
+                <MessageCircle size={16} className="text-emerald-600 dark:text-emerald-400" />
                 {isOutOfStock ? 'Chat with Queen Lateefah' : 'Inquire on WhatsApp'}
               </a>
             </div>

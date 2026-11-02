@@ -9,6 +9,7 @@ import CartDrawer from './components/CartDrawer';
 import { DatabaseDebugger } from './components/DatabaseDebugger';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminLogin from './admin/AdminLogin';
@@ -29,25 +30,25 @@ import { ASSETS } from './data/assets';
 
 function HomePage() {
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
       <DatabaseDebugger />
       <Header />
 
-      {/* Hero Header */}
+      {/* Hero Header (Luminous & Brightened with Colorful Lighting Mode Toggle) */}
       <Hero />
 
       {/* Section 1: Shop By Category */}
       <section className="py-20 px-6 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between pb-4 mb-10 border-b border-stone-200 gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between pb-4 mb-10 border-b border-stone-200 dark:border-stone-800 gap-4">
           <div>
-            <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-emerald-800 block mb-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-emerald-800 dark:text-emerald-400 block mb-1">
               Curated Wardrobe
             </span>
-            <h2 className="text-3xl md:text-4xl font-serif text-stone-900">Shop by Category</h2>
+            <h2 className="text-3xl md:text-4xl font-serif text-stone-900 dark:text-stone-100">Shop by Category</h2>
           </div>
           <Link
             to="/collections"
-            className="text-xs uppercase tracking-wider font-semibold text-stone-700 hover:text-emerald-900 transition-colors"
+            className="text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300 hover:text-emerald-900 dark:hover:text-amber-300 transition-colors"
           >
             All 8 Collections &rarr;
           </Link>
@@ -119,37 +120,39 @@ function HomePage() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        {/* Global Cart Drawer & Customer WhatsApp Widget - Accessible from every storefront route */}
-        <CartDrawer />
-        <WhatsAppWidget />
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          {/* Global Cart Drawer & Customer WhatsApp Widget - Accessible from every storefront route */}
+          <CartDrawer />
+          <WhatsAppWidget />
 
-        <Routes>
-          {/* Public Storefront Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/shop" element={<ShopPage />} />
-          <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-          <Route path="/collections" element={<CollectionsPage />} />
-          <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/our-story" element={<OurStoryPage />} />
-          <Route path="/contact" element={<ContactPage />} />
+          <Routes>
+            {/* Public Storefront Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+            <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/our-story" element={<OurStoryPage />} />
+            <Route path="/contact" element={<ContactPage />} />
 
-          {/* Admin Authentication Route (Separate from AdminLayout to avoid infinite redirect) */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+            {/* Admin Authentication Route (Separate from AdminLayout to avoid infinite redirect) */}
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Protected Admin Management Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<ProductsPage />} />
-            <Route path="products/add" element={<AddProductPage />} />
-            <Route path="products/edit/:id" element={<EditProductPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="inventory" element={<InventoryPage />} />
-            <Route path="media" element={<MediaStoragePage />} />
-          </Route>
-        </Routes>
-      </CartProvider>
-    </AuthProvider>
+            {/* Protected Admin Management Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<ProductsPage />} />
+              <Route path="products/add" element={<AddProductPage />} />
+              <Route path="products/edit/:id" element={<EditProductPage />} />
+              <Route path="categories" element={<CategoriesPage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="media" element={<MediaStoragePage />} />
+            </Route>
+          </Routes>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

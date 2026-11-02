@@ -148,18 +148,18 @@ export default function CartDrawer() {
       />
 
       {/* Drawer Container */}
-      <div className="relative w-full max-w-md sm:max-w-lg bg-white shadow-2xl flex flex-col h-full z-10 border-l border-stone-200">
+      <div className="relative w-full max-w-md sm:max-w-lg bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 shadow-2xl flex flex-col h-full z-10 border-l border-stone-200 dark:border-stone-800 transition-colors duration-300">
         
         {/* 1. DRAWER HEADER */}
-        <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/90 backdrop-blur-xs sticky top-0 z-20">
+        <div className="p-4 sm:p-5 border-b border-stone-200 dark:border-stone-850 flex items-center justify-between bg-stone-50/90 dark:bg-stone-950/90 backdrop-blur-xs sticky top-0 z-20">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-emerald-950 text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-emerald-950 text-emerald-400 flex items-center justify-center border border-emerald-800/50">
               <ShoppingBag size={16} />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-serif text-stone-900 tracking-wide font-medium flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-serif text-stone-900 dark:text-white tracking-wide font-medium flex items-center gap-2">
                 Shopping Bag
-                <span className="text-xs font-sans font-semibold px-2 py-0.5 bg-stone-200/80 text-stone-800 rounded-full">
+                <span className="text-xs font-sans font-semibold px-2 py-0.5 bg-stone-200/80 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-full">
                   {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'}
                 </span>
               </h2>
@@ -168,7 +168,7 @@ export default function CartDrawer() {
           <button 
             type="button"
             onClick={closeCart} 
-            className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-200/60 rounded-full transition-colors cursor-pointer"
+            className="p-2 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white hover:bg-stone-200/60 dark:hover:bg-stone-800 rounded-full transition-colors cursor-pointer"
             aria-label="Close shopping bag"
             title="Close shopping bag"
           >
@@ -215,10 +215,10 @@ export default function CartDrawer() {
                   return (
                     <div 
                       key={`${item.product.id}-${item.selectedSize}-${item.selectedColour}-${index}`} 
-                      className="p-3.5 bg-stone-50/70 border border-stone-200/80 rounded-sm flex gap-3.5 hover:border-stone-300 transition-colors"
+                      className="p-3.5 bg-stone-50/70 dark:bg-stone-850/80 border border-stone-200/80 dark:border-stone-800 rounded-sm flex gap-3.5 hover:border-stone-300 dark:hover:border-stone-700 transition-colors"
                     >
                       {/* Product Thumbnail */}
-                      <div className="w-20 h-24 sm:w-22 sm:h-28 bg-stone-200 flex-shrink-0 overflow-hidden rounded-xs border border-stone-200">
+                      <div className="w-20 h-24 sm:w-22 sm:h-28 bg-stone-200 dark:bg-stone-800 flex-shrink-0 overflow-hidden rounded-xs border border-stone-200 dark:border-stone-750">
                         <img 
                           src={itemImg} 
                           alt={item.product.name} 
@@ -231,13 +231,13 @@ export default function CartDrawer() {
                       <div className="flex-1 flex flex-col justify-between min-w-0">
                         <div>
                           <div className="flex justify-between items-start gap-2">
-                            <h4 className="text-xs sm:text-sm font-semibold text-stone-900 truncate" title={item.product.name}>
+                            <h4 className="text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 truncate" title={item.product.name}>
                               {item.product.name}
                             </h4>
                             <button 
                               type="button"
                               onClick={() => removeFromCart(index)} 
-                              className="text-stone-400 hover:text-red-600 transition-colors p-1 -mt-1 -mr-1 cursor-pointer"
+                              className="text-stone-400 hover:text-red-500 transition-colors p-1 -mt-1 -mr-1 cursor-pointer"
                               title="Remove item"
                               aria-label={`Remove ${item.product.name} from bag`}
                             >
@@ -245,31 +245,31 @@ export default function CartDrawer() {
                             </button>
                           </div>
                           
-                          <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-stone-600 mt-1">
-                            <span>Size: <strong className="text-stone-800">{item.selectedSize || 'Standard'}</strong></span>
+                          <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-stone-600 dark:text-stone-400 mt-1">
+                            <span>Size: <strong className="text-stone-800 dark:text-stone-200">{item.selectedSize || 'Standard'}</strong></span>
                             <span>&bull;</span>
-                            <span>Colour: <strong className="text-stone-800">{item.selectedColour || 'Original'}</strong></span>
+                            <span>Colour: <strong className="text-stone-800 dark:text-stone-200">{item.selectedColour || 'Original'}</strong></span>
                           </div>
 
-                          <div className="text-xs font-semibold text-emerald-950 mt-1">
+                          <div className="text-xs font-semibold text-emerald-950 dark:text-amber-300 mt-1">
                             ₦{unitPrice.toLocaleString()} <span className="text-[10px] text-stone-400 font-normal">each</span>
                           </div>
                         </div>
 
                         {/* Quantity Controls & Line Total */}
-                        <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-stone-200/60">
+                        <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-stone-200/60 dark:border-stone-800">
                           {/* Plus/Minus Quantity Button Group */}
-                          <div className="flex items-center border border-stone-300 rounded-xs bg-white shadow-2xs">
+                          <div className="flex items-center border border-stone-300 dark:border-stone-700 rounded-xs bg-white dark:bg-stone-800 shadow-2xs">
                             <button
                               type="button"
                               onClick={() => updateQuantity(index, item.quantity - 1)}
-                              className="p-1.5 text-stone-600 hover:bg-stone-100 hover:text-stone-900 active:bg-stone-200 transition-colors cursor-pointer"
+                              className="p-1.5 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-stone-900 active:bg-stone-200 transition-colors cursor-pointer"
                               title="Decrease quantity"
                               aria-label="Decrease quantity"
                             >
                               <Minus size={13} />
                             </button>
-                            <span className="px-3 text-xs font-semibold text-stone-900 select-none min-w-[28px] text-center">
+                            <span className="px-3 text-xs font-semibold text-stone-900 dark:text-stone-100 select-none min-w-[28px] text-center">
                               {item.quantity}
                             </span>
                             <button
@@ -371,28 +371,28 @@ export default function CartDrawer() {
 
         {/* 3. DRAWER FOOTER: SUMMARY & ACTION BUTTONS */}
         {cart.length > 0 && (
-          <div className="p-4 sm:p-6 border-t border-stone-200 bg-stone-50/95 sticky bottom-0 z-20 space-y-3.5 shadow-lg">
+          <div className="p-4 sm:p-6 border-t border-stone-200 dark:border-stone-800 bg-stone-50/95 dark:bg-stone-950/95 sticky bottom-0 z-20 space-y-3.5 shadow-lg">
             
             {/* Order Summary Line */}
             <div className="flex justify-between items-baseline">
               <div>
-                <span className="text-xs uppercase tracking-wider text-stone-600 font-semibold block">
+                <span className="text-xs uppercase tracking-wider text-stone-600 dark:text-stone-400 font-semibold block">
                   Order Subtotal
                 </span>
-                <span className="text-[11px] text-stone-500 font-light">
+                <span className="text-[11px] text-stone-500 dark:text-stone-400 font-light">
                   {totalItemCount} {totalItemCount === 1 ? 'garment' : 'garments'} selected
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xl sm:text-2xl font-serif font-bold text-stone-900 tracking-tight">
+                <span className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-amber-300 tracking-tight">
                   ₦{subtotal.toLocaleString()}
                 </span>
               </div>
             </div>
 
             {/* Assistance note */}
-            <p className="text-[11px] text-stone-500 leading-tight flex items-center gap-1.5 font-light">
-              <ShieldCheck size={14} className="text-emerald-700 flex-shrink-0" />
+            <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-tight flex items-center gap-1.5 font-light">
+              <ShieldCheck size={14} className="text-emerald-700 dark:text-emerald-400 flex-shrink-0" />
               <span>Direct WhatsApp confirmation with our stylist desk for bank transfer &amp; delivery.</span>
             </p>
 
@@ -411,16 +411,16 @@ export default function CartDrawer() {
 
             {/* Confirmation Dialog for Empty Bag / Start Over */}
             {showResetConfirm ? (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-sm text-center space-y-3 animate-fade-in">
-                <div className="flex items-start justify-center gap-2 text-red-900 font-medium text-xs leading-relaxed">
-                  <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-sm text-center space-y-3 animate-fade-in">
+                <div className="flex items-start justify-center gap-2 text-red-900 dark:text-red-200 font-medium text-xs leading-relaxed">
+                  <AlertCircle size={16} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                   <span>Are you sure you want to remove all items from your shopping bag?</span>
                 </div>
                 <div className="flex items-center justify-center gap-3 pt-1">
                   <button
                     type="button"
                     onClick={() => setShowResetConfirm(false)}
-                    className="flex-1 py-2 px-3 bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer"
+                    className="flex-1 py-2 px-3 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -442,7 +442,7 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={handleContinueShopping}
-                  className="w-full py-3 px-4 bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 hover:border-stone-400 font-semibold text-xs uppercase tracking-wider transition-colors rounded-xs shadow-2xs text-center cursor-pointer"
+                  className="w-full py-3 px-4 bg-white dark:bg-stone-850 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-300 dark:border-stone-700 hover:border-stone-400 font-semibold text-xs uppercase tracking-wider transition-colors rounded-xs shadow-2xs text-center cursor-pointer"
                 >
                   Continue Shopping
                 </button>
@@ -451,7 +451,7 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={() => setShowResetConfirm(true)}
-                  className="w-full py-2 px-3 text-stone-500 hover:text-red-700 text-[11px] font-medium uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer hover:bg-red-50/60 rounded-xs"
+                  className="w-full py-2 px-3 text-stone-500 hover:text-red-600 dark:hover:text-red-400 text-[11px] font-medium uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer hover:bg-red-50/60 dark:hover:bg-red-950/30 rounded-xs"
                 >
                   <RotateCcw size={13} />
                   <span>Empty Bag / Start Over</span>

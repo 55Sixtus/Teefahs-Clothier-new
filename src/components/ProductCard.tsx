@@ -36,10 +36,10 @@ export default function ProductCard({ product }: { product: Product }) {
     <>
       <div 
         onClick={() => setShowModal(true)}
-        className="flex flex-col group bg-white border border-stone-200/80 rounded-sm overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
+        className="flex flex-col group bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-sm overflow-hidden hover:shadow-xl dark:hover:border-stone-700 transition-all duration-300 cursor-pointer"
       >
         {/* Product Image Frame */}
-        <div className="aspect-[3/4] overflow-hidden bg-stone-100 relative">
+        <div className="aspect-[3/4] overflow-hidden bg-stone-100 dark:bg-stone-800 relative">
           <img
             src={imageSrc}
             alt={product.name}
@@ -75,12 +75,12 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Card Content & Visible Actions */}
         <div className="p-4 flex flex-col flex-1 justify-between gap-3">
           <div>
-            <h3 className="text-sm md:text-[15px] font-medium text-stone-900 line-clamp-1 group-hover:text-emerald-900 transition-colors">
+            <h3 className="text-sm md:text-[15px] font-medium text-stone-900 dark:text-stone-100 line-clamp-1 group-hover:text-emerald-800 dark:group-hover:text-amber-300 transition-colors">
               {product.name}
             </h3>
 
             {product.short_description && (
-              <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 mb-2 leading-relaxed font-light">
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-2 mt-1 mb-2 leading-relaxed font-light">
                 {product.short_description}
               </p>
             )}
@@ -88,15 +88,15 @@ export default function ProductCard({ product }: { product: Product }) {
             {/* Sizing & Colours Badges */}
             <div className="flex flex-wrap items-center gap-1.5 my-1.5">
               {sizes.slice(0, 3).map((sz) => (
-                <span key={sz} className="text-[10px] px-1.5 py-0.5 bg-stone-100 text-stone-600 rounded">
+                <span key={sz} className="text-[10px] px-1.5 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded">
                   {sz}
                 </span>
               ))}
               {sizes.length > 3 && (
-                <span className="text-[10px] px-1 text-stone-400">+{sizes.length - 3}</span>
+                <span className="text-[10px] px-1 text-stone-400 dark:text-stone-500">+{sizes.length - 3}</span>
               )}
               {colours.slice(0, 2).map((col) => (
-                <span key={col} className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded">
+                <span key={col} className="text-[10px] px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded border border-transparent dark:border-emerald-800/40">
                   {col}
                 </span>
               ))}
@@ -104,10 +104,10 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
 
           {/* Pricing & Stock Status */}
-          <div className="pt-2 border-t border-stone-100">
+          <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <span className="text-base font-semibold text-stone-900">
+                <span className="text-base font-semibold text-stone-900 dark:text-stone-100">
                   ₦{product.base_price ? product.base_price.toLocaleString() : 'Enquire'}
                 </span>
                 {product.sale_price && (
@@ -116,7 +116,7 @@ export default function ProductCard({ product }: { product: Product }) {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium text-emerald-800 uppercase tracking-wider">
+              <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">
                 {totalStock > 0 ? 'In Stock' : 'Pre-Order'}
               </span>
             </div>
@@ -138,7 +138,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     ? 'bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/60'
                     : isAdded
                     ? 'bg-emerald-800 text-white'
-                    : 'bg-stone-900 hover:bg-stone-800 text-white'
+                    : 'bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 font-bold'
                 }`}
               >
                 {totalStock <= 0 ? (
@@ -165,7 +165,7 @@ export default function ProductCard({ product }: { product: Product }) {
                   e.stopPropagation();
                   setShowModal(true);
                 }}
-                className="py-2 px-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs border border-stone-300 hover:bg-stone-100 text-stone-800 flex items-center justify-center gap-1.5 transition-colors"
+                className="py-2 px-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Eye size={13} />
                 <span>View Details</span>

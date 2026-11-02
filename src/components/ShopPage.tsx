@@ -73,7 +73,7 @@ export default function ShopPage() {
   }, [products, categories, selectedCategory, searchQuery, sortBy]);
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
       <div>
         <Header />
 
@@ -91,7 +91,7 @@ export default function ShopPage() {
         </section>
 
         {/* Filter and Search Bar */}
-        <div className="sticky top-[69px] z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 py-4 px-6 shadow-xs">
+        <div className="sticky top-[69px] z-30 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 py-4 px-6 shadow-xs transition-colors">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Category Pills */}
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
@@ -99,8 +99,8 @@ export default function ShopPage() {
                 onClick={() => handleCategoryChange('all')}
                 className={`px-4 py-1.5 text-xs font-medium rounded-full uppercase tracking-wider transition-all whitespace-nowrap ${
                   selectedCategory === 'all'
-                    ? 'bg-stone-900 text-white shadow-xs'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    ? 'bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 shadow-xs font-semibold'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
                 }`}
               >
                 All Pieces ({products.length})
@@ -114,8 +114,8 @@ export default function ShopPage() {
                     onClick={() => handleCategoryChange(cat.slug || cat.id)}
                     className={`px-4 py-1.5 text-xs font-medium rounded-full uppercase tracking-wider transition-all whitespace-nowrap ${
                       isSelected
-                        ? 'bg-stone-900 text-white shadow-xs'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        ? 'bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 shadow-xs font-semibold'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
                     }`}
                   >
                     {cat.name} {count > 0 && `(${count})`}
@@ -133,7 +133,7 @@ export default function ShopPage() {
                   placeholder="Search garments..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-sm focus:outline-none focus:border-stone-500"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-sm focus:outline-none focus:border-stone-500 text-stone-900 dark:text-stone-100"
                 />
               </div>
 
@@ -141,7 +141,7 @@ export default function ShopPage() {
                 <select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value as any)}
-                  className="py-1.5 pl-3 pr-8 text-xs bg-stone-50 border border-stone-200 rounded-sm focus:outline-none text-stone-700 font-medium"
+                  className="py-1.5 pl-3 pr-8 text-xs bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-sm focus:outline-none text-stone-700 dark:text-stone-200 font-medium"
                 >
                   <option value="featured">Featured First</option>
                   <option value="newest">Newest Arrivals</option>
@@ -156,9 +156,9 @@ export default function ShopPage() {
         {/* Product Grid Area */}
         <main className="py-12 px-6 max-w-7xl mx-auto">
           {/* Active Status Bar */}
-          <div className="flex items-center justify-between text-xs text-stone-500 mb-8 pb-3 border-b border-stone-200">
+          <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 mb-8 pb-3 border-b border-stone-200 dark:border-stone-800">
             <span>
-              Showing <strong className="text-stone-800">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'garment' : 'garments'}
+              Showing <strong className="text-stone-800 dark:text-stone-200">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'garment' : 'garments'}
               {selectedCategory !== 'all' && ` in ${categories.find(c => c.id === selectedCategory || c.slug === selectedCategory)?.name || selectedCategory}`}
               {searchQuery && ` matching "${searchQuery}"`}
             </span>
