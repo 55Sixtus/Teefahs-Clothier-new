@@ -103,15 +103,14 @@ export default function Header() {
               )}
             </button>
 
-            {/* Admin Portal (Lock icon - visible on mobile, tablet & desktop) */}
+            {/* Admin Portal (Lock icon) */}
             <Link
               to="/admin"
-              className="p-2 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 rounded-full transition-colors flex items-center justify-center min-w-[40px] min-h-[40px] border border-stone-200/80 dark:border-stone-800 md:border-transparent md:px-2.5"
+              className="p-2 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 rounded-full transition-colors flex items-center justify-center min-w-[40px] min-h-[40px]"
               aria-label="Admin Portal"
               title="Admin Portal"
             >
               <Lock size={17} className="stroke-[1.8] text-stone-800 dark:text-stone-300" />
-              <span className="hidden md:inline text-[11px] font-semibold uppercase tracking-wider ml-1.5 text-stone-800 dark:text-stone-300">Admin</span>
             </Link>
 
             {/* Mobile Menu Hamburger */}
@@ -275,26 +274,16 @@ export default function Header() {
               </nav>
             </div>
 
-            {/* Bottom Admin Link & Help */}
-            <div className="pt-6 border-t border-stone-200">
-              <Link
-                to="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 bg-stone-900 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-sm shadow-xs"
+            {/* Bottom Help */}
+            <div className="pt-6 border-t border-stone-200 text-center">
+              <a
+                href={SHOP_CONFIG.whatsappChatUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-emerald-800 font-medium hover:underline block"
               >
-                <Lock size={15} />
-                Admin Dashboard
-              </Link>
-              <div className="mt-4 text-center">
-                <a
-                  href={SHOP_CONFIG.whatsappChatUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-emerald-800 font-medium hover:underline block"
-                >
-                  Chat with Stylist on WhatsApp &rarr;
-                </a>
-              </div>
+                Chat with Stylist on WhatsApp &rarr;
+              </a>
             </div>
           </div>
         </div>

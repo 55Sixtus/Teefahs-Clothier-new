@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase';
 import { ASSETS } from '../data/assets';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('queenlateefalive@yahoo.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -144,23 +144,6 @@ export default function AdminLogin() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-6 shadow-2xl rounded-sm sm:px-10 border border-stone-200">
           
-          {/* Store Owner Security Badge */}
-          <div className="mb-6 p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded text-xs text-stone-700">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-semibold uppercase tracking-wider text-[10px] text-emerald-950 flex items-center gap-1.5">
-                <Shield size={12} className="text-emerald-700" />
-                Store Owner Identity
-              </span>
-              <span className="text-[10px] bg-emerald-200/80 text-emerald-900 font-bold px-1.5 py-0.5 rounded">
-                Protected
-              </span>
-            </div>
-            <p className="font-mono text-xs text-stone-900 font-bold">queenlateefalive@yahoo.com</p>
-            <p className="text-[11px] text-stone-600 mt-1">
-              Dashboard access is strictly locked and requires your verified administrator password.
-            </p>
-          </div>
-
           {errorMsg && (
             <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs rounded flex items-start gap-2.5">
               <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
@@ -187,7 +170,7 @@ export default function AdminLogin() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="queenlateefalive@yahoo.com"
+                  placeholder="Enter your administrator email"
                   className="w-full pl-9 pr-3 py-3 text-sm bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-stone-900 font-semibold text-stone-900 shadow-2xs"
                 />
               </div>
@@ -198,7 +181,6 @@ export default function AdminLogin() {
                 <label className="block text-xs uppercase tracking-wider font-semibold text-stone-700">
                   Admin Password
                 </label>
-                <span className="text-[10px] text-emerald-700 font-semibold">Visible for easy typing</span>
               </div>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
@@ -230,23 +212,6 @@ export default function AdminLogin() {
               <span>{loading ? 'Verifying Password...' : 'Unlock & Access Dashboard'}</span>
             </button>
           </form>
-
-          {/* Security Credentials Reference Helper */}
-          <div className="mt-6 pt-5 border-t border-stone-200">
-            <details className="text-[11px] text-stone-500 cursor-pointer group">
-              <summary className="font-semibold text-stone-700 hover:text-stone-900 flex items-center justify-between">
-                <span>Default Admin Credentials Reference</span>
-                <span className="text-stone-400 group-open:rotate-180 transition-transform">▾</span>
-              </summary>
-              <div className="mt-2.5 p-3 bg-stone-50 rounded border border-stone-200 text-stone-600 space-y-1">
-                <p><strong>Owner Email:</strong> <code className="text-stone-800">queenlateefalive@yahoo.com</code></p>
-                <p><strong>Default Password:</strong> <code className="text-stone-800 bg-stone-200/80 px-1.5 py-0.5 rounded font-mono">Teefahs@2026</code></p>
-                <p className="text-[10px] text-stone-400 pt-1">
-                  You can change this password at any time from your Admin Profile once authenticated.
-                </p>
-              </div>
-            </details>
-          </div>
         </div>
 
         <div className="mt-6 text-center">

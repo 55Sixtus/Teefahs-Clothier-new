@@ -123,24 +123,15 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Administration Portal */}
-        <div>
-          <h4 className="font-serif text-sm text-stone-100 uppercase tracking-widest mb-4">Store Access</h4>
-          <p className="text-xs text-stone-400 mb-4 leading-relaxed font-light">
-            Authorized store administration portal for inventory, catalogue updates, and order workflows.
-          </p>
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 border border-stone-800 text-stone-200 text-xs uppercase tracking-wider font-semibold rounded hover:bg-emerald-950 hover:text-emerald-300 transition-colors"
-          >
-            <Lock size={14} className="text-emerald-400" />
-            Admin Dashboard
-          </Link>
-        </div>
       </div>
 
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between text-[11px] text-stone-500 mt-12 pt-8 border-t border-stone-800 gap-4">
-        <span>&copy; {new Date().getFullYear()} Teefahs Clothier. All rights reserved.</span>
+        <span className="flex items-center gap-2">
+          &copy; {new Date().getFullYear()} Teefahs Clothier. All rights reserved.
+          <Link to="/admin" className="text-stone-700 hover:text-stone-400 transition-colors inline-flex items-center" title="Admin Portal">
+            <Lock size={12} />
+          </Link>
+        </span>
         <span>Dress modest. Look elegant. Stand out.</span>
       </div>
     </footer>
