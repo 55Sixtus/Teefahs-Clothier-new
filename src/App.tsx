@@ -18,6 +18,7 @@ import EditProductPage from './admin/EditProductPage';
 import CategoriesPage from './admin/CategoriesPage';
 import InventoryPage from './admin/InventoryPage';
 import MediaStoragePage from './admin/MediaStoragePage';
+import AnalyticsSeoPage from './admin/AnalyticsSeoPage';
 import ShopPage from './components/ShopPage';
 import NewArrivalsPage from './components/NewArrivalsPage';
 import CollectionsPage from './components/CollectionsPage';
@@ -25,11 +26,17 @@ import OurStoryPage from './components/OurStoryPage';
 import ContactPage from './components/ContactPage';
 import GalleryPage from './components/GalleryPage';
 import GallerySection from './components/GallerySection';
+import SEO from './components/SEO';
 import { ASSETS } from './data/assets';
 
 function HomePage() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
+      <SEO 
+        title="Modest Luxury Fashion, Abayas & Hijabs Lagos"
+        description="Shop bespoke Dubai abayas, Malaysian hijabs, French khimars, prayer dresses, and veils at Teefahs Clothier. Handcrafted modesty & elegance in Lagos, Nigeria."
+        keywords="Teefahs Clothier, abayas Lagos, buy abaya Nigeria, hijabs Lagos, French khimar, modest fashion Nigeria, Dubai abaya, Malaysian hijab, Islamic clothing Lagos, Queen Lateefah"
+      />
       <Header />
 
       {/* Hero Header */}
@@ -185,6 +192,7 @@ export default function App() {
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="media" element={<MediaStoragePage />} />
+              <Route path="analytics" element={<AnalyticsSeoPage />} />
             </Route>
           </Routes>
         </CartProvider>

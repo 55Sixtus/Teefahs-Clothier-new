@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Check, ShoppingBag, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
-
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
+import { trackProductView, trackAddToCart, trackWhatsAppConversion } from '../utils/analytics';
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -50,13 +50,35 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
   const variationStock = matchingVariation ? (matchingVariation.stock_quantity ?? 0) : totalStock;
   const isOutOfStock = variationStock <= 0;
 
+  // Fire Google Analytics view_item when modal opens
+  useEffect(() => {
+    if (product) {
+      trackProductView({
+        id: product.id,
+        name: product.name,
+        price: product.base_price || 0,
+        category: (product as any).category?.name || 'Modest Wear',
+      });
+    }
+  }, [product?.id]);
+
   const handleAdd = () => {
     if (isOutOfStock) return;
+    const addedQty = Math.min(variationStock, quantity);
     addToCart({
       product,
       selectedSize: currentSize,
       selectedColour: currentColour,
-      quantity: Math.min(variationStock, quantity),
+      quantity: addedQty,
+    });
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.base_price || 0,
+      quantity: addedQty,
+      size: currentSize,
+      color: currentColour,
+      category: (product as any).category?.name || 'Modest Wear',
     });
     setAddedNotice(true);
     setTimeout(() => {
@@ -249,6 +271,13 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                   href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => {
+                    trackWhatsAppConversion('preorder_whatsapp', {
+                      product_id: product.id,
+                      product_name: product.name,
+                      value: (product.base_price || 0) * quantity,
+                    });
+                  }}
                   className="w-full py-3.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
                   <MessageCircle size={16} className="text-amber-300" />
@@ -278,6 +307,13 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
                 href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => {
+                  trackWhatsAppConversion('inquire_whatsapp', {
+                    product_id: product.id,
+                    product_name: product.name,
+                    value: product.base_price || 0,
+                  });
+                }}
                 className="w-full py-3 border border-emerald-700 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-200 text-xs font-semibold uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors flex items-center justify-center gap-2"
               >
                 <MessageCircle size={16} className="text-emerald-600 dark:text-emerald-400" />

@@ -14,7 +14,8 @@ import {
   Shield,
   Home,
   ArrowLeft,
-  Lock
+  Lock,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -92,6 +93,7 @@ export default function AdminLayout() {
     { label: 'Categories', to: '/admin/categories', icon: FolderTree },
     { label: 'Inventory', to: '/admin/inventory', icon: Boxes },
     { label: 'Media & Storage', to: '/admin/media', icon: ImageIcon },
+    { label: 'Analytics & SEO', to: '/admin/analytics', icon: BarChart3 },
   ];
 
   const isActive = (item: typeof navItems[0]) => {

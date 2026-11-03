@@ -1,10 +1,16 @@
 import Header from './Header';
 import Footer from './Footer';
 import GallerySection from './GallerySection';
+import SEO from './SEO';
 
 export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+      <SEO
+        title="The Teefahs Gallery — Editorial Modest Photoshoot"
+        description="Browse the complete visual lookbook and photoshoot gallery of Teefahs Clothier. Featuring high-resolution captures of bespoke Dubai abayas, khimars, and veils."
+        keywords="abaya lookbook, modest photoshoot Lagos, Islamic clothing gallery, Dubai abaya gallery"
+      />
       <Header />
 
       {/* Hero Banner for Gallery */}

@@ -1,6 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
+import { trackWhatsAppConversion } from '../utils/analytics';
 
 export default function WhatsAppWidget() {
   const location = useLocation();
@@ -18,6 +19,11 @@ export default function WhatsAppWidget() {
       href={whatsappUrl}
       target="_blank"
       rel="noreferrer"
+      onClick={() => {
+        trackWhatsAppConversion('floating_widget', {
+          source_page: location.pathname,
+        });
+      }}
       className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#128C7E] text-white p-3.5 sm:p-4 rounded-full shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
       aria-label="Contact Teefahs Clothier on WhatsApp"
       title="Chat with Teefahs Clothier Stylist on WhatsApp"

@@ -18,6 +18,7 @@ import {
 import { useCart } from '../context/CartContext';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 import { SUPPLIED_PHOTOS } from '../data/assets';
+import { trackBeginCheckout, trackWhatsAppConversion } from '../utils/analytics';
 
 export default function CartDrawer() {
   const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -402,6 +403,21 @@ export default function CartDrawer() {
               href={whatsappCheckoutUrl}
               target="_blank"
               rel="noreferrer"
+              onClick={() => {
+                trackBeginCheckout(
+                  cart.map(item => ({
+                    id: item.product.id,
+                    name: item.product.name,
+                    price: item.product.base_price || 0,
+                    quantity: item.quantity,
+                  })),
+                  subtotal
+                );
+                trackWhatsAppConversion('cart_checkout', {
+                  value: subtotal,
+                  items_count: totalItemCount,
+                });
+              }}
               className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#1fa855] text-white font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2.5 rounded-xs shadow-sm hover:shadow-md active:scale-[0.99] cursor-pointer"
               title="Proceed to WhatsApp Checkout"
             >

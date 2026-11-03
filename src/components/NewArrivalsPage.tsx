@@ -5,6 +5,7 @@ import { Product } from '../types/product';
 import ProductCard from './ProductCard';
 import Header from './Header';
 import Footer from './Footer';
+import SEO from './SEO';
 
 export default function NewArrivalsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,6 +38,11 @@ export default function NewArrivalsPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+      <SEO
+        title="New Season Arrivals — Latest Modest Collection"
+        description="Shop the latest modest luxury fashion arrivals at Teefahs Clothier. Handcrafted Dubai abayas, Malaysian hijabs, and French khimars with express delivery in Nigeria."
+        keywords="new abayas, latest modest fashion Lagos, new khimars Nigeria, Queen Lateefah arrivals"
+      />
       <div>
         <Header />
 

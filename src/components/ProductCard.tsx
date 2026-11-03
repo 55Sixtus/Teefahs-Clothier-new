@@ -4,6 +4,7 @@ import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import ProductDetailsModal from './ProductDetailsModal';
+import { trackAddToCart } from '../utils/analytics';
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
@@ -24,6 +25,14 @@ export default function ProductCard({ product }: { product: Product }) {
       selectedSize: sizes[0] || 'Standard',
       selectedColour: colours[0] || 'Original',
       quantity: 1,
+    });
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.base_price || 0,
+      quantity: 1,
+      size: sizes[0] || 'Standard',
+      color: colours[0] || 'Original',
     });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);

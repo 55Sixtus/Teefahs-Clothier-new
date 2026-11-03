@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Homepage -->
+  <url>
+    <loc>https://www.teefahsclothier.com/</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://i.ibb.co/svjCMgcM/Whats-App-Image-2026-10-21-at-6-02-24-AM-1.jpg</image:loc>
+      <image:title>Teefahs Clothier Haute Modest Fashion</image:title>
+      <image:caption>Timeless Modesty, Effortless Elegance - Bespoke Abayas &amp; Khimars in Lagos, Nigeria</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Shop All Pieces -->
+  <url>
+    <loc>https://www.teefahsclothier.com/shop</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- New Season Arrivals -->
+  <url>
+    <loc>https://www.teefahsclothier.com/new-arrivals</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Collections -->
+  <url>
+    <loc>https://www.teefahsclothier.com/collections</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Category: Abayas -->
+  <url>
+    <loc>https://www.teefahsclothier.com/shop?category=abayas</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Category: Hijabs -->
+  <url>
+    <loc>https://www.teefahsclothier.com/shop?category=hijabs</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Category: Khimars -->
+  <url>
+    <loc>https://www.teefahsclothier.com/shop?category=khimars</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Category: Prayer Wear -->
+  <url>
+    <loc>https://www.teefahsclothier.com/shop?category=prayer-wear</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- The Teefahs Gallery -->
+  <url>
+    <loc>https://www.teefahsclothier.com/gallery</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Contact & Boutique Location -->
+  <url>
+    <loc>https://www.teefahsclothier.com/contact</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Our Story & Philosophy -->
+  <url>
+    <loc>https://www.teefahsclothier.com/our-story</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+</urlset>

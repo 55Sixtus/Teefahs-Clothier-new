@@ -2,11 +2,17 @@ import { Link } from 'react-router-dom';
 import { Award, ShieldCheck, Heart } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
+import SEO from './SEO';
 import { ASSETS } from '../data/assets';
 
 export default function OurStoryPage() {
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+      <SEO
+        title="Our Story — The Brand Journey & Craftsmanship"
+        description="Discover the story and ethos of Teefahs Clothier. Bespoke modest fashion founded on timeless grace, exquisite fabrics, and immaculate cuts in Lagos, Nigeria."
+        keywords="Teefahs Clothier story, modest fashion brand Nigeria, Queen Lateefah modest couture, Islamic boutique Lagos"
+      />
       <div>
         <Header />
 

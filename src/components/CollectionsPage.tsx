@@ -2,11 +2,17 @@ import { Link } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import CategoryGrid from './CategoryGrid';
+import SEO from './SEO';
 import { SHOP_CONFIG } from '../config/shopConfig';
 
 export default function CollectionsPage() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
+      <SEO
+        title="Curated Modest Fashion Collections"
+        description="Explore all 8 dedicated modest fashion collections: Abayas, French Khimars, Malaysian Hijabs, Prayer Dresses, Veils, and Occasion Wear at Teefahs Clothier."
+        keywords="modest collections, abaya collections Lagos, khimar collection Nigeria, hijab styles, modest wear sets"
+      />
       <div>
         <Header />
 

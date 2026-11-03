@@ -6,6 +6,7 @@ import { Product, Category } from '../types/product';
 import ProductCard from './ProductCard';
 import Header from './Header';
 import Footer from './Footer';
+import SEO from './SEO';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -74,6 +75,11 @@ export default function ShopPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
+      <SEO
+        title={selectedCategory !== 'all' ? `${selectedCategory.toUpperCase()} Collection` : 'Shop All Pieces — Abayas, Khimars & Hijabs'}
+        description="Explore the complete modest fashion catalogue at Teefahs Clothier. Bespoke Dubai abayas, Malaysian hijabs, French khimars, prayer dresses, and lightweight stretch veils."
+        keywords="buy abayas Nigeria, abayas Lagos, modest clothing catalogue, khimar sets, prayer wear, luxury modest dresses"
+      />
       <div>
         <Header />
 

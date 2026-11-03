@@ -1,6 +1,6 @@
 {
   "name": "Teefahs Clothier Storefront",
-  "description": "Premium modest-fashion e-commerce storefront for Teefahs Clothier, featuring elegant abayas, khimars, and accessories.",
+  "description": "Discover timeless modesty and effortless elegance at Teefahs Clothier. Bespoke Dubai abayas, Malaysian hijabs, French khimars, and prayer dresses delivered nationwide across Nigeria.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

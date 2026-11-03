@@ -1,0 +1,20 @@
+# Robots.txt for Teefahs Clothier
+# Production Domain: https://www.teefahsclothier.com
+
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /new-arrivals
+Allow: /collections
+Allow: /gallery
+Allow: /our-story
+Allow: /contact
+Allow: /assets/
+
+# Disallow private administration portal from indexing
+Disallow: /admin
+Disallow: /admin/
+Disallow: /admin/*
+
+# Search Engine Sitemaps
+Sitemap: https://www.teefahsclothier.com/sitemap.xml

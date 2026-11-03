@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { MessageCircle, Instagram, Mail, Clock, MapPin, Send, CheckCircle2, Globe, Navigation } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
+import SEO from './SEO';
 import { SHOP_CONFIG } from '../config/shopConfig';
+import { trackWhatsAppConversion } from '../utils/analytics';
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -23,10 +25,19 @@ export default function ContactPage() {
     const waLink = `https://wa.me/${SHOP_CONFIG.whatsappNumber}?text=${whatsappPayload}`;
     setPreparedWaUrl(waLink);
     setIsSubmitted(true);
+    trackWhatsAppConversion('contact_form_submission', {
+      inquiry_type: inquiryType,
+      customer_name: name.trim(),
+    });
   };
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+      <SEO
+        title="Contact & Boutique Location — Ikeja, Lagos"
+        description="Visit Teefahs Clothier at 165 Ekoro Road, Ekoro Junction, Abule Egba, Ikeja, Lagos. WhatsApp: +234 802 899 1921. Fast nationwide express delivery."
+        keywords="contact Teefahs Clothier, abaya shop Lagos location, modest boutique address Lagos, WhatsApp modest clothing"
+      />
       <div>
         <Header />
 
