@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   X,
   Archive,
-  History
+  History,
+  Tag
 } from 'lucide-react';
 import { 
   getAllProducts, 
@@ -18,7 +19,8 @@ import {
   archiveProduct, 
   restoreProduct, 
   permanentlyDeleteProduct, 
-  getRecentlyDeletedProducts 
+  getRecentlyDeletedProducts,
+  saveProduct
 } from '../lib/api';
 import { Product, Category } from '../types/product';
 
@@ -48,6 +50,32 @@ export default function ProductsPage() {
 
   // Restoring state
   const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  // Quick Price Edit Modal state
+  const [quickPriceProduct, setQuickPriceProduct] = useState<Product | null>(null);
+  const [newBasePrice, setNewBasePrice] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
+
+  const handleSaveQuickPrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickPriceProduct) return;
+    const priceNum = parseFloat(newBasePrice);
+    if (isNaN(priceNum) || priceNum < 0) return;
+
+    setSavingPrice(true);
+    try {
+      await saveProduct({
+        ...quickPriceProduct,
+        base_price: priceNum,
+      });
+      setQuickPriceProduct(null);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to update price:', err);
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -415,7 +443,21 @@ export default function ProductsPage() {
                       {getCategoryName(p.category_id)}
                     </td>
                     <td className="py-3 px-4 font-mono font-semibold text-stone-900">
-                      ₦{p.base_price?.toLocaleString()}
+                      <div className="flex items-center gap-2 group/price">
+                        <span>₦{p.base_price?.toLocaleString()}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickPriceProduct(p);
+                            setNewBasePrice(p.base_price?.toString() || '');
+                          }}
+                          className="opacity-80 group-hover/price:opacity-100 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer shadow-2xs border border-emerald-200"
+                          title="Quick Edit Price"
+                        >
+                          <Tag size={10} />
+                          <span>Edit Price</span>
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="text-stone-700 font-medium">
@@ -573,6 +615,63 @@ export default function ProductsPage() {
                 {permanentDeletingId ? 'Deleting...' : 'Permanently Delete'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Quick Price Edit Modal */}
+      {quickPriceProduct && (
+        <div className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm border border-stone-200 shadow-2xl max-w-sm w-full p-6 space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-serif text-base text-stone-900 font-bold flex items-center gap-2">
+                <Tag size={16} className="text-emerald-800" />
+                Quick Edit Garment Price
+              </h3>
+              <button
+                type="button"
+                onClick={() => setQuickPriceProduct(null)}
+                className="text-stone-400 hover:text-stone-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-stone-900 mb-1">{quickPriceProduct.name}</p>
+              <p className="text-[11px] text-stone-500">Update base selling price in Nigerian Naira (₦).</p>
+            </div>
+            <form onSubmit={handleSaveQuickPrice} className="space-y-4">
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider font-semibold text-stone-700 mb-1">
+                  New Price (₦)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="100"
+                  autoFocus
+                  value={newBasePrice}
+                  onChange={e => setNewBasePrice(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm font-mono font-bold bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-emerald-700"
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickPriceProduct(null)}
+                  className="flex-1 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-stone-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPrice}
+                  className="flex-1 py-2.5 bg-emerald-950 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-emerald-900 transition-colors shadow-xs cursor-pointer"
+                >
+                  {savingPrice ? 'Saving Price...' : 'Save New Price'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
