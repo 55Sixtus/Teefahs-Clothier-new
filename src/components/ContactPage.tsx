@@ -133,13 +133,14 @@ export default function ContactPage() {
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-3 p-3 bg-white border border-stone-200 rounded-sm hover:border-stone-800 hover:shadow-xs transition-all group"
+                      title="Visit official website: www.teefahsclothier.com"
                     >
                       <div className="w-9 h-9 bg-stone-100 text-stone-700 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-stone-900 group-hover:text-white transition-colors">
                         <Globe size={18} />
                       </div>
                       <div className="min-w-0">
                         <h5 className="font-medium text-stone-900 text-xs truncate">Official Website</h5>
-                        <p className="text-[11px] text-stone-500 truncate">teefahsclothier.bumpa.shop</p>
+                        <p className="text-[11px] text-stone-500 truncate">{SHOP_CONFIG.officialWebsiteDisplay}</p>
                       </div>
                     </a>
                   </div>

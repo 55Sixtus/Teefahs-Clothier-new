@@ -154,7 +154,7 @@ export default function AnalyticsSeoPage() {
               type="text"
               value={gaId}
               onChange={e => setGaId(e.target.value)}
-              placeholder="e.g. G-B0FEPOZUCI or G-1234567890"
+              placeholder="e.g. G-TEEFAHS2026"
               className="w-full px-3.5 py-2.5 text-sm font-mono border border-stone-300 rounded-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
             />
           </div>

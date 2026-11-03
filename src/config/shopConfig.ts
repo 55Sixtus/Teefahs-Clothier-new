@@ -26,6 +26,7 @@ export const SHOP_CONFIG = {
 
   // Official Web & Social Channels
   officialWebsite: 'https://www.teefahsclothier.com',
+  officialWebsiteDisplay: 'www.teefahsclothier.com',
   instagramHandle: '@teefahs_clothier',
   instagramUrl: 'https://instagram.com/teefahs_clothier',
 

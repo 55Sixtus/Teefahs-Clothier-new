@@ -63,8 +63,8 @@ export default function Footer() {
               target="_blank"
               rel="noreferrer"
               className="w-8 h-8 rounded-full bg-stone-800 text-stone-300 flex items-center justify-center hover:bg-stone-700 hover:text-white transition-colors"
-              title="Official Store Website"
-              aria-label="Official Store Website"
+              title={`Official Store Website: ${SHOP_CONFIG.officialWebsiteDisplay}`}
+              aria-label={`Official Store Website: ${SHOP_CONFIG.officialWebsiteDisplay}`}
             >
               <Globe size={16} />
             </a>
