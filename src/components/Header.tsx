@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { ShoppingBag, Search, Menu, X, Lock, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShoppingBag, Search, Menu, X, Lock, ArrowRight, Tag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data/assets';
 import { useCart } from '../context/CartContext';
 import { SHOP_CONFIG } from '../config/shopConfig';
 import ThemeToggle from './ThemeToggle';
+import { getPublishedProducts, getActiveCategories } from '../lib/api';
+import { Product, Category } from '../types/product';
 
 export default function Header() {
   const { cart, toggleCart } = useCart();
@@ -12,7 +14,34 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (searchOpen && products.length === 0) {
+      Promise.all([getPublishedProducts(), getActiveCategories()])
+        .then(([prods, cats]) => {
+          setProducts(prods);
+          setCategories(cats);
+        })
+        .catch(err => console.error('Error loading search data:', err));
+    }
+  }, [searchOpen]);
+
+  const filteredCategories = searchQuery.trim() ? categories.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  ) : categories.slice(0, 6);
+
+  const filteredProducts = searchQuery.trim() ? products.filter(p => {
+    const q = searchQuery.toLowerCase();
+    const matchName = p.name.toLowerCase().includes(q);
+    const matchDesc = p.description?.toLowerCase().includes(q) || p.short_description?.toLowerCase().includes(q);
+    const cat = categories.find(c => c.id === p.category_id);
+    const matchCat = cat?.name.toLowerCase().includes(q);
+    return matchName || matchDesc || matchCat;
+  }).slice(0, 6) : [];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,32 +156,106 @@ export default function Header() {
 
       {/* Search Overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-24 px-4">
-          <div className="bg-white w-full max-w-xl p-6 rounded-sm shadow-2xl relative border border-stone-200">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
+          <div className="bg-white w-full max-w-xl p-6 rounded-sm shadow-2xl relative border border-stone-200 max-h-[85vh] flex flex-col">
             <button
               onClick={() => setSearchOpen(false)}
-              className="absolute top-4 right-4 p-1 text-stone-400 hover:text-stone-900"
+              className="absolute top-4 right-4 p-1 text-stone-400 hover:text-stone-900 cursor-pointer"
             >
               <X size={20} />
             </button>
-            <h3 className="font-serif text-lg text-stone-900 mb-3">Search Teefahs Clothier</h3>
-            <form onSubmit={handleSearchSubmit} className="relative">
+            <h3 className="font-serif text-lg text-stone-900 mb-3">Search &amp; Filter Storefront</h3>
+            <form onSubmit={handleSearchSubmit} className="relative mb-4">
               <input
                 type="text"
                 autoFocus
-                placeholder="Type abaya, khimar, prayer dress, size 56..."
+                placeholder="Search abayas, hijabs, khimars, colours, sizes..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-4 pr-12 py-3 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:outline-none focus:border-stone-900"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-stone-900 text-white rounded-xs hover:bg-stone-800"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-stone-900 text-white rounded-xs hover:bg-stone-800 cursor-pointer"
               >
                 <ArrowRight size={15} />
               </button>
             </form>
-            <p className="text-[11px] text-stone-400 mt-2">Press enter to see matching garments in Shop All</p>
+
+            <div className="overflow-y-auto space-y-4 pr-1 flex-1">
+              {/* Categories */}
+              <div>
+                <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold block mb-2">
+                  {searchQuery.trim() ? 'Matching Categories' : 'Browse Categories'}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {filteredCategories.map(cat => (
+                    <Link
+                      key={cat.id}
+                      to={`/shop?category=${cat.slug || cat.id}`}
+                      onClick={() => {
+                        setSearchOpen(false);
+                        setSearchQuery('');
+                      }}
+                      className="px-3 py-1.5 bg-stone-100 hover:bg-emerald-900 hover:text-white text-stone-800 text-xs font-medium rounded-sm transition-colors border border-stone-200"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Matching Products */}
+              {searchQuery.trim() && (
+                <div>
+                  <span className="text-[10px] uppercase tracking-widest text-stone-500 font-bold block mb-2">
+                    Matching Garments ({filteredProducts.length})
+                  </span>
+                  {filteredProducts.length === 0 ? (
+                    <p className="text-xs text-stone-500 py-3 italic">No garments found matching "{searchQuery}". Press Enter to search all.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredProducts.map(prod => (
+                        <div
+                          key={prod.id}
+                          onClick={() => {
+                            navigate(`/shop?q=${encodeURIComponent(prod.name)}`);
+                            setSearchOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="flex items-center gap-3 p-2 hover:bg-stone-50 rounded-sm border border-stone-100 cursor-pointer transition-colors group"
+                        >
+                          <img
+                            src={prod.main_image_url || prod.images?.[0]?.image_url || '/logo.png'}
+                            alt={prod.name}
+                            className="w-12 h-14 object-cover object-top rounded-xs bg-stone-100 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-medium text-stone-900 group-hover:text-emerald-900 truncate">
+                              {prod.name}
+                            </h4>
+                            <p className="text-[11px] text-stone-500">
+                              ₦{(prod.base_price || 0).toLocaleString()}
+                            </p>
+                          </div>
+                          <ArrowRight size={14} className="text-stone-400 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-stone-100 mt-3 text-center">
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                className="text-xs font-semibold uppercase tracking-wider text-emerald-900 hover:underline cursor-pointer"
+              >
+                View all results in Shop All &rarr;
+              </button>
+            </div>
           </div>
         </div>
       )}
