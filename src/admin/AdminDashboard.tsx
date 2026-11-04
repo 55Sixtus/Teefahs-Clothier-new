@@ -378,6 +378,19 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Mobile Ease-of-Use Banner for Queen Lateefah */}
+      <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-sm text-xs text-emerald-950 flex items-start gap-3 shadow-2xs">
+        <div className="w-8 h-8 rounded-full bg-emerald-200 text-emerald-950 flex items-center justify-center font-bold flex-shrink-0 text-sm">
+          👑
+        </div>
+        <div>
+          <p className="font-semibold text-sm">Owner Quick Edit Notice:</p>
+          <p className="text-stone-700 mt-0.5 leading-relaxed">
+            Every garment below features a prominent <strong className="text-emerald-900">"Edit Price &amp; Images"</strong> button. You can update your pricing, add new photos, or manage sizes instantly from your phone without needing desktop mode.
+          </p>
+        </div>
+      </div>
+
       {/* 5. RECENT GARMENTS (COMPACT EDITORIAL OVERVIEW) */}
       <div className="bg-white border border-stone-200 rounded-sm shadow-2xs overflow-hidden">
         <div className="p-5 border-b border-stone-200 flex items-center justify-between">
@@ -481,10 +494,10 @@ export default function AdminDashboard() {
                       <td className="py-3 px-4 text-right">
                         <Link
                           to={`/admin/products/edit/${product.id}`}
-                          className="inline-flex items-center gap-1 text-xs text-stone-700 hover:text-stone-900 font-medium px-2.5 py-1 border border-stone-200 rounded hover:border-stone-400 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50 hover:bg-emerald-100 font-semibold px-3 py-1.5 border border-emerald-300 rounded transition-colors shadow-2xs"
                         >
-                          <Edit2 size={12} />
-                          <span>Edit</span>
+                          <Edit2 size={13} />
+                          <span>Edit Price &amp; Images</span>
                         </Link>
                       </td>
                     </tr>

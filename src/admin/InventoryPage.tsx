@@ -12,6 +12,7 @@ interface FlatVariation {
   size: string;
   colour: string;
   stockQuantity: number;
+  price: number;
 }
 
 export default function InventoryPage() {
@@ -43,6 +44,7 @@ export default function InventoryPage() {
               size: v.size || 'One Size',
               colour: v.colour || 'Standard',
               stockQuantity: Number(v.stock_quantity) || 0,
+              price: Number(v.price ?? p.base_price) || 0,
             });
           }
         }
@@ -195,14 +197,15 @@ export default function InventoryPage() {
       </div>
 
       {/* Variations Table */}
-      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-x-auto w-full">
+        <table className="w-full min-w-[950px] text-left border-collapse">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 text-[10px] uppercase tracking-wider">
               <th className="py-3 px-4 font-semibold w-16">Garment</th>
               <th className="py-3 px-4 font-semibold">Product Name</th>
               <th className="py-3 px-4 font-semibold">Size</th>
               <th className="py-3 px-4 font-semibold">Colour</th>
+              <th className="py-3 px-4 font-semibold">Price (NGN)</th>
               <th className="py-3 px-4 font-semibold">Stock Level</th>
               <th className="py-3 px-4 font-semibold text-center">Status</th>
               <th className="py-3 px-4 font-semibold text-right">Quick Update</th>
@@ -211,7 +214,7 @@ export default function InventoryPage() {
           <tbody className="divide-y divide-stone-100 text-xs">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-stone-500 font-light">
+                <td colSpan={8} className="py-12 text-center text-stone-500 font-light">
                   No inventory variations found matching your filters.
                 </td>
               </tr>
@@ -238,6 +241,9 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-3 px-4 font-medium text-stone-700">{v.size}</td>
                     <td className="py-3 px-4 font-medium text-stone-700">{v.colour}</td>
+                    <td className="py-3 px-4 font-mono font-semibold text-stone-900">
+                      ₦{v.price.toLocaleString()}
+                    </td>
                     <td className="py-3 px-4">
                       <span className="font-mono font-bold text-sm text-stone-900">{v.stockQuantity}</span>{' '}
                       <span className="text-[11px] text-stone-400">units</span>

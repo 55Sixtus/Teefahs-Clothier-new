@@ -14,6 +14,7 @@ export interface ProductVariation {
   sku?: string;
   size?: string;
   colour?: string;
+  price?: number;
   price_adjustment: number;
   stock_quantity: number;
   is_active: boolean;

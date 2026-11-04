@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Image as ImageIcon, 
@@ -16,7 +16,8 @@ import {
   Edit2
 } from 'lucide-react';
 import { SUPPLIED_PHOTOS, NEW_PRODUCT_PHOTOS } from '../data/assets';
-import { uploadProductImage } from '../lib/api';
+import { uploadProductImage, getAllProducts } from '../lib/api';
+import { Product } from '../types/product';
 
 interface MediaItem {
   id: string;
@@ -34,6 +35,30 @@ export default function MediaStoragePage() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [uploadError, setUploadError] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    getAllProducts().then(prods => setProducts(prods)).catch(err => console.error(err));
+  }, []);
+
+  const findProductIdForMedia = (item: MediaItem): string | undefined => {
+    // 1. Match by exact image URL
+    const matchByUrl = products.find(p => 
+      p.main_image_url === item.url || 
+      (p.images && p.images.some(img => img.image_url === item.url))
+    );
+    if (matchByUrl) return matchByUrl.id;
+
+    // 2. Match by name or category similarity
+    const matchByName = products.find(p => 
+      p.name.toLowerCase().includes(item.title.toLowerCase()) ||
+      (item.productName && p.name.toLowerCase().includes(item.productName.toLowerCase()))
+    );
+    if (matchByName) return matchByName.id;
+
+    // 3. Fallback to first product
+    return products[0]?.id;
+  };
 
   // Build the complete boutique media registry
   const mediaList: MediaItem[] = useMemo(() => {
@@ -323,14 +348,20 @@ export default function MediaStoragePage() {
                   </>
                 )}
               </button>
-              <Link
-                to="/admin/products"
-                className="mt-1.5 w-full py-1 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors text-center"
-                title="Edit product pricing and details"
-              >
-                <Edit2 size={10} />
-                <span>Edit Price</span>
-              </Link>
+              {(() => {
+                const prodId = findProductIdForMedia(item);
+                const editUrl = prodId ? `/admin/products/edit/${prodId}` : `/admin/products`;
+                return (
+                  <Link
+                    to={editUrl}
+                    className="mt-1.5 w-full py-1 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors text-center"
+                    title="Edit product pricing and details directly"
+                  >
+                    <Edit2 size={10} />
+                    <span>Edit Product &amp; Price</span>
+                  </Link>
+                );
+              })()}
             </div>
           </div>
         ))}
