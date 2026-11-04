@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ShoppingBag, Eye, Check, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Eye, Check, AlertCircle, Edit2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
@@ -181,6 +182,20 @@ export default function ProductCard({ product }: { product: Product }) {
                 <span>View Details</span>
               </button>
             </div>
+
+            {/* Admin Quick Edit Button */}
+            {typeof window !== 'undefined' && localStorage.getItem('teefahs_admin_authorized') === 'true' && (
+              <div className="pt-2">
+                <Link
+                  to={`/admin/products/edit/${product.id}`}
+                  onClick={e => e.stopPropagation()}
+                  className="w-full py-1.5 px-2 bg-emerald-900 hover:bg-emerald-800 text-white text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors shadow-2xs"
+                >
+                  <Edit2 size={11} />
+                  <span>Edit Price &amp; Details</span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

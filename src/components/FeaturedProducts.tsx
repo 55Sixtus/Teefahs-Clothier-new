@@ -22,7 +22,7 @@ export default function FeaturedProducts({
     getPublishedProducts()
       .then(allProducts => {
         const result = filter ? allProducts.filter(filter) : allProducts.filter(p => p.is_featured);
-        setProducts(result.length > 0 ? result : allProducts.slice(0, 4));
+        setProducts(result.length > 0 ? result : allProducts.slice(0, 24));
       })
       .finally(() => setLoading(false));
   }, [filter]);

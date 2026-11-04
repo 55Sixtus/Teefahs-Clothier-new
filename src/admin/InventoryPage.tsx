@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Save } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Save, Edit2 } from 'lucide-react';
 import { getAllProducts, updateVariationStock } from '../lib/api';
 import { Product, ProductVariation } from '../types/product';
 
@@ -258,6 +259,14 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
+                        <Link
+                          to={`/admin/products/edit/${v.productId}`}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded transition-colors"
+                          title="Edit product pricing and details"
+                        >
+                          <Edit2 size={12} />
+                          <span>Edit Price &amp; Details</span>
+                        </Link>
                         <input
                           type="number"
                           min="0"

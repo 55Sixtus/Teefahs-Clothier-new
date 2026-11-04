@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -11,7 +12,8 @@ import {
   HardDrive,
   Info,
   Maximize2,
-  X
+  X,
+  Edit2
 } from 'lucide-react';
 import { SUPPLIED_PHOTOS, NEW_PRODUCT_PHOTOS } from '../data/assets';
 import { uploadProductImage } from '../lib/api';
@@ -321,6 +323,14 @@ export default function MediaStoragePage() {
                   </>
                 )}
               </button>
+              <Link
+                to="/admin/products"
+                className="mt-1.5 w-full py-1 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors text-center"
+                title="Edit product pricing and details"
+              >
+                <Edit2 size={10} />
+                <span>Edit Price</span>
+              </Link>
             </div>
           </div>
         ))}
