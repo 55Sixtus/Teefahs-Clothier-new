@@ -291,6 +291,7 @@ export default function EditProductPage() {
         sale_price: salePrice ? parseFloat(salePrice) : undefined,
         currency: 'NGN',
         main_image_url: primaryImage,
+        additionalImages,
         images: formattedImages,
         is_published: isPublished,
         is_featured: isFeatured,

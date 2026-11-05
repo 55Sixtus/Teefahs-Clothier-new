@@ -223,6 +223,7 @@ export default function AddProductPage() {
         sale_price: salePrice ? parseFloat(salePrice) : undefined,
         currency: 'NGN',
         main_image_url: primaryImage,
+        additionalImages,
         images: additionalImages.map((url) => ({
           id: generateValidUuid(),
           image_url: url,
