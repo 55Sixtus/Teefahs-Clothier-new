@@ -299,6 +299,10 @@ export default function EditProductPage() {
         variations,
       });
 
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id } }));
+      }
+
       setSuccessMsg('Product details successfully updated!');
       setTimeout(() => {
         navigate('/admin/products');

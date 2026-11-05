@@ -16,7 +16,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Khimars',
     slug: 'khimars',
     description: 'Flowing French and classic cut khimars offering modest chest-to-hip coverage.',
-    image_url: SUPPLIED_PHOTOS[15], // Zahra Khimar
+    image_url: '/assets/aistudio/image_f09b866e.png', // French khimars cover
     display_order: 2,
     is_active: true,
   },
@@ -25,7 +25,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Hijabs',
     slug: 'hijabs',
     description: 'Feather-light modal, chiffon, and silk hijabs with non-slip drape.',
-    image_url: SUPPLIED_PHOTOS[35], // Amani Hijab
+    image_url: '/assets/aistudio/image_60c3b658.png', // Multi-model hijab array
     display_order: 3,
     is_active: true,
   },
@@ -85,7 +85,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     description: 'Crafted from the finest imported crepe, the Noor Luxury Abaya features delicate tone-on-tone cuff and lapel embroidery. Designed for timeless elegance, this piece offers modest fluid movement and effortless layering.',
     category_id: 'c0000000-0000-0000-0000-000000000001',
     main_image_url: SUPPLIED_PHOTOS[3], // 6-02-25-AM-1
-    base_price: 45000,
+    base_price: 255000,
     currency: 'NGN',
     is_published: true,
     is_featured: true,
@@ -373,7 +373,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-12-1', product_id: '00000000-0000-0000-0000-000000000012', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+      { id: 'var-12-1', product_id: '00000000-0000-0000-0000-000000000012', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
   {
@@ -396,7 +396,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-13-1', product_id: '00000000-0000-0000-0000-000000000013', size: 'Medium', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+      { id: 'var-13-1', product_id: '00000000-0000-0000-0000-000000000013', size: 'Medium', colour: 'Standard', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
   {
@@ -419,7 +419,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-14-1', product_id: '00000000-0000-0000-0000-000000000014', size: '4XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+      { id: 'var-14-1', product_id: '00000000-0000-0000-0000-000000000014', size: '4XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
   {
@@ -442,7 +442,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-15-1', product_id: '00000000-0000-0000-0000-000000000015', size: '4XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+      { id: 'var-15-1', product_id: '00000000-0000-0000-0000-000000000015', size: '4XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
   {
@@ -465,8 +465,8 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       display_order: idx,
     })),
     variations: [
-      { id: 'var-16-1', product_id: '00000000-0000-0000-0000-000000000016', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
-      { id: 'var-16-2', product_id: '00000000-0000-0000-0000-000000000016', size: '2XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+      { id: 'var-16-1', product_id: '00000000-0000-0000-0000-000000000016', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-16-2', product_id: '00000000-0000-0000-0000-000000000016', size: '2XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
   {
@@ -946,6 +946,116 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     images: [{ id: 'img-40-1', image_url: SUPPLIED_PHOTOS[47], alt_text: 'Photoshoot #48 Mauve Abaya' }],
     variations: [
       { id: 'var-40-1', product_id: '00000000-0000-0000-0000-000000000040', size: '56', colour: 'Dusty Mauve', price_adjustment: 0, stock_quantity: 7, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000041',
+    name: 'French Flowing Trio Crepe Khimar Set',
+    slug: 'french-flowing-trio-crepe-khimar-set',
+    short_description: 'Graceful three-silhouette French khimar in dusty rose, sage olive, and warm camel.',
+    description: 'Impeccable modest drape tailored from high-grade French Medina crepe. Provides full chest and back coverage with effortless breathable movement. Designed for everyday grace and prayer ease.',
+    category_id: 'c0000000-0000-0000-0000-000000000002', // Khimars
+    main_image_url: '/assets/aistudio/image_f09b866e.png',
+    additionalImages: [
+      '/assets/aistudio/image_7b2317e4.png',
+      '/assets/aistudio/image_93cf9d3d.png',
+      '/assets/aistudio/image_7378d334.png',
+    ],
+    base_price: 35000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-41-1', image_url: '/assets/aistudio/image_f09b866e.png', alt_text: 'French Flowing Trio Crepe Khimar front showcase' },
+      { id: 'img-41-2', image_url: '/assets/aistudio/image_7b2317e4.png', alt_text: 'Back diamond drape view' },
+      { id: 'img-41-3', image_url: '/assets/aistudio/image_93cf9d3d.png', alt_text: 'Complete palette view' },
+      { id: 'img-41-4', image_url: '/assets/aistudio/image_7378d334.png', alt_text: 'Layered niqab detail' },
+    ],
+    variations: [
+      { id: 'var-41-1', product_id: '00000000-0000-0000-0000-000000000041', size: 'Standard (Length 1)', colour: 'Dusty Pink', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-41-2', product_id: '00000000-0000-0000-0000-000000000041', size: 'Standard (Length 1)', colour: 'Sage Olive', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-41-3', product_id: '00000000-0000-0000-0000-000000000041', size: 'Standard (Length 1)', colour: 'Warm Camel', price_adjustment: 0, stock_quantity: 15, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000042',
+    name: 'Diamond Back-Drape French Khimar',
+    slug: 'diamond-back-drape-french-khimar',
+    short_description: 'Pointed geometric diamond rear drape with integrated secure tie-back headband.',
+    description: 'Designed for immaculate modest lines, this deep plum burgundy French khimar flows gracefully past the waist into a tailored diamond point. Finished with anti-static edge piping and non-slip inner straps.',
+    category_id: 'c0000000-0000-0000-0000-000000000002', // Khimars
+    main_image_url: '/assets/aistudio/image_7b2317e4.png',
+    additionalImages: [
+      '/assets/aistudio/image_f09b866e.png',
+      '/assets/aistudio/image_93cf9d3d.png',
+    ],
+    base_price: 32000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-42-1', image_url: '/assets/aistudio/image_7b2317e4.png', alt_text: 'Diamond Back Drape Khimar full rear length' },
+      { id: 'img-42-2', image_url: '/assets/aistudio/image_f09b866e.png', alt_text: 'Front silhouette' },
+    ],
+    variations: [
+      { id: 'var-42-1', product_id: '00000000-0000-0000-0000-000000000042', size: 'Standard (Length 1)', colour: 'Plum Burgundy', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-42-2', product_id: '00000000-0000-0000-0000-000000000042', size: 'Long (Length 2)', colour: 'Warm Biscuit', price_adjustment: 0, stock_quantity: 15, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000043',
+    name: 'Medina Layered Niqab Khimar & Free Handsocks Set',
+    slug: 'medina-layered-niqab-khimar-handsocks-set',
+    short_description: 'Multi-tiered modest khimar with convertible niqab flap and complimentary coordinating handsocks.',
+    description: 'The complete sunnah modesty set. Features layered Medina crepe fabric that prevents transparency while staying cool. Includes attached convertible half-niqab straps and free stretch handsocks for total wrist coverage.',
+    category_id: 'c0000000-0000-0000-0000-000000000002', // Khimars
+    main_image_url: '/assets/aistudio/image_7378d334.png',
+    additionalImages: [
+      '/assets/aistudio/image_f09b866e.png',
+      '/assets/aistudio/image_7b2317e4.png',
+    ],
+    base_price: 38000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-43-1', image_url: '/assets/aistudio/image_7378d334.png', alt_text: 'Medina Layered Niqab Khimar with handsocks' },
+      { id: 'img-43-2', image_url: '/assets/aistudio/image_f09b866e.png', alt_text: 'Fabric flow overview' },
+    ],
+    variations: [
+      { id: 'var-43-1', product_id: '00000000-0000-0000-0000-000000000043', size: 'Standard Fit', colour: 'Dusty Lavender', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-43-2', product_id: '00000000-0000-0000-0000-000000000043', size: 'Standard Fit', colour: 'Midnight Black', price_adjustment: 0, stock_quantity: 15, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000044',
+    name: 'Signature French Medina Khimar Palette Collection',
+    slug: 'signature-french-medina-khimar-palette-collection',
+    short_description: '8 rich modest shades crafted in premium wrinkle-resistant Medina silk crepe.',
+    description: 'A curated wardrobe essential for sisters seeking graceful coverage. Available in 8 bespoke botanical and jewel tones: Pure White, Jet Black, Espresso Cocoa, Forest Green, Regal Plum, Burgundy Wine, Pearl Grey, and Midnight Navy.',
+    category_id: 'c0000000-0000-0000-0000-000000000002', // Khimars
+    main_image_url: '/assets/aistudio/image_93cf9d3d.png',
+    additionalImages: [
+      '/assets/aistudio/image_f09b866e.png',
+      '/assets/aistudio/image_7b2317e4.png',
+    ],
+    base_price: 35000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-44-1', image_url: '/assets/aistudio/image_93cf9d3d.png', alt_text: 'Signature Khimar Palette Collection' },
+      { id: 'img-44-2', image_url: '/assets/aistudio/image_f09b866e.png', alt_text: 'Drape styling' },
+    ],
+    variations: [
+      { id: 'var-44-1', product_id: '00000000-0000-0000-0000-000000000044', size: 'Length 1', colour: 'Forest Green', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-44-2', product_id: '00000000-0000-0000-0000-000000000044', size: 'Length 1', colour: 'Midnight Navy', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-44-3', product_id: '00000000-0000-0000-0000-000000000044', size: 'Length 1', colour: 'Burgundy Wine', price_adjustment: 0, stock_quantity: 15, is_active: true },
+      { id: 'var-44-4', product_id: '00000000-0000-0000-0000-000000000044', size: 'Length 1', colour: 'Espresso Cocoa', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
 ];

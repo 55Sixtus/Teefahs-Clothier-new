@@ -144,12 +144,13 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
   const currentSize = selectedSize || sizes[0] || 'Standard';
   const currentColour = selectedColour || colours[0] || 'Original';
 
-  const totalStock = product.variations?.reduce((acc, v) => acc + (v.stock_quantity || 0), 0) ?? 15;
+  const rawTotal = product.variations?.reduce((acc, v) => acc + (v.stock_quantity || 0), 0) ?? 15;
   const matchingVariation = product.variations?.find(
     v => (!v.size || v.size === currentSize) && (!v.colour || v.colour === currentColour)
   );
-  const variationStock = matchingVariation ? (matchingVariation.stock_quantity ?? 0) : totalStock;
-  const isOutOfStock = variationStock <= 0;
+  const matchedQty = matchingVariation?.stock_quantity ?? rawTotal;
+  const variationStock = matchedQty > 0 ? matchedQty : 15;
+  const isOutOfStock = false;
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
@@ -444,42 +445,23 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
               {/* Secure Customer Actions (Strictly Storefront - No Admin Edit Buttons) */}
               <div className="pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-col gap-3">
-                {isOutOfStock ? (
-                  <a
-                    href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => {
-                      trackWhatsAppConversion('preorder_whatsapp', {
-                        product_id: product.id,
-                        product_name: product.name,
-                        value: (product.base_price || 0) * quantity,
-                      });
-                    }}
-                    className="w-full py-3.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 rounded-xs shadow-sm"
-                  >
-                    <MessageCircle size={16} className="text-amber-300" />
-                    <span>Pre-Order via WhatsApp</span>
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleAddToCart}
-                    className="w-full py-3.5 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 rounded-xs shadow-sm cursor-pointer"
-                  >
-                    {addedNotice ? (
-                      <>
-                        <Check size={16} className="text-emerald-400 dark:text-stone-950" />
-                        Added to Shopping Bag!
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={16} />
-                        Add to Bag (₦{((product.base_price || 0) * quantity).toLocaleString()})
-                      </>
-                    )}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="w-full py-3.5 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 rounded-xs shadow-sm cursor-pointer"
+                >
+                  {addedNotice ? (
+                    <>
+                      <Check size={16} className="text-emerald-400 dark:text-stone-950" />
+                      Added to Shopping Bag!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={16} />
+                      Add to Bag (₦{((product.base_price || 0) * quantity).toLocaleString()})
+                    </>
+                  )}
+                </button>
 
                 <a
                   href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
@@ -495,7 +477,7 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                   className="w-full py-3 border border-emerald-700 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 rounded-xs"
                 >
                   <MessageCircle size={16} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>Inquire on WhatsApp</span>
+                  <span>Order / Inquire via WhatsApp</span>
                 </a>
               </div>
             </div>

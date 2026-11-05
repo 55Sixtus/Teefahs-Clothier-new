@@ -128,7 +128,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 )}
               </div>
               <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">
-                {totalStock > 0 ? 'In Stock' : 'Pre-Order'}
+                In Stock
               </span>
             </div>
 
@@ -136,28 +136,14 @@ export default function ProductCard({ product }: { product: Product }) {
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 type="button"
-                onClick={(e) => {
-                  if (totalStock <= 0) {
-                    e.stopPropagation();
-                    setShowModal(true);
-                  } else {
-                    handleQuickAdd(e);
-                  }
-                }}
+                onClick={handleQuickAdd}
                 className={`py-2 px-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs ${
-                  totalStock <= 0
-                    ? 'bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/60'
-                    : isAdded
+                  isAdded
                     ? 'bg-emerald-800 text-white'
                     : 'bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 font-bold'
                 }`}
               >
-                {totalStock <= 0 ? (
-                  <>
-                    <ShoppingBag size={13} className="text-amber-400" />
-                    <span>Pre-Order</span>
-                  </>
-                ) : isAdded ? (
+                {isAdded ? (
                   <>
                     <Check size={13} />
                     <span>Added</span>

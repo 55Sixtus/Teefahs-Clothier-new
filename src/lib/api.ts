@@ -3,8 +3,8 @@ import { Product, Category, ProductVariation } from '../types/product';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/initialCatalogue';
 
 // Local storage keys for caching and optimistic updates
-const LOCAL_PRODUCTS_KEY = 'teefahs_products_v10_angles';
-const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v10_angles';
+const LOCAL_PRODUCTS_KEY = 'teefahs_products_v12_covers';
+const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v12_covers';
 
 export interface DatabaseDiagnostics {
   status: 'fully_synchronized' | 'partially_populated' | 'connected_empty' | 'permission_denied' | 'connection_error';
@@ -119,6 +119,13 @@ const getLocalStoredProducts = (): Product[] => {
               return { ...p, name: 'Layla Embellished Luxury Occasion Silk Abaya', base_price: 255000 };
             }
           }
+          // Ensure Noor Abaya is 255000 as specified by the owner
+          if (p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') {
+            if (p.base_price === 45000) {
+              changed = true;
+              return { ...p, base_price: 255000 };
+            }
+          }
           // Remove photos 0-2 from Noor Abaya if still present
           if (p.id === '00000000-0000-0000-0000-000000000001' && p.images && p.images.length > 6) {
             changed = true;
@@ -173,7 +180,18 @@ const getLocalStoredCategories = (): Category[] => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].image_url) {
-        return parsed;
+        return parsed.map((c: Category) => {
+          if (c.slug === 'hijabs') {
+            return { ...c, image_url: '/assets/aistudio/image_60c3b658.png' };
+          }
+          if (c.slug === 'khimars') {
+            return { ...c, image_url: '/assets/aistudio/image_f09b866e.png' };
+          }
+          if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
+            return { ...c, image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg' };
+          }
+          return c;
+        });
       }
     }
   } catch (e) {
@@ -262,10 +280,18 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
             categoryId = hijabsCat.id;
           }
 
+          let basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
+          if ((p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') && basePrice === 45000) {
+            basePrice = 255000;
+          }
+          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 65000)) {
+            basePrice = 255000;
+          }
+
           return {
             ...p,
             category_id: categoryId,
-            base_price: p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0),
+            base_price: basePrice,
             sale_price: p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : localMatch?.sale_price,
             name: p.name || localMatch?.name || '',
             description: p.description || localMatch?.description || '',
@@ -339,10 +365,18 @@ export const getAllProducts = async (): Promise<Product[]> => {
             categoryId = hijabsCat.id;
           }
 
+          let basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
+          if ((p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') && basePrice === 45000) {
+            basePrice = 255000;
+          }
+          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 65000)) {
+            basePrice = 255000;
+          }
+
           return {
             ...p,
             category_id: categoryId,
-            base_price: p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0),
+            base_price: basePrice,
             sale_price: p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : localMatch?.sale_price,
             name: p.name || localMatch?.name || '',
             description: p.description || localMatch?.description || '',
@@ -716,6 +750,22 @@ export const getActiveCategories = async (): Promise<Category[]> => {
 
     if (!error && data && data.length > 0) {
       const normalized = (data as Category[]).map(c => {
+        if (c.slug === 'hijabs') {
+          return {
+            ...c,
+            name: 'Hijabs',
+            slug: 'hijabs',
+            image_url: '/assets/aistudio/image_60c3b658.png',
+          };
+        }
+        if (c.slug === 'khimars') {
+          return {
+            ...c,
+            name: 'Khimars',
+            slug: 'khimars',
+            image_url: '/assets/aistudio/image_f09b866e.png',
+          };
+        }
         if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
           return {
             ...c,
@@ -746,6 +796,22 @@ export const getAllCategories = async (): Promise<Category[]> => {
 
     if (!error && data && data.length > 0) {
       const normalized = (data as Category[]).map(c => {
+        if (c.slug === 'hijabs') {
+          return {
+            ...c,
+            name: 'Hijabs',
+            slug: 'hijabs',
+            image_url: '/assets/aistudio/image_60c3b658.png',
+          };
+        }
+        if (c.slug === 'khimars') {
+          return {
+            ...c,
+            name: 'Khimars',
+            slug: 'khimars',
+            image_url: '/assets/aistudio/image_f09b866e.png',
+          };
+        }
         if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
           return {
             ...c,

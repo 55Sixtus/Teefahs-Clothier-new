@@ -57,28 +57,28 @@ export default function MediaStoragePage() {
 
   // Find exact matching product for media item (never fall back to first product)
   const findProductForMedia = (item: MediaItem): Product | undefined => {
-    // 1. Match by exact main_image_url
-    const exactMain = products.find(p => p.main_image_url === item.url);
-    if (exactMain) return exactMain;
-
-    // 2. Match by images list
-    const exactGallery = products.find(p => p.images && p.images.some(img => {
-      const url = typeof img === 'string' ? img : img.image_url;
-      return url === item.url;
-    }));
-    if (exactGallery) return exactGallery;
-
-    // 3. Match by specific product slug
+    // 1. Match by explicit product slug first (highest specificity)
     if (item.productSlug) {
       const matchSlug = products.find(p => p.slug === item.productSlug);
       if (matchSlug) return matchSlug;
     }
 
-    // 4. Match by exact product name
+    // 2. Match by exact product name
     if (item.productName) {
       const matchName = products.find(p => p.name.toLowerCase() === item.productName?.toLowerCase());
       if (matchName) return matchName;
     }
+
+    // 3. Match by exact main_image_url
+    const exactMain = products.find(p => p.main_image_url === item.url);
+    if (exactMain) return exactMain;
+
+    // 4. Match by secondary images list only as last resort
+    const exactGallery = products.find(p => p.images && p.images.some(img => {
+      const url = typeof img === 'string' ? img : img.image_url;
+      return url === item.url;
+    }));
+    if (exactGallery) return exactGallery;
 
     return undefined;
   };
@@ -144,43 +144,103 @@ export default function MediaStoragePage() {
         category = 'Occasion Wear';
         productSlug = 'malika-crystal-draped-evening-occasion-gown';
         productName = 'Malika Crystal-Draped Evening Occasion Gown';
-      } else if (idx >= 29 && idx <= 32) {
-        title = `Hafsah Medina Silk Rounded Khimar - View ${idx - 28}`;
+      } else if (idx === 29) {
+        title = 'Hafsah Medina Silk Rounded Khimar';
         category = 'Khimars';
         productSlug = 'hafsah-medina-silk-rounded-khimar';
         productName = 'Hafsah Medina Silk Rounded Khimar';
-      } else if (idx >= 33 && idx <= 34) {
-        title = `Fatima Pleated Hem Minimalist Abaya - Shot ${idx - 32}`;
+      } else if (idx === 30) {
+        title = 'Editorial Photoshoot #31 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-31-abaya';
+        productName = 'Editorial Photoshoot #31 Abaya';
+      } else if (idx === 31) {
+        title = 'Editorial Photoshoot #32 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-32-abaya';
+        productName = 'Editorial Photoshoot #32 Abaya';
+      } else if (idx === 32) {
+        title = 'Editorial Photoshoot #33 Abaya';
+        category = 'Occasion Wear';
+        productSlug = 'editorial-photoshoot-33-abaya';
+        productName = 'Editorial Photoshoot #33 Abaya';
+      } else if (idx === 33) {
+        title = 'Editorial Photoshoot #34 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-34-abaya';
+        productName = 'Editorial Photoshoot #34 Abaya';
+      } else if (idx === 34) {
+        title = 'Editorial Photoshoot #35 Abaya';
+        category = 'Occasion Wear';
+        productSlug = 'editorial-photoshoot-35-abaya';
+        productName = 'Editorial Photoshoot #35 Abaya';
+      } else if (idx === 35) {
+        title = 'Editorial Photoshoot #36 Abaya';
+        category = 'Occasion Wear';
+        productSlug = 'editorial-photoshoot-36-abaya';
+        productName = 'Editorial Photoshoot #36 Abaya';
+      } else if (idx === 36) {
+        title = 'Editorial Photoshoot #37 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-37-abaya';
+        productName = 'Editorial Photoshoot #37 Abaya';
+      } else if (idx === 37) {
+        title = 'Editorial Photoshoot #38 Abaya';
+        category = 'Occasion Wear';
+        productSlug = 'editorial-photoshoot-38-abaya';
+        productName = 'Editorial Photoshoot #38 Abaya';
+      } else if (idx === 38) {
+        title = 'Editorial Photoshoot #39 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-39-abaya';
+        productName = 'Editorial Photoshoot #39 Abaya';
+      } else if (idx === 39) {
+        title = 'Editorial Photoshoot #40 Abaya';
+        category = 'Occasion Wear';
+        productSlug = 'editorial-photoshoot-40-abaya';
+        productName = 'Editorial Photoshoot #40 Abaya';
+      } else if (idx === 40) {
+        title = 'Editorial Photoshoot #41 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-41-abaya';
+        productName = 'Editorial Photoshoot #41 Abaya';
+      } else if (idx === 41) {
+        title = 'Editorial Photoshoot #42 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-42-abaya';
+        productName = 'Editorial Photoshoot #42 Abaya';
+      } else if (idx === 42) {
+        title = 'Fatima Pleated Hem Minimalist Abaya';
         category = 'Abayas';
         productSlug = 'fatima-pleated-hem-minimalist-abaya';
         productName = 'Fatima Pleated Hem Minimalist Abaya';
-      } else if (idx >= 35 && idx <= 39) {
-        title = `Amani Breathable Chiffon Veil & Hijab - Shot ${idx - 34}`;
+      } else if (idx === 43) {
+        title = 'Amani Breathable Chiffon Veil & Hijab Set';
         category = 'Veils & Hijabs';
         productSlug = 'amani-breathable-chiffon-veil-hijab-set';
         productName = 'Amani Breathable Chiffon Veil & Hijab Set';
-      } else if (idx === 40) {
-        title = 'Sultana Beaded Evening Occasion Kimono';
+      } else if (idx === 44) {
+        title = 'Editorial Photoshoot #45 Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-45-abaya';
+        productName = 'Editorial Photoshoot #45 Abaya';
+      } else if (idx === 45) {
+        title = 'Editorial Photoshoot #46 Abaya';
         category = 'Occasion Wear';
-        productSlug = 'sultana-beaded-evening-occasion-kimono';
-        productName = 'Sultana Beaded Evening Occasion Kimono';
-      } else if (idx === 41) {
-        title = 'Soraya Hand-Beaded Black Occasion Kimono';
-        category = 'Occasion Wear';
-        productSlug = 'soraya-hand-beaded-black-occasion-kimono';
-        productName = 'Soraya Hand-Beaded Black Occasion Kimono';
-      } else if (idx === 42) {
-        title = 'Jawhara Royal Evening Silk Kimono';
-        category = 'Occasion Wear';
-        productSlug = 'jawhara-royal-evening-silk-kimono';
-        productName = 'Jawhara Royal Evening Silk Kimono';
-      } else if (idx === 43) {
-        title = 'Sultana Beaded Sweeping Hemline Kimono';
-        category = 'Occasion Wear';
-        productSlug = 'sultana-beaded-sweeping-hemline-kimono';
-        productName = 'Sultana Beaded Sweeping Hemline Kimono';
-      } else if (idx >= 44 && idx <= 48) {
-        title = `Rukayyah Zip-Front Prayer Abaya - Shot ${idx - 43}`;
+        productSlug = 'editorial-photoshoot-46-abaya';
+        productName = 'Editorial Photoshoot #46 Abaya';
+      } else if (idx === 46) {
+        title = 'Editorial Photoshoot #47 Embroidered Denim Dress';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-47-denim-dress';
+        productName = 'Editorial Photoshoot #47 Embroidered Denim Dress';
+      } else if (idx === 47) {
+        title = 'Editorial Photoshoot #48 Mauve Ruffled Abaya';
+        category = 'Abayas';
+        productSlug = 'editorial-photoshoot-48-mauve-abaya';
+        productName = 'Editorial Photoshoot #48 Mauve Ruffled Abaya';
+      } else if (idx === 48) {
+        title = 'Rukayyah Zip-Front Prayer Abaya';
         category = 'Prayer Wear';
         productSlug = 'rukayyah-zip-front-hooded-prayer-abaya';
         productName = 'Rukayyah Zip-Front Hooded Prayer Abaya';
@@ -255,6 +315,52 @@ export default function MediaStoragePage() {
         productSlug: 'jacquard-jersey-laser-cut-hijab',
         productName: 'Jacquard Jersey Laser-Cut Hijab',
       });
+    });
+
+    // 3. New Khimars & Hijabs
+    list.push({
+      id: 'hijab-palette-cover',
+      url: '/assets/aistudio/image_60c3b658.png',
+      title: 'Hijabs Master Palette Collection',
+      category: 'Hijabs',
+      productSlug: 'hijabs',
+      productName: 'Hijabs Master Palette Collection',
+    });
+
+    list.push({
+      id: 'khimar-flowing-trio',
+      url: '/assets/aistudio/image_f09b866e.png',
+      title: 'French Flowing Trio Crepe Khimar Set',
+      category: 'Khimars',
+      productSlug: 'french-flowing-trio-crepe-khimar-set',
+      productName: 'French Flowing Trio Crepe Khimar Set',
+    });
+
+    list.push({
+      id: 'khimar-diamond-drape',
+      url: '/assets/aistudio/image_7b2317e4.png',
+      title: 'Diamond Back-Drape French Khimar',
+      category: 'Khimars',
+      productSlug: 'diamond-back-drape-french-khimar',
+      productName: 'Diamond Back-Drape French Khimar',
+    });
+
+    list.push({
+      id: 'khimar-layered-niqab',
+      url: '/assets/aistudio/image_7378d334.png',
+      title: 'Medina Layered Niqab Khimar & Free Handsocks Set',
+      category: 'Khimars',
+      productSlug: 'medina-layered-niqab-khimar-handsocks-set',
+      productName: 'Medina Layered Niqab Khimar & Free Handsocks Set',
+    });
+
+    list.push({
+      id: 'khimar-palette-spectrum',
+      url: '/assets/aistudio/image_93cf9d3d.png',
+      title: 'Signature French Medina Khimar Palette Collection',
+      category: 'Khimars',
+      productSlug: 'signature-french-medina-khimar-palette-collection',
+      productName: 'Signature French Medina Khimar Palette Collection',
     });
 
     return list;
@@ -548,23 +654,23 @@ export default function MediaStoragePage() {
                   {/* Primary Edit Button for Owner */}
                   {matchedProduct ? (
                     <div className="flex items-center gap-1">
-                      <Link
-                        to={`/admin/products/edit/${matchedProduct.id}`}
-                        className="flex-1 py-1 px-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors text-center shadow-2xs"
-                        title="Edit garment pricing and details"
-                      >
-                        <Edit2 size={10} />
-                        <span>Edit Price</span>
-                      </Link>
-
                       <button
                         type="button"
                         onClick={() => openQuickPrice(matchedProduct, item.title)}
-                        className="py-1 px-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-semibold uppercase tracking-wider rounded-xs transition-colors"
-                        title="Quick edit price without leaving this screen"
+                        className="flex-1 py-1.5 px-2 bg-emerald-900 hover:bg-emerald-800 text-white text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1.5 transition-colors text-center shadow-2xs cursor-pointer"
+                        title="Click to instantly edit price for this garment"
                       >
-                        ⚡
+                        <Tag size={11} className="text-amber-300" />
+                        <span>Edit Price</span>
                       </button>
+
+                      <Link
+                        to={`/admin/products/edit/${matchedProduct.id}`}
+                        className="py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center"
+                        title="Open full garment editor"
+                      >
+                        <Edit2 size={11} />
+                      </Link>
                     </div>
                   ) : (
                     <Link
