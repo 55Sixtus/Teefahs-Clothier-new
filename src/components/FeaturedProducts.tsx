@@ -17,14 +17,22 @@ export default function FeaturedProducts({
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setLoading(true);
+  const fetchProducts = () => {
     getPublishedProducts()
       .then(allProducts => {
         const result = filter ? allProducts.filter(filter) : allProducts.filter(p => p.is_featured);
         setProducts(result.length > 0 ? result : allProducts.slice(0, 24));
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchProducts();
+
+    const handleUpdate = () => fetchProducts();
+    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
   }, [filter]);
 
   return (

@@ -18,8 +18,7 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'newest'>('featured');
 
-  useEffect(() => {
-    setLoading(true);
+  const fetchShopData = () => {
     Promise.all([getPublishedProducts(), getActiveCategories()])
       .then(([prods, cats]) => {
         setProducts(prods);
@@ -31,6 +30,17 @@ export default function ShopPage() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchShopData();
+
+    const handleUpdate = () => {
+      fetchShopData();
+    };
+    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
   }, []);
 
   const handleCategoryChange = (catIdOrSlug: string) => {

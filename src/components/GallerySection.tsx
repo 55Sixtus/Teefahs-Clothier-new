@@ -31,6 +31,10 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
 
   useEffect(() => {
     loadProducts();
+
+    const handleUpdate = () => loadProducts();
+    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
   }, []);
 
   const loadProducts = async () => {

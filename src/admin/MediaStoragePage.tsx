@@ -14,7 +14,7 @@ import {
   Tag
 } from 'lucide-react';
 import { SUPPLIED_PHOTOS, NEW_PRODUCT_PHOTOS } from '../data/assets';
-import { uploadProductImage, getAllProducts, saveProduct } from '../lib/api';
+import { uploadProductImage, getAllProducts, saveProduct, updateProductPrice } from '../lib/api';
 import { Product } from '../types/product';
 
 interface MediaItem {
@@ -309,16 +309,13 @@ export default function MediaStoragePage() {
 
     setSavingPrice(true);
     try {
-      await saveProduct({
-        ...quickPriceProduct.product,
-        base_price: priceNum,
-      });
+      await updateProductPrice(quickPriceProduct.product.id, priceNum);
       setQuickPriceSuccess(true);
       await loadProducts();
       setTimeout(() => {
         setQuickPriceProduct(null);
         setQuickPriceSuccess(false);
-      }, 900);
+      }, 700);
     } catch (err) {
       console.error('Failed to update price:', err);
     } finally {

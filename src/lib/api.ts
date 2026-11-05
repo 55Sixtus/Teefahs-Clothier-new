@@ -567,6 +567,51 @@ export const saveProduct = async (product: Partial<Product>): Promise<Product> =
   return savedProduct;
 };
 
+// Fast Price Updater that syncs across Supabase and local cache with automatic change events
+export const updateProductPrice = async (productId: string, newPrice: number): Promise<Product> => {
+  const current = getLocalStoredProducts();
+  const prod = current.find(p => p.id === productId || (p.slug && p.slug === productId));
+  if (!prod) {
+    throw new Error('Product not found');
+  }
+
+  const numericPrice = Math.max(0, Number(newPrice) || 0);
+  const updatedProduct: Product = {
+    ...prod,
+    base_price: numericPrice,
+    updated_at: new Date().toISOString(),
+  };
+
+  const updatedList = current.map(p => (p.id === prod.id || p.slug === prod.slug) ? updatedProduct : p);
+  setLocalStoredProducts(updatedList);
+
+  // Sync to Supabase if valid UUID
+  if (isValidUuid(prod.id)) {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          base_price: numericPrice,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', prod.id);
+
+      if (error) {
+        console.warn('Supabase product price update note:', error.message);
+      }
+    } catch (err) {
+      console.warn('Supabase price update error:', err);
+    }
+  }
+
+  // Dispatch window event so any listening admin pages refresh instantly
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: prod.id, price: numericPrice } }));
+  }
+
+  return updatedProduct;
+};
+
 // Soft-Delete / Archive product with undo support
 export const archiveProduct = async (id: string, deletedBy = 'Queen Lateefah'): Promise<Product | null> => {
   const current = getLocalStoredProducts();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Save, Edit2 } from 'lucide-react';
-import { getAllProducts, updateVariationStock } from '../lib/api';
+import { Search, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Save, Edit2, Tag, X, ArrowRightLeft } from 'lucide-react';
+import { getAllProducts, updateVariationStock, updateProductPrice } from '../lib/api';
 import { Product, ProductVariation } from '../types/product';
 
 interface FlatVariation {
@@ -23,8 +23,19 @@ export default function InventoryPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedSuccessId, setSavedSuccessId] = useState<string | null>(null);
 
+  // Quick Price Modal state
+  const [quickPriceItem, setQuickPriceItem] = useState<FlatVariation | null>(null);
+  const [newPriceInput, setNewPriceInput] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
+
   useEffect(() => {
     loadInventory();
+
+    const handleCatalogueUpdated = () => {
+      loadInventory();
+    };
+    window.addEventListener('teefahs_catalogue_updated', handleCatalogueUpdated);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleCatalogueUpdated);
   }, []);
 
   const loadInventory = async () => {
@@ -75,6 +86,31 @@ export default function InventoryPage() {
     }
   };
 
+  const openQuickPrice = (item: FlatVariation) => {
+    setQuickPriceItem(item);
+    setNewPriceInput(item.price ? item.price.toString() : '');
+  };
+
+  const handleSavePrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickPriceItem) return;
+
+    const parsed = parseFloat(newPriceInput);
+    if (isNaN(parsed) || parsed < 0) return;
+
+    setSavingPrice(true);
+    try {
+      await updateProductPrice(quickPriceItem.productId, parsed);
+      // Update local item row prices
+      setItems(prev => prev.map(i => i.productId === quickPriceItem.productId ? { ...i, price: parsed } : i));
+      setQuickPriceItem(null);
+    } catch (err) {
+      console.error('Failed to update price:', err);
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
   // Filter items
   const filtered = items.filter(item => {
     const matchesSearch =
@@ -104,12 +140,12 @@ export default function InventoryPage() {
           </span>
           <h1 className="text-3xl font-serif text-stone-900">Inventory Management</h1>
           <p className="text-xs text-stone-500 mt-1 font-light">
-            Monitor real-time variation levels, adjust available stock, and replenish modest pieces.
+            Monitor real-time variation levels, adjust available stock, and update selling prices directly.
           </p>
         </div>
         <button
           onClick={loadInventory}
-          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-stone-300 text-stone-700 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-50 transition-colors self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-stone-300 text-stone-700 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-50 transition-colors self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           <span>Refresh Stock</span>
@@ -165,7 +201,7 @@ export default function InventoryPage() {
         <div className="flex items-center gap-1.5 w-full sm:w-auto">
           <button
             onClick={() => setFilterMode('all')}
-            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors ${
+            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer ${
               filterMode === 'all'
                 ? 'bg-stone-900 text-white'
                 : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -175,7 +211,7 @@ export default function InventoryPage() {
           </button>
           <button
             onClick={() => setFilterMode('low')}
-            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors ${
+            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer ${
               filterMode === 'low'
                 ? 'bg-amber-800 text-white'
                 : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -185,7 +221,7 @@ export default function InventoryPage() {
           </button>
           <button
             onClick={() => setFilterMode('out')}
-            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors ${
+            className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer ${
               filterMode === 'out'
                 ? 'bg-red-800 text-white'
                 : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -196,9 +232,28 @@ export default function InventoryPage() {
         </div>
       </div>
 
+      {/* Horizontal Scroll Hint Banner for Mobile / Smaller Screens */}
+      <div className="flex items-center justify-between p-2.5 bg-stone-100/80 border border-stone-200/90 rounded-sm text-xs text-stone-600">
+        <div className="flex items-center gap-2">
+          <ArrowRightLeft size={14} className="text-emerald-700 flex-shrink-0" />
+          <span className="font-medium text-stone-800">
+            Horizontal Scroll Enabled:
+          </span>
+          <span className="text-stone-500 text-[11px] hidden sm:inline">
+            Scroll sideways to view all columns, prices, and quick stock updates.
+          </span>
+          <span className="text-stone-500 text-[11px] sm:hidden">
+            Swipe left/right to view price &amp; update buttons.
+          </span>
+        </div>
+        <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+          {filtered.length} Items Loaded
+        </span>
+      </div>
+
       {/* Variations Table */}
-      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-x-auto w-full">
-        <table className="w-full min-w-[950px] text-left border-collapse">
+      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-x-auto w-full scrollbar-thin">
+        <table className="w-full min-w-[980px] text-left border-collapse">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 text-[10px] uppercase tracking-wider">
               <th className="py-3 px-4 font-semibold w-16">Garment</th>
@@ -208,7 +263,7 @@ export default function InventoryPage() {
               <th className="py-3 px-4 font-semibold">Price (NGN)</th>
               <th className="py-3 px-4 font-semibold">Stock Level</th>
               <th className="py-3 px-4 font-semibold text-center">Status</th>
-              <th className="py-3 px-4 font-semibold text-right">Quick Update</th>
+              <th className="py-3 px-4 font-semibold text-right">Quick Stock Update</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 text-xs">
@@ -242,7 +297,18 @@ export default function InventoryPage() {
                     <td className="py-3 px-4 font-medium text-stone-700">{v.size}</td>
                     <td className="py-3 px-4 font-medium text-stone-700">{v.colour}</td>
                     <td className="py-3 px-4 font-mono font-semibold text-stone-900">
-                      ₦{v.price.toLocaleString()}
+                      <div className="flex items-center gap-2">
+                        <span>₦{v.price.toLocaleString()}</span>
+                        <button
+                          type="button"
+                          onClick={() => openQuickPrice(v)}
+                          className="p-1 text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded text-[10px] font-sans font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Change price quickly"
+                        >
+                          <Tag size={11} />
+                          <span>Edit</span>
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <span className="font-mono font-bold text-sm text-stone-900">{v.stockQuantity}</span>{' '}
@@ -268,10 +334,10 @@ export default function InventoryPage() {
                         <Link
                           to={`/admin/products/edit/${v.productId}`}
                           className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded transition-colors"
-                          title="Edit product pricing and details"
+                          title="Edit full product details and imagery"
                         >
                           <Edit2 size={12} />
-                          <span>Edit Price &amp; Details</span>
+                          <span>Full Edit</span>
                         </Link>
                         <input
                           type="number"
@@ -284,12 +350,12 @@ export default function InventoryPage() {
                         <button
                           onClick={() => handleCommitStock(v.id, v.stockQuantity)}
                           disabled={savingId === v.id}
-                          className={`p-1.5 rounded transition-colors ${
+                          className={`p-1.5 rounded transition-colors cursor-pointer ${
                             savedSuccessId === v.id
                               ? 'bg-emerald-600 text-white'
                               : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
                           }`}
-                          title="Save stock level"
+                          title="Save stock quantity"
                         >
                           <Save size={13} />
                         </button>
@@ -302,6 +368,80 @@ export default function InventoryPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Quick Price Edit Modal for Inventory */}
+      {quickPriceItem && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setQuickPriceItem(null)}
+        >
+          <div
+            className="bg-white rounded-sm p-6 max-w-sm w-full shadow-2xl space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+              <div className="flex items-center gap-2">
+                <Tag size={16} className="text-emerald-800" />
+                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
+              </div>
+              <button
+                onClick={() => setQuickPriceItem(null)}
+                className="text-stone-400 hover:text-stone-600 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-stone-900">{quickPriceItem.productName}</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Size: {quickPriceItem.size} | Colour: {quickPriceItem.colour}
+              </p>
+            </div>
+
+            <form onSubmit={handleSavePrice} className="space-y-4">
+              <div>
+                <label className="text-[11px] uppercase font-semibold text-stone-600 block mb-1">
+                  New Selling Price (NGN)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-500">
+                    ₦
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500"
+                    value={newPriceInput}
+                    onChange={e => setNewPriceInput(e.target.value)}
+                    placeholder="e.g. 70000"
+                    autoFocus
+                    className="w-full pl-7 pr-3 py-2 text-sm font-mono font-semibold bg-stone-50 border border-stone-300 rounded focus:outline-none focus:border-stone-900 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickPriceItem(null)}
+                  className="flex-1 py-2 text-xs font-semibold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPrice || !newPriceInput}
+                  className="flex-1 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-emerald-900 hover:bg-emerald-800 disabled:opacity-50 rounded transition-colors cursor-pointer shadow-sm"
+                >
+                  {savingPrice ? 'Saving...' : 'Save Price'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

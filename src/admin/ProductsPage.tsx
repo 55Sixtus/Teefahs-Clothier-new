@@ -20,7 +20,8 @@ import {
   restoreProduct, 
   permanentlyDeleteProduct, 
   getRecentlyDeletedProducts,
-  saveProduct
+  saveProduct,
+  updateProductPrice
 } from '../lib/api';
 import { Product, Category } from '../types/product';
 
@@ -64,10 +65,7 @@ export default function ProductsPage() {
 
     setSavingPrice(true);
     try {
-      await saveProduct({
-        ...quickPriceProduct,
-        base_price: priceNum,
-      });
+      await updateProductPrice(quickPriceProduct.id, priceNum);
       setQuickPriceProduct(null);
       await loadData();
     } catch (err) {

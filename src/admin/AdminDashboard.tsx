@@ -47,6 +47,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadData();
+    const handleUpdate = () => loadData();
+    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
   }, []);
 
   const handleLockDashboard = () => {

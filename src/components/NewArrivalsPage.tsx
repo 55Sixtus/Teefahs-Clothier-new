@@ -12,11 +12,9 @@ export default function NewArrivalsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSort, setSelectedSort] = useState<'featured' | 'price-asc' | 'price-desc'>('featured');
 
-  useEffect(() => {
-    setLoading(true);
+  const fetchNewArrivals = () => {
     getPublishedProducts()
       .then(allProducts => {
-        // Filter strictly for verified published products marked as new arrivals
         const newOnes = allProducts.filter(p => p.is_new_arrival && p.is_published);
         setProducts(newOnes);
       })
@@ -26,6 +24,15 @@ export default function NewArrivalsPage() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchNewArrivals();
+
+    const handleUpdate = () => fetchNewArrivals();
+    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
   }, []);
 
   const sortedProducts = useMemo(() => {
