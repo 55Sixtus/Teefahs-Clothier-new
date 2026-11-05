@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, X, ArrowRight, ZoomIn, ChevronLeft, ChevronRight, Edit2, Check, Tag } from 'lucide-react';
+import { ShoppingBag, X, ArrowRight, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SUPPLIED_PHOTOS } from '../data/assets';
-import { getAllProducts, saveProduct } from '../lib/api';
+import { getAllProducts } from '../lib/api';
 import { Product } from '../types/product';
 import ProductDetailsModal from './ProductDetailsModal';
 import { useCart } from '../context/CartContext';
@@ -28,20 +28,8 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
   const [activeItem, setActiveItem] = useState<GalleryItem | null>(null);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [quickAdded, setQuickAdded] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // Quick Price Edit Modal
-  const [quickPriceItem, setQuickPriceItem] = useState<GalleryItem | null>(null);
-  const [newPriceInput, setNewPriceInput] = useState<string>('');
-  const [savingPrice, setSavingPrice] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    // Check admin authorization
-    if (typeof window !== 'undefined') {
-      setIsAdmin(localStorage.getItem('teefahs_admin_authorized') === 'true');
-    }
-
     loadProducts();
   }, []);
 
@@ -139,7 +127,6 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
         slug = 'zainab-luxe-modal-hijab-under-cap-set';
       }
 
-      // Find matching live product
       const product = products.find(p => p.slug === slug || p.main_image_url === url);
 
       return {
@@ -203,38 +190,6 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
     setTimeout(() => setQuickAdded(false), 2000);
   };
 
-  const openQuickPriceModal = (e: React.MouseEvent, item: GalleryItem) => {
-    e.stopPropagation();
-    setQuickPriceItem(item);
-    setNewPriceInput(item.product?.base_price?.toString() || '');
-    setSaveSuccess(false);
-  };
-
-  const handleSaveQuickPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPriceItem || !quickPriceItem.product) return;
-    const priceNum = parseFloat(newPriceInput);
-    if (isNaN(priceNum) || priceNum < 0) return;
-
-    setSavingPrice(true);
-    try {
-      await saveProduct({
-        ...quickPriceItem.product,
-        base_price: priceNum,
-      });
-      setSaveSuccess(true);
-      await loadProducts();
-      setTimeout(() => {
-        setQuickPriceItem(null);
-        setSaveSuccess(false);
-      }, 900);
-    } catch (err) {
-      console.error('Failed to update price:', err);
-    } finally {
-      setSavingPrice(false);
-    }
-  };
-
   return (
     <section className="py-20 px-6 max-w-7xl mx-auto w-full">
       {/* Header */}
@@ -249,11 +204,6 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
           <p className="text-xs md:text-sm text-stone-500 font-light mt-2 max-w-xl leading-relaxed">
             A photographic celebration of all {SUPPLIED_PHOTOS.length} authentic modest garments, captured across dynamic angles, artisanal textures, and sweeping silhouettes.
           </p>
-          {isAdmin && (
-            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-300 rounded text-xs text-emerald-900 font-medium">
-              <span>👑 Owner Mode Active: Click <strong>"Edit Price"</strong> on any piece below to update live pricing instantly.</span>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -329,7 +279,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                     </p>
                   )}
                   <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white underline underline-offset-4">
-                    <span>View Look</span>
+                    <span>View Look &amp; Angles</span>
                     <ArrowRight size={12} />
                   </div>
                 </div>
@@ -343,7 +293,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
               )}
             </div>
 
-            {/* Permanent Card Bottom Footer: Shows Title & Edit Button for Owner */}
+            {/* Permanent Card Bottom Footer */}
             <div className="p-2.5 bg-white border-t border-stone-100 flex flex-col gap-1.5 justify-between flex-1">
               <div>
                 <p className="text-[11px] font-medium text-stone-900 truncate" title={item.title}>
@@ -358,30 +308,6 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                   </span>
                 </div>
               </div>
-
-              {/* Owner Edit Actions - Always Visible for Admin */}
-              {isAdmin && item.product && (
-                <div className="pt-1 flex items-center gap-1">
-                  <Link
-                    to={`/admin/products/edit/${item.product.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 py-1.5 px-2 bg-emerald-900 hover:bg-emerald-800 text-white text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors shadow-2xs text-center"
-                    title="Edit garment price & details"
-                  >
-                    <Edit2 size={11} />
-                    <span>Edit Price</span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={(e) => openQuickPriceModal(e, item)}
-                    className="py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-semibold uppercase tracking-wider rounded-xs transition-colors"
-                    title="Quick change price without leaving page"
-                  >
-                    ⚡
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -444,7 +370,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
             <div className="md:w-2/5 p-6 md:p-8 flex flex-col justify-between bg-white overflow-y-auto">
               <div>
                 <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-emerald-800 block mb-2">
-                  {activeItem.category} • Asset #{activeItem.id + 1}
+                  {activeItem.category} • View all angles &amp; details
                 </span>
                 <h3 className="text-2xl font-serif text-stone-900 mb-3">
                   {activeItem.title}
@@ -459,29 +385,19 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                     <div className="p-3 bg-stone-50 border border-stone-200 rounded-xs flex items-center justify-between">
                       <div>
                         <span className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold block mb-0.5">
-                          Current Price
+                          Price
                         </span>
                         <span className="text-xl font-serif font-bold text-stone-900">
                           ₦{activeItem.product.base_price ? activeItem.product.base_price.toLocaleString() : 'Enquire'}
                         </span>
                       </div>
-
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={(e) => openQuickPriceModal(e, activeItem)}
-                          className="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-semibold rounded transition-colors"
-                        >
-                          Change Price
-                        </button>
-                      )}
                     </div>
 
                     {/* Variations Preview */}
                     {activeItem.product.variations && activeItem.product.variations.length > 0 && (
                       <div className="space-y-2">
                         <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-500 block">
-                          Available Variations:
+                          Available Sizes &amp; Colours:
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {activeItem.product.variations.map((v, i) => (
@@ -502,22 +418,11 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
 
               {/* Action Buttons */}
               <div className="pt-6 border-t border-stone-200 mt-6 space-y-3">
-                {/* Admin Direct Edit Button */}
-                {isAdmin && activeItem.product && (
-                  <Link
-                    to={`/admin/products/edit/${activeItem.product.id}`}
-                    className="w-full py-2.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors shadow-xs"
-                  >
-                    <Edit2 size={13} />
-                    <span>👑 Edit Garment &amp; Pricing Details</span>
-                  </Link>
-                )}
-
                 {activeItem.product ? (
                   <>
                     <button
                       onClick={() => handleShopThisLook(activeItem.product!)}
-                      className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors shadow-sm"
+                      className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors shadow-sm cursor-pointer"
                     >
                       <ShoppingBag size={14} />
                       <span>{quickAdded ? 'Added to Bag!' : 'Shop This Look'}</span>
@@ -528,9 +433,9 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                         setSelectedProductForModal(activeItem.product!);
                         setActiveItem(null);
                       }}
-                      className="w-full py-2.5 border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors"
+                      className="w-full py-2.5 border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors cursor-pointer"
                     >
-                      <span>View Full Specifications</span>
+                      <span>View Front, Back &amp; Side Views</span>
                     </button>
                   </>
                 ) : (
@@ -544,83 +449,6 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Price Edit Modal for Owner */}
-      {quickPriceItem && quickPriceItem.product && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setQuickPriceItem(null)}
-        >
-          <div 
-            className="bg-white rounded-sm p-6 max-w-sm w-full shadow-2xl space-y-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
-              <div className="flex items-center gap-2">
-                <Tag size={16} className="text-emerald-800" />
-                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
-              </div>
-              <button 
-                onClick={() => setQuickPriceItem(null)}
-                className="text-stone-400 hover:text-stone-600"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium text-stone-800">{quickPriceItem.title}</p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Category: {quickPriceItem.category}</p>
-            </div>
-
-            <form onSubmit={handleSaveQuickPrice} className="space-y-4">
-              <div>
-                <label className="text-[11px] uppercase font-semibold text-stone-600 block mb-1">
-                  New Selling Price (NGN)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-stone-500 text-xs">₦</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="500"
-                    required
-                    value={newPriceInput}
-                    onChange={e => setNewPriceInput(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 text-sm font-semibold border border-stone-300 rounded focus:outline-none focus:border-stone-900"
-                    placeholder="e.g. 130000"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              {saveSuccess && (
-                <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded flex items-center gap-1.5 font-medium">
-                  <Check size={14} className="text-emerald-700" />
-                  <span>Price successfully updated!</span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setQuickPriceItem(null)}
-                  className="w-1/2 py-2 border border-stone-300 text-xs font-semibold rounded hover:bg-stone-50 text-stone-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingPrice}
-                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs"
-                >
-                  {savingPrice ? 'Saving...' : 'Save Price'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

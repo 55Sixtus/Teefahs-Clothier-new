@@ -139,18 +139,29 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
 
             {/* Thumbnails */}
             {allImages.length > 1 && (
-              <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-thin">
-                {allImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative w-16 h-20 flex-shrink-0 overflow-hidden border-2 transition-all ${
-                      selectedImageIndex === idx ? 'border-amber-500 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img} alt={`Angle ${idx + 1}`} className="w-full h-full object-cover object-top" />
-                  </button>
-                ))}
+              <div className="mt-4">
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-stone-500 dark:text-stone-400 mb-2">
+                  Inspect Views ({allImages.length} angles available):
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                  {allImages.map((img, idx) => {
+                    const label = idx === 0 ? 'Front View' : idx === 1 ? 'Back View' : idx === 2 ? 'Side Profile' : `Detail #${idx}`;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`relative w-16 h-20 flex-shrink-0 overflow-hidden border-2 transition-all rounded-xs flex flex-col justify-end ${
+                          selectedImageIndex === idx ? 'border-amber-500 opacity-100 ring-1 ring-amber-500' : 'border-stone-300 dark:border-stone-700 opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={img} alt={label} className="absolute inset-0 w-full h-full object-cover object-top" />
+                        <div className="relative z-10 bg-black/60 text-white text-[8px] font-medium text-center py-0.5 px-0.5 truncate w-full">
+                          {idx === 0 ? 'Front' : idx === 1 ? 'Back' : idx === 2 ? 'Side' : `Detail ${idx}`}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -267,16 +278,6 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
 
             {/* Actions */}
             <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col gap-3">
-              {typeof window !== 'undefined' && localStorage.getItem('teefahs_admin_authorized') === 'true' && (
-                <Link
-                  to={`/admin/products/edit/${product.id}`}
-                  onClick={() => onClose()}
-                  className="w-full py-2.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/60 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 rounded-xs shadow-xs"
-                >
-                  <Edit2 size={13} className="text-amber-300" />
-                  <span>👑 Edit Garment &amp; Pricing Details</span>
-                </Link>
-              )}
               {isOutOfStock ? (
                 <a
                   href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
