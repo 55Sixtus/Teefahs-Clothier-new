@@ -76,7 +76,7 @@ export const INITIAL_CATEGORIES: Category[] = [
   },
 ];
 
-export const INITIAL_PRODUCTS: Product[] = [
+const RAW_INITIAL_PRODUCTS: Product[] = [
   {
     id: '00000000-0000-0000-0000-000000000001',
     name: 'Noor Embroidered Luxury Abaya',
@@ -702,6 +702,25 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
   },
   {
+    id: '00000000-0000-0000-0000-000000000034',
+    name: 'Editorial Photoshoot #34 Abaya',
+    slug: 'editorial-photoshoot-34-abaya',
+    short_description: 'Understated luxury taupe abaya with tailored collar silhouette.',
+    description: 'Bespoke modest design in warm taupe with fine button accents.',
+    category_id: 'c0000000-0000-0000-0000-000000000001',
+    main_image_url: SUPPLIED_PHOTOS[33],
+    additionalImages: [],
+    base_price: 85000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-34-1', image_url: SUPPLIED_PHOTOS[33], alt_text: 'Photoshoot #34 Abaya' }],
+    variations: [
+      { id: 'var-34-1', product_id: '00000000-0000-0000-0000-000000000034', size: '54', colour: 'Taupe', price_adjustment: 0, stock_quantity: 8, is_active: true },
+    ],
+  },
+  {
     id: '00000000-0000-0000-0000-000000000028',
     name: 'Editorial Photoshoot #35 Abaya',
     slug: 'editorial-photoshoot-35-abaya',
@@ -709,6 +728,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: 'Sophisticated deep plum tailored abaya with structured utility buttons.',
     category_id: 'c0000000-0000-0000-0000-000000000006',
     main_image_url: SUPPLIED_PHOTOS[34],
+    additionalImages: [],
     base_price: 70000,
     currency: 'NGN',
     is_published: true,
@@ -720,6 +740,25 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
   },
   {
+    id: '00000000-0000-0000-0000-000000000035',
+    name: 'Editorial Photoshoot #36 Abaya',
+    slug: 'editorial-photoshoot-36-abaya',
+    short_description: 'Opulent gold floral patterned luxury occasion gown.',
+    description: 'Handcrafted luxury occasion abaya featuring golden floral textile and ornate embroidery.',
+    category_id: 'c0000000-0000-0000-0000-000000000006',
+    main_image_url: SUPPLIED_PHOTOS[35],
+    additionalImages: [],
+    base_price: 150000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-35-1', image_url: SUPPLIED_PHOTOS[35], alt_text: 'Photoshoot #36 Abaya' }],
+    variations: [
+      { id: 'var-35-1', product_id: '00000000-0000-0000-0000-000000000035', size: '56', colour: 'Gold Patterned', price_adjustment: 0, stock_quantity: 6, is_active: true },
+    ],
+  },
+  {
     id: '00000000-0000-0000-0000-000000000029',
     name: 'Editorial Photoshoot #37 Abaya',
     slug: 'editorial-photoshoot-37-abaya',
@@ -727,6 +766,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: 'Understated elegance in warm taupe with fine metallic button accents.',
     category_id: 'c0000000-0000-0000-0000-000000000001',
     main_image_url: SUPPLIED_PHOTOS[36],
+    additionalImages: [],
     base_price: 85000,
     currency: 'NGN',
     is_published: true,
@@ -738,6 +778,25 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
   },
   {
+    id: '00000000-0000-0000-0000-000000000036',
+    name: 'Editorial Photoshoot #38 Abaya',
+    slug: 'editorial-photoshoot-38-abaya',
+    short_description: 'Royal purple front-detail abaya ensemble.',
+    description: 'Tailored royal purple modest piece with structured collar and luxury draping.',
+    category_id: 'c0000000-0000-0000-0000-000000000006',
+    main_image_url: SUPPLIED_PHOTOS[37],
+    additionalImages: [],
+    base_price: 70000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-36-1', image_url: SUPPLIED_PHOTOS[37], alt_text: 'Photoshoot #38 Abaya' }],
+    variations: [
+      { id: 'var-36-1', product_id: '00000000-0000-0000-0000-000000000036', size: '54', colour: 'Royal Purple', price_adjustment: 0, stock_quantity: 7, is_active: true },
+    ],
+  },
+  {
     id: '00000000-0000-0000-0000-000000000030',
     name: 'Editorial Photoshoot #39 Abaya',
     slug: 'editorial-photoshoot-39-abaya',
@@ -745,6 +804,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: 'Charming floral embroidery accents along the sleeves of a relaxed silhouette.',
     category_id: 'c0000000-0000-0000-0000-000000000001',
     main_image_url: SUPPLIED_PHOTOS[38],
+    additionalImages: [],
     base_price: 68000,
     currency: 'NGN',
     is_published: true,
@@ -763,6 +823,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: 'Sophisticated mint green robe tailored with ornate collar beadwork.',
     category_id: 'c0000000-0000-0000-0000-000000000006',
     main_image_url: SUPPLIED_PHOTOS[39],
+    additionalImages: [],
     base_price: 130000,
     currency: 'NGN',
     is_published: true,
@@ -774,6 +835,44 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
   },
   {
+    id: '00000000-0000-0000-0000-000000000037',
+    name: 'Editorial Photoshoot #41 Abaya',
+    slug: 'editorial-photoshoot-41-abaya',
+    short_description: 'Navy blue flowing kaftan with handcrafted chest blossom motif.',
+    description: 'Relaxed modest cut with artisanal floral motif on soft midnight drape.',
+    category_id: 'c0000000-0000-0000-0000-000000000001',
+    main_image_url: SUPPLIED_PHOTOS[40],
+    additionalImages: [],
+    base_price: 68000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-37-1', image_url: SUPPLIED_PHOTOS[40], alt_text: 'Photoshoot #41 Abaya' }],
+    variations: [
+      { id: 'var-37-1', product_id: '00000000-0000-0000-0000-000000000037', size: '54', colour: 'Midnight Blue', price_adjustment: 0, stock_quantity: 6, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000038',
+    name: 'Editorial Photoshoot #42 Abaya',
+    slug: 'editorial-photoshoot-42-abaya',
+    short_description: 'Pure black abaya with tone-on-tone shoulder beadwork.',
+    description: 'Minimalist luxury abaya in deep black with shimmering black beadwork on the shoulder and chest.',
+    category_id: 'c0000000-0000-0000-0000-000000000001',
+    main_image_url: SUPPLIED_PHOTOS[41],
+    additionalImages: [],
+    base_price: 68000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-38-1', image_url: SUPPLIED_PHOTOS[41], alt_text: 'Photoshoot #42 Abaya' }],
+    variations: [
+      { id: 'var-38-1', product_id: '00000000-0000-0000-0000-000000000038', size: '56', colour: 'Jet Black', price_adjustment: 0, stock_quantity: 7, is_active: true },
+    ],
+  },
+  {
     id: '00000000-0000-0000-0000-000000000032',
     name: 'Editorial Photoshoot #45 Abaya',
     slug: 'editorial-photoshoot-45-abaya',
@@ -781,6 +880,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: 'Delicate blush pink tones with graceful side ruffles for modern modest flair.',
     category_id: 'c0000000-0000-0000-0000-000000000001',
     main_image_url: SUPPLIED_PHOTOS[44],
+    additionalImages: [],
     base_price: 70000,
     currency: 'NGN',
     is_published: true,
@@ -799,6 +899,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     description: 'Refined seafoam teal abaya featuring shimmering bead accents along the bodice.',
     category_id: 'c0000000-0000-0000-0000-000000000006',
     main_image_url: SUPPLIED_PHOTOS[45],
+    additionalImages: [],
     base_price: 90000,
     currency: 'NGN',
     is_published: true,
@@ -809,4 +910,58 @@ export const INITIAL_PRODUCTS: Product[] = [
       { id: 'var-33-1', product_id: '00000000-0000-0000-0000-000000000033', size: '56', colour: 'Seafoam Teal', price_adjustment: 0, stock_quantity: 6, is_active: true },
     ],
   },
+  {
+    id: '00000000-0000-0000-0000-000000000039',
+    name: 'Editorial Photoshoot #47 Embroidered Denim Dress',
+    slug: 'editorial-photoshoot-47-denim-dress',
+    short_description: 'Tiered lightweight denim dress with fine collar and placket floral embroidery.',
+    description: 'Casual luxury modest dress crafted with lightweight chambray denim and delicate garden blossom embroidery.',
+    category_id: 'c0000000-0000-0000-0000-000000000001',
+    main_image_url: SUPPLIED_PHOTOS[46],
+    additionalImages: [],
+    base_price: 58000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-39-1', image_url: SUPPLIED_PHOTOS[46], alt_text: 'Photoshoot #47 Denim Dress' }],
+    variations: [
+      { id: 'var-39-1', product_id: '00000000-0000-0000-0000-000000000039', size: '54', colour: 'Chambray Blue', price_adjustment: 0, stock_quantity: 8, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000040',
+    name: 'Editorial Photoshoot #48 Mauve Ruffled Abaya',
+    slug: 'editorial-photoshoot-48-mauve-abaya',
+    short_description: 'Graceful mauve layered batwing abaya with ruffled borders.',
+    description: 'Statement batwing cut featuring delicate ruffle trims and matching chiffon shayla.',
+    category_id: 'c0000000-0000-0000-0000-000000000001',
+    main_image_url: SUPPLIED_PHOTOS[47],
+    additionalImages: [],
+    base_price: 70000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [{ id: 'img-40-1', image_url: SUPPLIED_PHOTOS[47], alt_text: 'Photoshoot #48 Mauve Abaya' }],
+    variations: [
+      { id: 'var-40-1', product_id: '00000000-0000-0000-0000-000000000040', size: '56', colour: 'Dusty Mauve', price_adjustment: 0, stock_quantity: 7, is_active: true },
+    ],
+  },
 ];
+
+export const INITIAL_PRODUCTS: Product[] = RAW_INITIAL_PRODUCTS.map((prod) => {
+  // If additionalImages was explicitly defined (even as empty array), keep it
+  if (prod.additionalImages !== undefined) {
+    return prod;
+  }
+  // Otherwise populate from secondary images if available
+  const extras = (prod.images && prod.images.length > 1)
+    ? prod.images.slice(1).map(img => typeof img === 'string' ? img : img.image_url).filter(Boolean)
+    : [];
+  return {
+    ...prod,
+    additionalImages: extras,
+  };
+});
+

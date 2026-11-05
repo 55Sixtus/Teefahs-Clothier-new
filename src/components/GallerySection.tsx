@@ -4,7 +4,7 @@ import { ShoppingBag, X, ArrowRight, ZoomIn, ChevronLeft, ChevronRight } from 'l
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import { getAllProducts } from '../lib/api';
 import { Product } from '../types/product';
-import ProductDetailsModal from './ProductDetailsModal';
+import ProductModal from './ProductModal';
 import { useCart } from '../context/CartContext';
 
 interface GalleryItem {
@@ -453,10 +453,11 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* Details Modal with Angle Grid & Placeholders */}
       {selectedProductForModal && (
-        <ProductDetailsModal
+        <ProductModal
           product={selectedProductForModal}
+          isOpen={!!selectedProductForModal}
           onClose={() => setSelectedProductForModal(null)}
         />
       )}

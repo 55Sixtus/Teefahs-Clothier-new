@@ -28,6 +28,7 @@ export interface Product {
   description?: string;
   category_id?: string;
   main_image_url?: string;
+  additionalImages?: string[];
   base_price?: number;
   sale_price?: number;
   currency: 'NGN' | 'USD';

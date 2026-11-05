@@ -3,8 +3,8 @@ import { Product, Category, ProductVariation } from '../types/product';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/initialCatalogue';
 
 // Local storage keys for caching and optimistic updates
-const LOCAL_PRODUCTS_KEY = 'teefahs_products_v9_accurate';
-const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v9_accurate';
+const LOCAL_PRODUCTS_KEY = 'teefahs_products_v10_angles';
+const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v10_angles';
 
 export interface DatabaseDiagnostics {
   status: 'fully_synchronized' | 'partially_populated' | 'connected_empty' | 'permission_denied' | 'connection_error';
@@ -129,6 +129,12 @@ const getLocalStoredProducts = (): Product[] => {
                 return !url?.includes('6-02-24-AM');
               }),
             };
+          }
+          if (p.additionalImages === undefined) {
+            changed = true;
+            p.additionalImages = (p.images && p.images.length > 1)
+              ? p.images.slice(1).map((img: any) => typeof img === 'string' ? img : img.image_url).filter(Boolean)
+              : [];
           }
           return p;
         });
@@ -270,6 +276,13 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
             is_new_arrival: p.is_new_arrival !== undefined ? p.is_new_arrival : (localMatch?.is_new_arrival ?? false),
             variations: (p.product_variations && p.product_variations.length > 0) ? p.product_variations : (localMatch?.variations || []),
             images: (p.product_images && p.product_images.length > 0) ? p.product_images : (localMatch?.images || []),
+            additionalImages: p.additionalImages || localMatch?.additionalImages || (
+              p.product_images && p.product_images.length > 0
+                ? p.product_images.map((img: any) => typeof img === 'string' ? img : img.image_url).filter(Boolean)
+                : (localMatch?.images && localMatch.images.length > 1
+                  ? localMatch.images.slice(1).map(i => i.image_url)
+                  : [])
+            ),
           };
         });
 
@@ -340,6 +353,13 @@ export const getAllProducts = async (): Promise<Product[]> => {
             is_new_arrival: p.is_new_arrival !== undefined ? p.is_new_arrival : (localMatch?.is_new_arrival ?? false),
             variations: (p.product_variations && p.product_variations.length > 0) ? p.product_variations : (localMatch?.variations || []),
             images: (p.product_images && p.product_images.length > 0) ? p.product_images : (localMatch?.images || []),
+            additionalImages: p.additionalImages || localMatch?.additionalImages || (
+              p.product_images && p.product_images.length > 0
+                ? p.product_images.map((img: any) => typeof img === 'string' ? img : img.image_url).filter(Boolean)
+                : (localMatch?.images && localMatch.images.length > 1
+                  ? localMatch.images.slice(1).map(i => i.image_url)
+                  : [])
+            ),
           };
         });
 
@@ -400,6 +420,7 @@ export const saveProduct = async (product: Partial<Product>): Promise<Product> =
     savedProduct = {
       ...existing,
       ...product,
+      additionalImages: product.additionalImages ?? existing.additionalImages ?? [],
       variations: product.variations ?? existing.variations ?? [],
       images: product.images ?? existing.images ?? [],
     } as Product;
@@ -482,6 +503,7 @@ export const saveProduct = async (product: Partial<Product>): Promise<Product> =
       is_published: product.is_published ?? true,
       is_featured: product.is_featured ?? false,
       is_new_arrival: product.is_new_arrival ?? false,
+      additionalImages: product.additionalImages || [],
       variations: product.variations || [],
       images: product.images || [],
     } as Product;

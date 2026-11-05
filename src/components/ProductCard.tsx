@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ShoppingBag, Eye, Check, AlertCircle, Edit2 } from 'lucide-react';
+import { ShoppingBag, Eye, Check, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
-import ProductDetailsModal from './ProductDetailsModal';
+import ProductModal from './ProductModal';
 import { trackAddToCart } from '../utils/analytics';
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -186,9 +186,9 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
 
-      {/* Product Details Modal with Full Gallery Carousel & WhatsApp enquiry */}
+      {/* Product Details Modal with Angle Grid & Placeholders */}
       {showModal && (
-        <ProductDetailsModal product={product} onClose={() => setShowModal(false)} />
+        <ProductModal product={product} isOpen={showModal} onClose={() => setShowModal(false)} />
       )}
     </>
   );
