@@ -91,9 +91,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     is_featured: true,
     is_new_arrival: true,
     images: [
-      { id: 'img-1-0a', image_url: SUPPLIED_PHOTOS[0], alt_text: 'Editorial portrait - Noor Abaya' },
-      { id: 'img-1-0b', image_url: SUPPLIED_PHOTOS[1], alt_text: 'Styling angle - Noor Abaya' },
-      { id: 'img-1-0c', image_url: SUPPLIED_PHOTOS[2], alt_text: 'Full-length studio angle - Noor Abaya' },
       { id: 'img-1-1', image_url: SUPPLIED_PHOTOS[3], alt_text: 'Front view Noor Abaya' },
       { id: 'img-1-2', image_url: SUPPLIED_PHOTOS[4], alt_text: 'Sleeve embroidery detail' },
       { id: 'img-1-3', image_url: SUPPLIED_PHOTOS[5], alt_text: 'Side profile flow' },
@@ -188,13 +185,13 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: '00000000-0000-0000-0000-000000000005',
-    name: 'Layla Embellished Occasion Silk Abaya',
+    name: 'Layla Embellished Luxury Occasion Silk Abaya',
     slug: 'layla-embellished-occasion-silk-abaya',
     short_description: 'Hand-applied crystal trim and lustrous silk satin for weddings and celebrations.',
     description: 'An ethereal creation designed for milestone celebrations. Featuring hand-sewn metallic lace bordering along the cuffs and sweeping hemline with premium champagne silk undertones.',
     category_id: 'c0000000-0000-0000-0000-000000000006',
     main_image_url: SUPPLIED_PHOTOS[26], // 10-08-22-PM
-    base_price: 65000,
+    base_price: 255000,
     currency: 'NGN',
     is_published: true,
     is_featured: true,
@@ -470,6 +467,184 @@ export const INITIAL_PRODUCTS: Product[] = [
     variations: [
       { id: 'var-16-1', product_id: '00000000-0000-0000-0000-000000000016', size: 'XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
       { id: 'var-16-2', product_id: '00000000-0000-0000-0000-000000000016', size: '2XL', colour: 'Standard', price_adjustment: 0, stock_quantity: 0, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000017',
+    name: 'Royal Black Embellished Occasion Abaya',
+    slug: 'royal-black-embellished-occasion-abaya',
+    short_description: 'Editorial jet-black occasion abaya with regal lapel embroidery and sweeping movement.',
+    description: 'Tailored with the utmost precision from rich jet black Dubai crepe, this ceremonial occasion abaya boasts hand-embellished metallic trim along the cuffs and sweeping lapels. Designed specifically for evening galas, weddings, and Eid celebrations.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[0], // Photo 0
+    base_price: 130000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-17-1', image_url: SUPPLIED_PHOTOS[0], alt_text: 'Royal Black Occasion Abaya portrait' },
+      { id: 'img-17-2', image_url: SUPPLIED_PHOTOS[1], alt_text: 'Royal Black Occasion Abaya styling angle' },
+      { id: 'img-17-3', image_url: SUPPLIED_PHOTOS[2], alt_text: 'Royal Black Occasion Abaya full-length studio angle' },
+    ],
+    variations: [
+      { id: 'var-17-1', product_id: '00000000-0000-0000-0000-000000000017', size: '54', colour: 'Midnight Black', price_adjustment: 0, stock_quantity: 6, is_active: true },
+      { id: 'var-17-2', product_id: '00000000-0000-0000-0000-000000000017', size: '56', colour: 'Midnight Black', price_adjustment: 0, stock_quantity: 8, is_active: true },
+      { id: 'var-17-3', product_id: '00000000-0000-0000-0000-000000000017', size: '58', colour: 'Midnight Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000018',
+    name: 'Zeenat Royal Gold Thread Occasion Abaya',
+    slug: 'zeenat-royal-gold-thread-occasion-abaya',
+    short_description: 'Intricate golden embroidery on cascading luxury champagne silk.',
+    description: 'An opulent modest statement piece adorned with lustrous gold-tone filigree along the hem and sleeves for milestone celebrations.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[27], // Photo 27
+    base_price: 145000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: false,
+    images: [
+      { id: 'img-18-1', image_url: SUPPLIED_PHOTOS[27], alt_text: 'Zeenat Occasion Abaya golden thread detail' },
+      { id: 'img-18-2', image_url: SUPPLIED_PHOTOS[28], alt_text: 'Zeenat Occasion Abaya fluid motion' },
+    ],
+    variations: [
+      { id: 'var-18-1', product_id: '00000000-0000-0000-0000-000000000018', size: '54', colour: 'Champagne Gold', price_adjustment: 0, stock_quantity: 5, is_active: true },
+      { id: 'var-18-2', product_id: '00000000-0000-0000-0000-000000000018', size: '56', colour: 'Champagne Gold', price_adjustment: 0, stock_quantity: 7, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000019',
+    name: 'Malika Crystal-Draped Evening Occasion Gown',
+    slug: 'malika-crystal-draped-evening-occasion-gown',
+    short_description: 'Sweeping silhouette with shimmering hand-placed crystals for celebrations.',
+    description: 'Crafted with voluminous flowing silk drape that commands attention while remaining impeccably modest.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[28], // Photo 28
+    base_price: 185000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-19-1', image_url: SUPPLIED_PHOTOS[28], alt_text: 'Malika Evening Gown drape' },
+      { id: 'img-19-2', image_url: SUPPLIED_PHOTOS[26], alt_text: 'Malika Evening Gown front view' },
+    ],
+    variations: [
+      { id: 'var-19-1', product_id: '00000000-0000-0000-0000-000000000019', size: '54', colour: 'Gold & Ivory', price_adjustment: 0, stock_quantity: 4, is_active: true },
+      { id: 'var-19-2', product_id: '00000000-0000-0000-0000-000000000019', size: '56', colour: 'Gold & Ivory', price_adjustment: 0, stock_quantity: 6, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000020',
+    name: 'Noor Ceremonial Black Silk Occasion Robe',
+    slug: 'noor-ceremonial-black-silk-occasion-robe' ,
+    short_description: 'Structured formal black occasion robe with tonal silk accents.',
+    description: 'An exquisite ceremonial abaya designed with sharp tailoring and flowing black silk fabric for formal banquets.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[1], // Photo 1
+    base_price: 135000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: false,
+    images: [
+      { id: 'img-20-1', image_url: SUPPLIED_PHOTOS[1], alt_text: 'Noor Ceremonial Robe side angle' },
+      { id: 'img-20-2', image_url: SUPPLIED_PHOTOS[2], alt_text: 'Noor Ceremonial Robe full studio view' },
+    ],
+    variations: [
+      { id: 'var-20-1', product_id: '00000000-0000-0000-0000-000000000020', size: '54', colour: 'Obsidian Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
+      { id: 'var-20-2', product_id: '00000000-0000-0000-0000-000000000020', size: '56', colour: 'Obsidian Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000021',
+    name: 'Kamp Elegance Embroidered Evening Abaya',
+    slug: 'kamp-elegance-embroidered-evening-abaya',
+    short_description: 'Full-length luxury evening abaya with artistic kamp geometric embroidery.',
+    description: 'Features traditional geometric kamp needlework on deep black luxury cloth with modern flared sleeves.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[2], // Photo 2
+    base_price: 140000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-21-1', image_url: SUPPLIED_PHOTOS[2], alt_text: 'Kamp Elegance Abaya front' },
+      { id: 'img-21-2', image_url: SUPPLIED_PHOTOS[0], alt_text: 'Kamp Elegance Abaya closeup' },
+    ],
+    variations: [
+      { id: 'var-21-1', product_id: '00000000-0000-0000-0000-000000000021', size: '54', colour: 'Midnight Black', price_adjustment: 0, stock_quantity: 6, is_active: true },
+      { id: 'var-21-2', product_id: '00000000-0000-0000-0000-000000000021', size: '56', colour: 'Midnight Black', price_adjustment: 0, stock_quantity: 7, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000022',
+    name: 'Soraya Hand-Beaded Black Occasion Kimono',
+    slug: 'soraya-hand-beaded-black-occasion-kimono',
+    short_description: 'Hand-applied crystal beads across structured velvet-lined lapels.',
+    description: 'A sophisticated open kimono abaya embellished with jet-black glass crystals for shimmering nocturnal elegance.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[41], // Photo 41
+    base_price: 110000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: false,
+    images: [
+      { id: 'img-22-1', image_url: SUPPLIED_PHOTOS[41], alt_text: 'Soraya Kimono glass beadwork' },
+      { id: 'img-22-2', image_url: SUPPLIED_PHOTOS[42], alt_text: 'Soraya Kimono side embroidery' },
+    ],
+    variations: [
+      { id: 'var-22-1', product_id: '00000000-0000-0000-0000-000000000022', size: '54', colour: 'Onyx Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
+      { id: 'var-22-2', product_id: '00000000-0000-0000-0000-000000000022', size: '56', colour: 'Onyx Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000023',
+    name: 'Jawhara Royal Evening Silk Kimono',
+    slug: 'jawhara-royal-evening-silk-kimono',
+    short_description: 'Textured silk brocade with floor-sweeping regal silhouette.',
+    description: 'A masterwork of modest luxury. Featuring embossed botanical motifs, lined in breathable silk crepe.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[42], // Photo 42
+    base_price: 125000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-23-1', image_url: SUPPLIED_PHOTOS[42], alt_text: 'Jawhara Kimono side embroidery' },
+      { id: 'img-23-2', image_url: SUPPLIED_PHOTOS[43], alt_text: 'Jawhara Kimono sweeping hemline' },
+    ],
+    variations: [
+      { id: 'var-23-1', product_id: '00000000-0000-0000-0000-000000000023', size: '54', colour: 'Midnight & Gold', price_adjustment: 0, stock_quantity: 4, is_active: true },
+      { id: 'var-23-2', product_id: '00000000-0000-0000-0000-000000000023', size: '56', colour: 'Midnight & Gold', price_adjustment: 0, stock_quantity: 4, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000024',
+    name: 'Sultana Beaded Sweeping Hemline Kimono',
+    slug: 'sultana-beaded-sweeping-hemline-kimono',
+    short_description: 'Full-motion statement occasion kimono with heavy beaded hemline.',
+    description: 'Designed to turn heads with every step. Featuring weighted beads along the hem that create an immaculate modest fall.',
+    category_id: 'c0000000-0000-0000-0000-000000000006', // Occasion Wear
+    main_image_url: SUPPLIED_PHOTOS[43], // Photo 43
+    base_price: 95000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: false,
+    images: [
+      { id: 'img-24-1', image_url: SUPPLIED_PHOTOS[43], alt_text: 'Sultana Kimono sweeping hem' },
+      { id: 'img-24-2', image_url: SUPPLIED_PHOTOS[40], alt_text: 'Sultana Kimono front look' },
+    ],
+    variations: [
+      { id: 'var-24-1', product_id: '00000000-0000-0000-0000-000000000024', size: '54', colour: 'Onyx Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
+      { id: 'var-24-2', product_id: '00000000-0000-0000-0000-000000000024', size: '56', colour: 'Onyx Black', price_adjustment: 0, stock_quantity: 5, is_active: true },
     ],
   },
 ];

@@ -409,8 +409,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto w-full scrollbar-thin">
+          <table className="w-full min-w-[750px] text-left border-collapse">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 text-[10px] uppercase tracking-wider">
                 <th className="py-3 px-4 font-semibold w-16">Photo</th>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Check, ShoppingBag, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, Check, ShoppingBag, MessageCircle, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
@@ -266,6 +267,16 @@ export default function ProductDetailsModal({ product, onClose }: ProductDetails
 
             {/* Actions */}
             <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex flex-col gap-3">
+              {typeof window !== 'undefined' && localStorage.getItem('teefahs_admin_authorized') === 'true' && (
+                <Link
+                  to={`/admin/products/edit/${product.id}`}
+                  onClick={() => onClose()}
+                  className="w-full py-2.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/60 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 rounded-xs shadow-xs"
+                >
+                  <Edit2 size={13} className="text-amber-300" />
+                  <span>👑 Edit Garment &amp; Pricing Details</span>
+                </Link>
+              )}
               {isOutOfStock ? (
                 <a
                   href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}

@@ -106,12 +106,50 @@ const getLocalStoredProducts = (): Product[] => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].main_image_url) {
-        return parsed;
+        // Merge in any newly catalogued products (e.g. dedicated Occasion Wear pieces 17-24)
+        const existingIds = new Set(parsed.map((p: any) => p.id));
+        const existingSlugs = new Set(parsed.map((p: any) => p.slug).filter(Boolean));
+        let changed = false;
+
+        const updated = parsed.map((p: any) => {
+          // If Layla was mistakenly overwritten to 130000 due to the single-product collision bug, restore 255000
+          if (p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') {
+            if (p.base_price === 130000 || p.base_price === 65000) {
+              changed = true;
+              return { ...p, name: 'Layla Embellished Luxury Occasion Silk Abaya', base_price: 255000 };
+            }
+          }
+          // Remove photos 0-2 from Noor Abaya if still present
+          if (p.id === '00000000-0000-0000-0000-000000000001' && p.images && p.images.length > 6) {
+            changed = true;
+            return {
+              ...p,
+              images: p.images.filter((img: any) => {
+                const url = typeof img === 'string' ? img : img.image_url;
+                return !url?.includes('6-02-24-AM');
+              }),
+            };
+          }
+          return p;
+        });
+
+        // Add any missing catalogued products from INITIAL_PRODUCTS
+        const missing = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id) && !existingSlugs.has(p.slug));
+        if (missing.length > 0) {
+          updated.push(...missing);
+          changed = true;
+        }
+
+        if (changed) {
+          setLocalStoredProducts(updated);
+        }
+        return updated;
       }
     }
   } catch (e) {
     console.error('Error reading local products:', e);
   }
+  setLocalStoredProducts(INITIAL_PRODUCTS);
   return INITIAL_PRODUCTS;
 };
 

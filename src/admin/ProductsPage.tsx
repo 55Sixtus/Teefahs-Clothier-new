@@ -319,9 +319,9 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Products Table */}
-      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      {/* Products Table with Horizontal Scrollbar for Mobile/Desktop */}
+      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-x-auto w-full scrollbar-thin">
+        <table className="w-full min-w-[900px] text-left border-collapse">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 text-[10px] uppercase tracking-wider">
               <th className="py-3 px-4 font-semibold w-16">Photo</th>
