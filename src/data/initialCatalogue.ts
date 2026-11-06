@@ -1092,9 +1092,9 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     short_description: 'Breathable non-slip jersey cap designed for all-day comfort and hair security.',
     description: 'Engineered from ultra-soft stretch cotton jersey with ergonomic tie-back or slip-on fit. Prevents slippage while keeping your hair securely tucked. Available in 28 rich shades.',
     category_id: 'c0000000-0000-0000-0000-000000000007', // Caps
-    main_image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg',
+    main_image_url: '/assets/aistudio/image_3e1d9478.png', // Blue cap as cover
     additionalImages: [
-      '/assets/aistudio/image_3e1d9478.png',
+      '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', // Color palette under it
       '/assets/aistudio/image_d32215c4.png',
       '/assets/aistudio/image_2630a71f.png',
     ],
@@ -1104,8 +1104,8 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     is_featured: true,
     is_new_arrival: true,
     images: [
-      { id: 'img-46-1', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', alt_text: 'Jersey Under-Cap color palette' },
-      { id: 'img-46-2', image_url: '/assets/aistudio/image_3e1d9478.png', alt_text: 'Teal blue cap angle' },
+      { id: 'img-46-1', image_url: '/assets/aistudio/image_3e1d9478.png', alt_text: 'Teal blue cap cover view' },
+      { id: 'img-46-2', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', alt_text: 'Jersey Under-Cap color palette' },
       { id: 'img-46-3', image_url: '/assets/aistudio/image_d32215c4.png', alt_text: 'Bulk cap packaging' },
     ],
     variations: [
