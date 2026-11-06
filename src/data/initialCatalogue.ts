@@ -1112,6 +1112,32 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       { id: 'var-47-3', product_id: '00000000-0000-0000-0000-000000000047', size: 'Maxi (200x75cm)', colour: 'Warm Taupe & Gold', price_adjustment: 0, stock_quantity: 20, is_active: true },
     ],
   },
+  {
+    id: '00000000-0000-0000-0000-000000000048',
+    name: 'Comfort Fit Jersey Under-Cap',
+    slug: 'comfort-fit-jersey-under-cap',
+    short_description: 'Breathable non-slip jersey cap designed for all-day comfort and hair security.',
+    description: 'Engineered from ultra-soft stretch cotton jersey with ergonomic tie-back or slip-on fit. Prevents slippage while keeping your hair securely tucked. Available in 28 rich shades.',
+    category_id: 'c0000000-0000-0000-0000-000000000007', // Caps
+    main_image_url: '/assets/aistudio/image_3e1d9478.png', // Blue cap as cover
+    additionalImages: [
+      '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', // Color palette image under it
+    ],
+    base_price: 1500,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-48-1', image_url: '/assets/aistudio/image_3e1d9478.png', alt_text: 'Teal blue cap cover view' },
+      { id: 'img-48-2', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', alt_text: 'Jersey Under-Cap color palette' },
+    ],
+    variations: [
+      { id: 'var-48-1', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Teal Blue', price_adjustment: 0, stock_quantity: 30, is_active: true },
+      { id: 'var-48-2', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Jet Black', price_adjustment: 0, stock_quantity: 30, is_active: true },
+      { id: 'var-48-3', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Nude Biscotti', price_adjustment: 0, stock_quantity: 30, is_active: true },
+    ],
+  },
 ];
 
 export const INITIAL_PRODUCTS: Product[] = RAW_INITIAL_PRODUCTS.map((prod) => {
