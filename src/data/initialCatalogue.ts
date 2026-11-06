@@ -1058,6 +1058,88 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       { id: 'var-44-4', product_id: '00000000-0000-0000-0000-000000000044', size: 'Length 1', colour: 'Espresso Cocoa', price_adjustment: 0, stock_quantity: 15, is_active: true },
     ],
   },
+  {
+    id: '00000000-0000-0000-0000-000000000045',
+    name: 'Fashion Jewelry Hijab Pins & Accessories',
+    slug: 'fashion-jewelry-hijab-pins-accessories',
+    short_description: 'Exquisite metallic brooch and magnetic pins for secure, elegant hijab styling.',
+    description: 'Delicate flower, butterfly, and bow brooch pins crafted with polished gold and silver finishes. Snag-free design to protect delicate modal, silk, and chiffon fabrics.',
+    category_id: 'c0000000-0000-0000-0000-000000000008', // Accessories
+    main_image_url: '/assets/aistudio/image_818c95a6.png',
+    additionalImages: [
+      '/assets/aistudio/image_95fa5a7e.png',
+      '/assets/aistudio/image_7791bd2e.png',
+      '/assets/aistudio/image_c84da201.png',
+    ],
+    base_price: 700,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-45-1', image_url: '/assets/aistudio/image_818c95a6.png', alt_text: 'Fashion Jewelry Accessories card view' },
+      { id: 'img-45-2', image_url: '/assets/aistudio/image_95fa5a7e.png', alt_text: 'Pin fastener detail' },
+      { id: 'img-45-3', image_url: '/assets/aistudio/image_7791bd2e.png', alt_text: 'Gold and silver bow pins' },
+    ],
+    variations: [
+      { id: 'var-45-1', product_id: '00000000-0000-0000-0000-000000000045', size: 'Standard', colour: 'Assorted Gold & Silver', price_adjustment: 0, stock_quantity: 50, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000046',
+    name: 'Comfort Fit Jersey Under-Cap',
+    slug: 'comfort-fit-jersey-under-cap',
+    short_description: 'Breathable non-slip jersey cap designed for all-day comfort and hair security.',
+    description: 'Engineered from ultra-soft stretch cotton jersey with ergonomic tie-back or slip-on fit. Prevents slippage while keeping your hair securely tucked. Available in 28 rich shades.',
+    category_id: 'c0000000-0000-0000-0000-000000000007', // Caps
+    main_image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg',
+    additionalImages: [
+      '/assets/aistudio/image_3e1d9478.png',
+      '/assets/aistudio/image_d32215c4.png',
+      '/assets/aistudio/image_2630a71f.png',
+    ],
+    base_price: 1500,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-46-1', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', alt_text: 'Jersey Under-Cap color palette' },
+      { id: 'img-46-2', image_url: '/assets/aistudio/image_3e1d9478.png', alt_text: 'Teal blue cap angle' },
+      { id: 'img-46-3', image_url: '/assets/aistudio/image_d32215c4.png', alt_text: 'Bulk cap packaging' },
+    ],
+    variations: [
+      { id: 'var-46-1', product_id: '00000000-0000-0000-0000-000000000046', size: 'Standard Fit', colour: 'Teal Blue', price_adjustment: 0, stock_quantity: 30, is_active: true },
+      { id: 'var-46-2', product_id: '00000000-0000-0000-0000-000000000046', size: 'Standard Fit', colour: 'Jet Black', price_adjustment: 0, stock_quantity: 30, is_active: true },
+      { id: 'var-46-3', product_id: '00000000-0000-0000-0000-000000000046', size: 'Standard Fit', colour: 'Nude Biscotti', price_adjustment: 0, stock_quantity: 30, is_active: true },
+    ],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000047',
+    name: 'Luxe Lace-Border Chiffon Veil',
+    slug: 'luxe-lace-border-chiffon-veil',
+    short_description: 'Feather-light chiffon maxi wrap bordered with intricate vintage gold lace.',
+    description: 'Combining flowing airy chiffon with ornate metallic embroidery along the curved hemline. An exquisite statement veil for special occasions and daily luxury wear.',
+    category_id: 'c0000000-0000-0000-0000-000000000004', // Veils
+    main_image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.33.35_PM_e737bb62.jpeg',
+    additionalImages: [
+      'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
+    ],
+    base_price: 5500,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-47-1', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.33.35_PM_e737bb62.jpeg', alt_text: 'Lace Border Chiffon Veil stacked colors' },
+      { id: 'img-47-2', image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg', alt_text: 'Chiffon drape view' },
+    ],
+    variations: [
+      { id: 'var-47-1', product_id: '00000000-0000-0000-0000-000000000047', size: 'Maxi (200x75cm)', colour: 'Midnight Black & Gold', price_adjustment: 0, stock_quantity: 20, is_active: true },
+      { id: 'var-47-2', product_id: '00000000-0000-0000-0000-000000000047', size: 'Maxi (200x75cm)', colour: 'Burgundy & Gold', price_adjustment: 0, stock_quantity: 20, is_active: true },
+      { id: 'var-47-3', product_id: '00000000-0000-0000-0000-000000000047', size: 'Maxi (200x75cm)', colour: 'Warm Taupe & Gold', price_adjustment: 0, stock_quantity: 20, is_active: true },
+    ],
+  },
 ];
 
 export const INITIAL_PRODUCTS: Product[] = RAW_INITIAL_PRODUCTS.map((prod) => {
