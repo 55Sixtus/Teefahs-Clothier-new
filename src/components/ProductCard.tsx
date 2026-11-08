@@ -6,12 +6,15 @@ import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import ProductModal from './ProductModal';
 import { trackAddToCart } from '../utils/analytics';
+import { calculateProductPricing } from '../utils/pricing';
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   const [showModal, setShowModal] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
+
+  const pricing = calculateProductPricing(product);
 
   // Extract sizes and colours from variations
   const sizes = Array.from(new Set(product.variations?.map(v => v.size).filter(Boolean))) as string[];
@@ -30,7 +33,7 @@ export default function ProductCard({ product }: { product: Product }) {
     trackAddToCart({
       id: product.id,
       name: product.name,
-      price: product.base_price || 0,
+      price: pricing.sellingPrice,
       quantity: 1,
       size: sizes[0] || 'Standard',
       color: colours[0] || 'Original',
@@ -61,13 +64,18 @@ export default function ProductCard({ product }: { product: Product }) {
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+            {pricing.hasDiscount && (
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-600 text-white shadow-sm rounded-xs">
+                10% OFF
+              </span>
+            )}
             {product.is_new_arrival && (
               <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-emerald-800 text-white shadow-sm">
                 New Arrival
               </span>
             )}
             {product.is_featured && !product.is_new_arrival && (
-              <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-amber-700 text-white shadow-sm">
+              <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-stone-900 text-white shadow-sm">
                 Featured
               </span>
             )}
@@ -117,13 +125,13 @@ export default function ProductCard({ product }: { product: Product }) {
           {/* Pricing & Stock Status */}
           <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
             <div className="flex items-center justify-between mb-3">
-              <div>
+              <div className="flex items-baseline gap-2">
                 <span className="text-base font-semibold text-stone-900 dark:text-stone-100">
-                  ₦{product.base_price ? product.base_price.toLocaleString() : 'Enquire'}
+                  {pricing.formattedSellingPrice}
                 </span>
-                {product.sale_price && (
-                  <span className="text-xs text-stone-400 line-through ml-2 font-light">
-                    ₦{product.sale_price.toLocaleString()}
+                {pricing.hasDiscount && (
+                  <span className="text-xs text-stone-400 dark:text-stone-500 line-through font-light">
+                    {pricing.formattedOriginalPrice}
                   </span>
                 )}
               </div>

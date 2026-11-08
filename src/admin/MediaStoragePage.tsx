@@ -726,7 +726,7 @@ export default function MediaStoragePage() {
                   <input
                     type="number"
                     min="0"
-                    step="500"
+                    step="any"
                     required
                     value={newPriceInput}
                     onChange={e => setNewPriceInput(e.target.value)}

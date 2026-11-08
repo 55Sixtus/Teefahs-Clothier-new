@@ -399,7 +399,7 @@ export default function InventoryPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSavePrice} className="space-y-4">
+            <form onSubmit={handleSavePrice} noValidate className="space-y-4">
               <div>
                 <label className="text-[11px] uppercase font-semibold text-stone-600 block mb-1">
                   New Selling Price (NGN)
@@ -409,12 +409,11 @@ export default function InventoryPage() {
                     ₦
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="500"
+                    type="text"
+                    inputMode="decimal"
                     value={newPriceInput}
-                    onChange={e => setNewPriceInput(e.target.value)}
-                    placeholder="e.g. 70000"
+                    onChange={e => setNewPriceInput(e.target.value.replace(/[^0-9.]/g, ''))}
+                    placeholder="e.g. 700 or 1500"
                     autoFocus
                     className="w-full pl-7 pr-3 py-2 text-sm font-mono font-semibold bg-stone-50 border border-stone-300 rounded focus:outline-none focus:border-stone-900 focus:bg-white"
                   />

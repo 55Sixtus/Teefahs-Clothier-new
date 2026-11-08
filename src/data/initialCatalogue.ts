@@ -61,7 +61,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Caps',
     slug: 'caps',
     description: 'Ergonomic tie-back under-caps and volumizing cotton caps.',
-    image_url: SUPPLIED_PHOTOS[49], // Zainab Under-Cap
+    image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', // Blue cap as cover
     display_order: 7,
     is_active: true,
   },
@@ -113,7 +113,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     description: 'The Ameera Abaya features an airy double-layered chiffon build with satin piping. Includes a matching waist tie and deep hidden pockets for modern convenience without disrupting the modest drape.',
     category_id: 'c0000000-0000-0000-0000-000000000001',
     main_image_url: SUPPLIED_PHOTOS[9], // 6-02-26-AM-1
-    base_price: 48500,
+    base_price: 158000,
     currency: 'NGN',
     is_published: true,
     is_featured: true,
@@ -191,7 +191,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     description: 'An ethereal creation designed for milestone celebrations. Featuring hand-sewn metallic lace bordering along the cuffs and sweeping hemline with premium champagne silk undertones.',
     category_id: 'c0000000-0000-0000-0000-000000000006',
     main_image_url: SUPPLIED_PHOTOS[26], // 10-08-22-PM
-    base_price: 255000,
+    base_price: 68000,
     currency: 'NGN',
     is_published: true,
     is_featured: true,
@@ -311,7 +311,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     description: 'The ultimate in convenience for home, work, and mosque. The Rukayyah Prayer Abaya slips on in under 10 seconds with a full-length invisible zip and secure integrated head covering.',
     category_id: 'c0000000-0000-0000-0000-000000000005',
     main_image_url: SUPPLIED_PHOTOS[44], // 10-08-28-PM-1
-    base_price: 29500,
+    base_price: 65000,
     currency: 'NGN',
     is_published: true,
     is_featured: false,
@@ -1069,7 +1069,6 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     additionalImages: [
       '/assets/aistudio/image_95fa5a7e.png',
       '/assets/aistudio/image_7791bd2e.png',
-      '/assets/aistudio/image_c84da201.png',
     ],
     base_price: 700,
     currency: 'NGN',
@@ -1087,15 +1086,15 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: '00000000-0000-0000-0000-000000000047',
-    name: 'Luxe Lace-Border Chiffon Veil',
-    slug: 'luxe-lace-border-chiffon-veil',
+    name: 'Laced Chiffon Veil',
+    slug: 'laced-chiffon-veil',
     short_description: 'Feather-light chiffon maxi wrap bordered with intricate vintage gold lace.',
-    description: 'Combining flowing airy chiffon with ornate metallic embroidery along the curved hemline. An exquisite statement veil for special occasions and daily luxury wear.',
+    description: 'Exquisite flowing chiffon veil featuring delicate vintage gold lace edging along the borders. Designed for elegant daily modesty and occasion wear.',
     category_id: 'c0000000-0000-0000-0000-000000000004', // Veils
-    main_image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg', // Proper chiffon veil view as cover
+    main_image_url: 'https://i.ibb.co/qYSMqbNw/Whats-App-Image-2026-11-06-at-10-35-10-PM-1.jpg',
     additionalImages: [
-      '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.33.35_PM_e737bb62.jpeg', // Stacked colors view under it
-      '/assets/aistudio/image_3e1d9478.png',
+      'https://i.ibb.co/848yGYpb/Whats-App-Image-2026-11-06-at-10-35-10-PM.jpg',
+      'https://i.ibb.co/nVMmHNK/Whats-App-Image-2026-11-06-at-10-35-11-PM.jpg',
     ],
     base_price: 5500,
     currency: 'NGN',
@@ -1103,8 +1102,9 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     is_featured: true,
     is_new_arrival: true,
     images: [
-      { id: 'img-47-1', image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg', alt_text: 'Luxe Lace-Border Chiffon Veil drape view' },
-      { id: 'img-47-2', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.33.35_PM_e737bb62.jpeg', alt_text: 'Stacked color collection' },
+      { id: 'img-47-1', image_url: 'https://i.ibb.co/qYSMqbNw/Whats-App-Image-2026-11-06-at-10-35-10-PM-1.jpg', alt_text: 'Laced Chiffon Veil - Main View' },
+      { id: 'img-47-2', image_url: 'https://i.ibb.co/848yGYpb/Whats-App-Image-2026-11-06-at-10-35-10-PM.jpg', alt_text: 'Laced Chiffon Veil - Detail View' },
+      { id: 'img-47-3', image_url: 'https://i.ibb.co/nVMmHNK/Whats-App-Image-2026-11-06-at-10-35-11-PM.jpg', alt_text: 'Laced Chiffon Veil - Border View' },
     ],
     variations: [
       { id: 'var-47-1', product_id: '00000000-0000-0000-0000-000000000047', size: 'Maxi (200x75cm)', colour: 'Midnight Black & Gold', price_adjustment: 0, stock_quantity: 20, is_active: true },
@@ -1114,29 +1114,48 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: '00000000-0000-0000-0000-000000000048',
-    name: 'Comfort Fit Jersey Under-Cap',
-    slug: 'comfort-fit-jersey-under-cap',
-    short_description: 'Breathable non-slip jersey cap designed for all-day comfort and hair security.',
-    description: 'Engineered from ultra-soft stretch cotton jersey with ergonomic tie-back or slip-on fit. Prevents slippage while keeping your hair securely tucked. Available in 28 rich shades.',
+    name: 'Comfort Fit Jersey Cap',
+    slug: 'jersey-cap',
+    short_description: 'Ergonomic non-slip stretch jersey cap crafted for all-day comfort and hair security.',
+    description: 'Breathable, non-slip cotton-jersey cap tailored for effortless all-day wear without pressure or tension. Features an ergonomic cut to keep hair neatly secured beneath any hijab or veil.',
     category_id: 'c0000000-0000-0000-0000-000000000007', // Caps
-    main_image_url: '/assets/aistudio/image_3e1d9478.png', // Blue cap as cover
+    main_image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', // Blue cap MUST BE THE MAIN COVER IMAGE
     additionalImages: [
-      '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', // Color palette image under it
+      'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg',
+      'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg',
     ],
-    base_price: 1500,
+    base_price: 700,
     currency: 'NGN',
     is_published: true,
     is_featured: true,
     is_new_arrival: true,
     images: [
-      { id: 'img-48-1', image_url: '/assets/aistudio/image_3e1d9478.png', alt_text: 'Teal blue cap cover view' },
-      { id: 'img-48-2', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_9.50.11_PM_61e72630.jpeg', alt_text: 'Jersey Under-Cap color palette' },
+      { id: 'img-48-1', image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', alt_text: 'Blue jersey cap - Main Cover View' },
+      { id: 'img-48-2', image_url: 'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg', alt_text: 'Jersey cap - Additional Angle' },
+      { id: 'img-48-3', image_url: 'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg', alt_text: 'Jersey cap - Color Selection' },
     ],
     variations: [
       { id: 'var-48-1', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Teal Blue', price_adjustment: 0, stock_quantity: 30, is_active: true },
       { id: 'var-48-2', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Jet Black', price_adjustment: 0, stock_quantity: 30, is_active: true },
       { id: 'var-48-3', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Nude Biscotti', price_adjustment: 0, stock_quantity: 30, is_active: true },
     ],
+  },
+];
+
+/**
+ * Owner-supplied photographs awaiting official product name, price, and category identification.
+ * Preserved safely without inventing product records or prematurely assigning categories.
+ */
+export const PENDING_OWNER_SUPPLIED_IMAGES = [
+  {
+    url: 'https://i.ibb.co/XxPxRt6d/Whats-App-Image-2026-11-08-at-10-58-50-AM.jpg',
+    status: 'Pending owner confirmation for product name, price, and category',
+    date_supplied: '2026-11-08',
+  },
+  {
+    url: 'https://i.ibb.co/WWhm46CG/Whats-App-Image-2026-11-06-at-10-11-27-PM.jpg',
+    status: 'Pending owner confirmation for product name, price, and category',
+    date_supplied: '2026-11-08',
   },
 ];
 

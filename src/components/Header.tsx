@@ -7,6 +7,7 @@ import { SHOP_CONFIG } from '../config/shopConfig';
 import ThemeToggle from './ThemeToggle';
 import { getPublishedProducts, getActiveCategories } from '../lib/api';
 import { Product, Category } from '../types/product';
+import { calculateProductPricing } from '../utils/pricing';
 
 export default function Header() {
   const { cart, toggleCart } = useCart();
@@ -234,9 +235,23 @@ export default function Header() {
                             <h4 className="text-xs font-medium text-stone-900 group-hover:text-emerald-900 truncate">
                               {prod.name}
                             </h4>
-                            <p className="text-[11px] text-stone-500">
-                              ₦{(prod.base_price || 0).toLocaleString()}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-[11px]">
+                              {(() => {
+                                const pricing = calculateProductPricing(prod, categories);
+                                return (
+                                  <>
+                                    <span className="font-semibold text-stone-900">
+                                      {pricing.formattedSellingPrice}
+                                    </span>
+                                    {pricing.hasDiscount && (
+                                      <span className="text-stone-400 line-through text-[10px]">
+                                        {pricing.formattedOriginalPrice}
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </div>
                           <ArrowRight size={14} className="text-stone-400 group-hover:translate-x-1 transition-transform" />
                         </div>

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, RotateCcw } from 'lucide-react';
 import { getPublishedProducts, getActiveCategories } from '../lib/api';
 import { Product, Category } from '../types/product';
+import { calculateProductPricing } from '../utils/pricing';
 import ProductCard from './ProductCard';
 import Header from './Header';
 import Footer from './Footer';
@@ -75,8 +76,12 @@ export default function ShopPage() {
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === 'price-asc') return (a.base_price || 0) - (b.base_price || 0);
-        if (sortBy === 'price-desc') return (b.base_price || 0) - (a.base_price || 0);
+        if (sortBy === 'price-asc') {
+          return calculateProductPricing(a, categories).sellingPrice - calculateProductPricing(b, categories).sellingPrice;
+        }
+        if (sortBy === 'price-desc') {
+          return calculateProductPricing(b, categories).sellingPrice - calculateProductPricing(a, categories).sellingPrice;
+        }
         if (sortBy === 'newest') return (b.is_new_arrival ? 1 : 0) - (a.is_new_arrival ? 1 : 0);
         // Default featured
         return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);

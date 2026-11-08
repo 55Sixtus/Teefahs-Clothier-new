@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Check, ShoppingBag, MessageCircle, Eye, Camera, Sparkles, Maximize2, ShieldCheck } from 'lucide-react';
+import { X, Check, ShoppingBag, MessageCircle, Eye, Camera, Sparkles, Maximize2, ShieldCheck, Tag } from 'lucide-react';
 import { Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 import { trackProductView, trackAddToCart, trackWhatsAppConversion } from '../utils/analytics';
+import { calculateProductPricing } from '../utils/pricing';
 
 export interface ProductModalProps {
   product: Product | null;
@@ -12,17 +13,15 @@ export interface ProductModalProps {
   onClose: () => void;
 }
 
-interface AngleSlot {
-  key: 'front' | 'back' | 'side' | 'detail' | string;
+interface GallerySlot {
+  key: string;
   title: string;
-  subtitle: string;
-  image?: string;
-  isPlaceholder: boolean;
+  image: string;
 }
 
 export default function ProductModal({ product, isOpen = true, onClose }: ProductModalProps) {
   const { addToCart } = useCart();
-  const [selectedAngleKey, setSelectedAngleKey] = useState<string>('front');
+  const [selectedImageKey, setSelectedImageKey] = useState<string>('0');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColour, setSelectedColour] = useState<string>('');
@@ -53,86 +52,63 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
         price: product.base_price || 0,
         category: (product as any).category?.name || 'Modest Wear',
       });
-      setSelectedAngleKey('front');
+      setSelectedImageKey('0');
     }
   }, [product?.id]);
 
   if (!product || !isOpen) return null;
 
-  // 1. Resolve primary (Front View) image
-  const frontImage = product.main_image_url || 
+  const pricing = calculateProductPricing(product);
+
+  // 1. Resolve product primary image
+  const primaryImage = product.main_image_url || 
     (product.images && product.images[0]?.image_url) || 
     (product.additionalImages && product.additionalImages[0]) || 
     SUPPLIED_PHOTOS[0];
 
-  // 2. Resolve additional images array
-  const rawAdditional: string[] = [];
-  
+  // 2. Resolve genuine images strictly belonging to this product
+  const productImagesList: string[] = [];
+  if (primaryImage) productImagesList.push(primaryImage);
+
   if (product.additionalImages && Array.isArray(product.additionalImages)) {
     product.additionalImages.forEach(url => {
-      if (url && typeof url === 'string' && !rawAdditional.includes(url) && url !== frontImage) {
-        rawAdditional.push(url);
+      if (url && typeof url === 'string' && !productImagesList.includes(url)) {
+        productImagesList.push(url);
       }
     });
   }
 
   if (product.images && Array.isArray(product.images)) {
-    product.images.forEach((imgObj, idx) => {
+    product.images.forEach(imgObj => {
       const url = typeof imgObj === 'string' ? imgObj : imgObj?.image_url;
-      if (url && !rawAdditional.includes(url) && (idx > 0 || url !== frontImage)) {
-        rawAdditional.push(url);
+      if (url && typeof url === 'string' && !productImagesList.includes(url)) {
+        productImagesList.push(url);
       }
     });
   }
 
-  // 3. Build structured angle slots with placeholders for missing back, side, detail views
-  const angleSlots: AngleSlot[] = [
-    {
-      key: 'front',
-      title: 'Front View',
-      subtitle: 'Primary silhouette',
-      image: frontImage,
-      isPlaceholder: false,
-    },
-    {
-      key: 'back',
-      title: 'Back View',
-      subtitle: 'Rear drape & flow',
-      image: rawAdditional[0] || undefined,
-      isPlaceholder: !rawAdditional[0],
-    },
-    {
-      key: 'side',
-      title: 'Side View',
-      subtitle: 'Profile & sleeve cut',
-      image: rawAdditional[1] || undefined,
-      isPlaceholder: !rawAdditional[1],
-    },
-    {
-      key: 'detail',
-      title: 'Detail View',
-      subtitle: 'Embroidery & fabric',
-      image: rawAdditional[2] || undefined,
-      isPlaceholder: !rawAdditional[2],
-    },
-  ];
+  // 3. Construct Gallery Slots belonging ONLY to this product with neutral, truthful labels
+  const gallerySlots: GallerySlot[] = productImagesList.map((url, idx) => {
+    // If only 1 image, label it Primary View
+    // If multiple, label View 1, View 2, etc. (never invent front/back/side without verified angle data)
+    let title = `Photograph ${idx + 1}`;
+    if (idx === 0) {
+      title = productImagesList.length > 1 ? 'Primary View' : 'Garment Photograph';
+    } else {
+      title = `View ${idx + 1}`;
+    }
 
-  // Add any further additional photos beyond the core 3 angles
-  if (rawAdditional.length > 3) {
-    rawAdditional.slice(3).forEach((extraUrl, idx) => {
-      angleSlots.push({
-        key: `extra-${idx + 1}`,
-        title: `Angle #${idx + 5}`,
-        subtitle: 'Additional showcase',
-        image: extraUrl,
-        isPlaceholder: false,
-      });
-    });
-  }
+    return {
+      key: `${idx}`,
+      title,
+      image: url,
+    };
+  });
 
-  // Find active focused angle slot
-  const currentSlot = angleSlots.find(s => s.key === selectedAngleKey) || angleSlots[0];
-  const activeDisplayImage = (!currentSlot.isPlaceholder && currentSlot.image) ? currentSlot.image : frontImage;
+  // Find active focused gallery image
+  const currentSlotIndex = parseInt(selectedImageKey, 10);
+  const activeSlot = gallerySlots[currentSlotIndex] || gallerySlots[0];
+  const activeDisplayImage = activeSlot?.image || primaryImage;
 
   // Variations: sizes and colours
   const rawSizes = product.variations?.map(v => v.size).filter(Boolean) as string[] | undefined;
@@ -178,8 +154,12 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
   };
 
   const chatNumber = getActiveWhatsAppChatNumber();
+  const priceDisplayNote = pricing.hasDiscount 
+    ? `₦${pricing.sellingPrice.toLocaleString()} (10% OFF from ₦${pricing.originalPrice.toLocaleString()})`
+    : `₦${pricing.sellingPrice.toLocaleString()}`;
+
   const whatsappMessage = encodeURIComponent(
-    `Assalamu Alaikum Teefahs Clothier! I am viewing:\n\n*${product.name}*\nPrice: ₦${product.base_price ? product.base_price.toLocaleString() : 'Contact for price'}\nSize: ${currentSize}\nColour: ${currentColour}\n\nCould you please confirm availability and order details?`
+    `Assalamu Alaikum Teefahs Clothier! I am viewing:\n\n*${product.name}*\nPrice: ${priceDisplayNote}\nSize: ${currentSize}\nColour: ${currentColour}\n\nCould you please confirm availability and order details?`
   );
 
   return (
@@ -210,15 +190,17 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
               <div className="relative aspect-[3/4] w-full max-h-[440px] sm:max-h-[500px] overflow-hidden bg-stone-100 dark:bg-stone-900 shadow-sm border border-stone-200/70 dark:border-stone-800 rounded-xs group">
                 <img
                   src={activeDisplayImage}
-                  alt={`${product.name} - ${currentSlot.title}`}
+                  alt={`${product.name} - ${activeSlot?.title || 'View'}`}
                   className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                 />
                 
-                {/* Active Angle Badge */}
+                {/* Active Photo Badge */}
                 <div className="absolute bottom-3 left-3 bg-stone-900/80 backdrop-blur-sm text-stone-100 text-xs px-3 py-1.5 rounded-xs flex items-center gap-2 border border-stone-700/60 shadow">
                   <Sparkles size={13} className="text-amber-400" />
-                  <span className="font-medium tracking-wide">{currentSlot.title}</span>
-                  <span className="text-[10px] text-stone-300">({currentSlot.subtitle})</span>
+                  <span className="font-medium tracking-wide">{activeSlot?.title || 'Photograph'}</span>
+                  {gallerySlots.length > 1 && (
+                    <span className="text-[10px] text-stone-300">({currentSlotIndex + 1} of {gallerySlots.length})</span>
+                  )}
                 </div>
 
                 {/* Lightbox / Zoom Button */}
@@ -232,97 +214,74 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                 </button>
               </div>
 
-              {/* Grid View of Additional Product Views */}
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-xs font-semibold tracking-wider uppercase text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-                    <Eye size={14} className="text-amber-500" />
-                    Garment Angles & Detail Views
-                  </span>
-                  <span className="text-[11px] text-stone-500 dark:text-stone-400">
-                    Click any angle to view
-                  </span>
-                </div>
+              {/* Grid View of Genuine Product Photographs (Only if product has multiple views) */}
+              {gallerySlots.length > 1 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-xs font-semibold tracking-wider uppercase text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                      <Eye size={14} className="text-amber-500" />
+                      Product Gallery ({gallerySlots.length} Views)
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-stone-400">
+                      Click to inspect view
+                    </span>
+                  </div>
 
-                {/* Responsive 4-Slot Grid: Front, Back, Side, Detail */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {angleSlots.map((slot) => {
-                    const isSelected = selectedAngleKey === slot.key;
+                  {/* Responsive Grid of Genuine Product Photos Only */}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                    {gallerySlots.map((slot, idx) => {
+                      const isSelected = selectedImageKey === `${idx}`;
 
-                    if (slot.isPlaceholder) {
                       return (
-                        <div
+                        <button
                           key={slot.key}
-                          onClick={() => setSelectedAngleKey(slot.key)}
-                          className={`relative aspect-[3/4] rounded-xs border-2 border-dashed p-2.5 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                          type="button"
+                          onClick={() => setSelectedImageKey(`${idx}`)}
+                          className={`relative aspect-[3/4] rounded-xs overflow-hidden border-2 transition-all text-left group ${
                             isSelected
-                              ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-1 ring-amber-500'
-                              : 'border-stone-300 dark:border-stone-800 bg-stone-100/60 dark:bg-stone-900/50 hover:border-stone-400 dark:hover:border-stone-700'
+                              ? 'border-amber-500 ring-2 ring-amber-500/50'
+                              : 'border-stone-200 dark:border-stone-700 hover:border-stone-400'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 mb-1.5">
-                            <Camera size={15} />
+                          <img
+                            src={slot.image}
+                            alt={slot.title}
+                            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-1.5 pt-3">
+                            <p className="text-[10px] font-medium text-white truncate leading-tight">
+                              {slot.title}
+                            </p>
                           </div>
-                          <span className="text-xs font-medium text-stone-800 dark:text-stone-200 leading-tight">
-                            {slot.title}
-                          </span>
-                          <span className="text-[10px] text-stone-400 dark:text-stone-500 mt-1 leading-snug">
-                            {slot.subtitle}
-                          </span>
-                          <span className="mt-2 text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-xs bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300">
-                            Photo Coming
-                          </span>
-                        </div>
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow">
+                              <Check size={10} strokeWidth={3} />
+                            </div>
+                          )}
+                        </button>
                       );
-                    }
-
-                    return (
-                      <button
-                        key={slot.key}
-                        type="button"
-                        onClick={() => setSelectedAngleKey(slot.key)}
-                        className={`relative aspect-[3/4] rounded-xs overflow-hidden border-2 transition-all text-left group ${
-                          isSelected
-                            ? 'border-amber-500 ring-2 ring-amber-500/50'
-                            : 'border-stone-200 dark:border-stone-700 hover:border-stone-400'
-                        }`}
-                      >
-                        <img
-                          src={slot.image}
-                          alt={slot.title}
-                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-2 pt-4">
-                          <p className="text-[11px] font-medium text-white truncate leading-tight">
-                            {slot.title}
-                          </p>
-                          <p className="text-[9px] text-stone-300 truncate">
-                            {slot.subtitle}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center shadow">
-                            <Check size={11} strokeWidth={3} />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Right 5 Columns: Product Information & Purchase Controls */}
             <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100">
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {pricing.hasDiscount && (
+                    <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold bg-amber-600 text-white rounded-xs">
+                      10% OFF PROMOTION
+                    </span>
+                  )}
                   {product.is_new_arrival && (
                     <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold bg-emerald-800 text-white rounded-xs">
                       New Collection
                     </span>
                   )}
                   {product.is_featured && (
-                    <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold bg-amber-600 text-white rounded-xs">
+                    <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold bg-stone-900 text-white rounded-xs">
                       Featured
                     </span>
                   )}
@@ -335,14 +294,20 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                 {/* Price Display */}
                 <div className="flex items-baseline gap-3 my-3.5">
                   <span className="text-2xl sm:text-3xl font-semibold text-stone-900 dark:text-amber-300">
-                    ₦{product.base_price ? product.base_price.toLocaleString() : 'Price upon request'}
+                    {pricing.formattedSellingPrice}
                   </span>
-                  {product.sale_price && (
-                    <span className="text-base line-through text-stone-400 dark:text-stone-500">
-                      ₦{product.sale_price.toLocaleString()}
+                  {pricing.hasDiscount && (
+                    <span className="text-base line-through text-stone-400 dark:text-stone-500 font-light">
+                      {pricing.formattedOriginalPrice}
                     </span>
                   )}
                 </div>
+
+                {pricing.hasDiscount && (
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mb-3">
+                    You save {pricing.formattedDiscountAmount} (10% promotional discount applied)
+                  </p>
+                )}
 
                 {/* Description */}
                 <div className="text-sm text-stone-600 dark:text-stone-300 py-3 border-t border-b border-stone-100 dark:border-stone-800 my-4 leading-relaxed font-light">
@@ -458,7 +423,7 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                   ) : (
                     <>
                       <ShoppingBag size={16} />
-                      Add to Bag (₦{((product.base_price || 0) * quantity).toLocaleString()})
+                      Add to Bag (₦{(pricing.sellingPrice * quantity).toLocaleString()})
                     </>
                   )}
                 </button>
@@ -471,7 +436,7 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                     trackWhatsAppConversion('inquire_whatsapp', {
                       product_id: product.id,
                       product_name: product.name,
-                      value: product.base_price || 0,
+                      value: pricing.sellingPrice,
                     });
                   }}
                   className="w-full py-3 border border-emerald-700 dark:border-emerald-600 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 rounded-xs"

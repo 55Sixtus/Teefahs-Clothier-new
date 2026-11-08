@@ -6,6 +6,7 @@ import { getAllProducts } from '../lib/api';
 import { Product } from '../types/product';
 import ProductModal from './ProductModal';
 import { useCart } from '../context/CartContext';
+import { calculateProductPricing } from '../utils/pricing';
 
 interface GalleryItem {
   id: number;
@@ -277,11 +278,21 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                   <h4 className="font-serif text-xs md:text-sm leading-snug font-medium line-clamp-2">
                     {item.title}
                   </h4>
-                  {item.product && (
-                    <p className="text-xs text-amber-300 mt-1 font-bold">
-                      ₦{item.product.base_price ? item.product.base_price.toLocaleString() : 'Enquire'}
-                    </p>
-                  )}
+                  {item.product && (() => {
+                    const pricing = calculateProductPricing(item.product);
+                    return (
+                      <div className="flex items-baseline gap-1.5 mt-1">
+                        <span className="text-xs text-amber-300 font-bold">
+                          {pricing.formattedSellingPrice}
+                        </span>
+                        {pricing.hasDiscount && (
+                          <span className="text-[10px] text-stone-300 line-through">
+                            {pricing.formattedOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white underline underline-offset-4">
                     <span>View Look &amp; Angles</span>
                     <ArrowRight size={12} />
@@ -290,11 +301,17 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
               </div>
 
               {/* Static Price Badge on Corner */}
-              {item.product?.base_price && (
-                <div className="absolute top-2.5 left-2.5 z-10 px-2 py-0.5 bg-stone-900/85 backdrop-blur-xs text-white text-[11px] font-semibold rounded-xs shadow-sm">
-                  ₦{item.product.base_price.toLocaleString()}
-                </div>
-              )}
+              {item.product && (() => {
+                const pricing = calculateProductPricing(item.product);
+                return (
+                  <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-2 py-0.5 bg-stone-900/85 backdrop-blur-xs text-white text-[11px] font-semibold rounded-xs shadow-sm">
+                    <span>{pricing.formattedSellingPrice}</span>
+                    {pricing.hasDiscount && (
+                      <span className="text-[9px] font-bold text-amber-300">10% OFF</span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Permanent Card Bottom Footer */}
@@ -304,9 +321,25 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                   {item.title}
                 </p>
                 <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-xs font-bold text-stone-900">
-                    ₦{item.product?.base_price ? item.product.base_price.toLocaleString() : 'Enquire'}
-                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    {item.product ? (() => {
+                      const pricing = calculateProductPricing(item.product);
+                      return (
+                        <>
+                          <span className="text-xs font-bold text-stone-900">
+                            {pricing.formattedSellingPrice}
+                          </span>
+                          {pricing.hasDiscount && (
+                            <span className="text-[10px] text-stone-400 line-through">
+                              {pricing.formattedOriginalPrice}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })() : (
+                      <span className="text-xs font-bold text-stone-900">Enquire</span>
+                    )}
+                  </div>
                   <span className="text-[10px] text-stone-500 uppercase tracking-wider">
                     {item.category}
                   </span>
@@ -386,16 +419,33 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                       {activeItem.product.short_description || activeItem.product.description}
                     </p>
 
-                    <div className="p-3 bg-stone-50 border border-stone-200 rounded-xs flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold block mb-0.5">
-                          Price
-                        </span>
-                        <span className="text-xl font-serif font-bold text-stone-900">
-                          ₦{activeItem.product.base_price ? activeItem.product.base_price.toLocaleString() : 'Enquire'}
-                        </span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const pricing = calculateProductPricing(activeItem.product);
+                      return (
+                        <div className="p-3 bg-stone-50 border border-stone-200 rounded-xs flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold block mb-0.5">
+                              Price
+                            </span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-xl font-serif font-bold text-stone-900">
+                                {pricing.formattedSellingPrice}
+                              </span>
+                              {pricing.hasDiscount && (
+                                <span className="text-sm text-stone-400 line-through">
+                                  {pricing.formattedOriginalPrice}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {pricing.hasDiscount && (
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-xs font-bold rounded-xs uppercase tracking-wider">
+                              10% OFF
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Variations Preview */}
                     {activeItem.product.variations && activeItem.product.variations.length > 0 && (

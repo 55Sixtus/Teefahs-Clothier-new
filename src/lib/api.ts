@@ -101,6 +101,9 @@ export const getDatabaseDiagnostics = async (): Promise<DatabaseDiagnostics> => 
 };
 
 const getLocalStoredProducts = (): Product[] => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return INITIAL_PRODUCTS;
+  }
   try {
     const raw = localStorage.getItem(LOCAL_PRODUCTS_KEY);
     if (raw) {
@@ -112,19 +115,59 @@ const getLocalStoredProducts = (): Product[] => {
         let changed = false;
 
         const updated = parsed.map((p: any) => {
-          // If Layla was mistakenly overwritten to 130000 due to the single-product collision bug, restore 255000
+          // Ensure Layla is 68,000 as specified by the owner
           if (p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') {
-            if (p.base_price === 130000 || p.base_price === 65000) {
+            if (p.base_price === 130000 || p.base_price === 255000) {
               changed = true;
-              return { ...p, name: 'Layla Embellished Luxury Occasion Silk Abaya', base_price: 255000 };
+              return { ...p, name: 'Layla Embellished Luxury Occasion Silk Abaya', base_price: 68000 };
             }
           }
-          // Ensure Noor Abaya is 255000 as specified by the owner
+          // Ensure Noor Abaya is 255,000 as specified by the owner
           if (p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') {
             if (p.base_price === 45000) {
               changed = true;
               return { ...p, base_price: 255000 };
             }
+          }
+          // Ensure Caps product has confirmed owner supplied images and exact 700 price (blue cap as cover)
+          if (p.id === '00000000-0000-0000-0000-000000000048' || p.slug === 'jersey-cap' || p.slug === 'zainab-luxe-modal-hijab-under-cap') {
+            changed = true;
+            return {
+              ...p,
+              name: 'Comfort Fit Jersey Cap',
+              slug: 'jersey-cap',
+              base_price: 700,
+              main_image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg',
+              additionalImages: [
+                'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg',
+                'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg',
+              ],
+              images: [
+                { id: 'img-48-1', image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', alt_text: 'Blue jersey cap - Main Cover View' },
+                { id: 'img-48-2', image_url: 'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg', alt_text: 'Jersey cap - Additional Angle' },
+                { id: 'img-48-3', image_url: 'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg', alt_text: 'Jersey cap - Color Selection' },
+              ],
+            };
+          }
+          // Ensure Laced Chiffon Veil has confirmed owner supplied images and price 5500
+          if (p.id === '00000000-0000-0000-0000-000000000047' || p.slug === 'laced-chiffon-veil' || p.slug === 'luxe-lace-border-chiffon-veil') {
+            changed = true;
+            return {
+              ...p,
+              name: 'Laced Chiffon Veil',
+              slug: 'laced-chiffon-veil',
+              base_price: 5500,
+              main_image_url: 'https://i.ibb.co/qYSMqbNw/Whats-App-Image-2026-11-06-at-10-35-10-PM-1.jpg',
+              additionalImages: [
+                'https://i.ibb.co/848yGYpb/Whats-App-Image-2026-11-06-at-10-35-10-PM.jpg',
+                'https://i.ibb.co/nVMmHNK/Whats-App-Image-2026-11-06-at-10-35-11-PM.jpg',
+              ],
+              images: [
+                { id: 'img-47-1', image_url: 'https://i.ibb.co/qYSMqbNw/Whats-App-Image-2026-11-06-at-10-35-10-PM-1.jpg', alt_text: 'Laced Chiffon Veil - Main View' },
+                { id: 'img-47-2', image_url: 'https://i.ibb.co/848yGYpb/Whats-App-Image-2026-11-06-at-10-35-10-PM.jpg', alt_text: 'Laced Chiffon Veil - Detail View' },
+                { id: 'img-47-3', image_url: 'https://i.ibb.co/nVMmHNK/Whats-App-Image-2026-11-06-at-10-35-11-PM.jpg', alt_text: 'Laced Chiffon Veil - Border View' },
+              ],
+            };
           }
           // Remove photos 0-2 from Noor Abaya if still present
           if (p.id === '00000000-0000-0000-0000-000000000001' && p.images && p.images.length > 6) {
@@ -167,6 +210,7 @@ const getLocalStoredProducts = (): Product[] => {
 };
 
 const setLocalStoredProducts = (products: Product[]) => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(LOCAL_PRODUCTS_KEY, JSON.stringify(products));
   } catch (e) {
@@ -175,6 +219,9 @@ const setLocalStoredProducts = (products: Product[]) => {
 };
 
 const getLocalStoredCategories = (): Category[] => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return INITIAL_CATEGORIES;
+  }
   try {
     const raw = localStorage.getItem(LOCAL_CATEGORIES_KEY);
     if (raw) {
@@ -201,6 +248,7 @@ const getLocalStoredCategories = (): Category[] => {
 };
 
 const setLocalStoredCategories = (categories: Category[]) => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(LOCAL_CATEGORIES_KEY, JSON.stringify(categories));
   } catch (e) {
@@ -284,8 +332,8 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
           if ((p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') && basePrice === 45000) {
             basePrice = 255000;
           }
-          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 65000)) {
-            basePrice = 255000;
+          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 255000)) {
+            basePrice = 68000;
           }
 
           return {
@@ -369,8 +417,8 @@ export const getAllProducts = async (): Promise<Product[]> => {
           if ((p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') && basePrice === 45000) {
             basePrice = 255000;
           }
-          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 65000)) {
-            basePrice = 255000;
+          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 255000)) {
+            basePrice = 68000;
           }
 
           return {

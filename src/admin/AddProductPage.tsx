@@ -161,9 +161,10 @@ export default function AddProductPage() {
       return;
     }
 
-    const parsedPrice = parseFloat(price);
-    if (!price || isNaN(parsedPrice) || parsedPrice <= 0) {
-      setErrorMsg('Please enter a valid selling price in Naira (₦).');
+    const cleanedPrice = price.toString().replace(/,/g, '').trim();
+    const parsedPrice = parseFloat(cleanedPrice);
+    if (!cleanedPrice || isNaN(parsedPrice) || parsedPrice <= 0) {
+      setErrorMsg('Please enter a valid selling price in Naira (₦), e.g. 700 or 1500.');
       return;
     }
 
@@ -281,7 +282,7 @@ export default function AddProductPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
         {/* Section 1: Garment Details */}
         <div className="bg-white p-6 border border-stone-200 rounded-sm shadow-2xs space-y-4">
           <h2 className="text-sm font-semibold text-stone-900 uppercase tracking-wider pb-2 border-b border-stone-100">
@@ -312,13 +313,12 @@ export default function AddProductPage() {
                   ₦
                 </span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   required
-                  min="0"
-                  step="500"
                   value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  placeholder="45000"
+                  onChange={e => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+                  placeholder="e.g. 700 or 1500"
                   className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900"
                 />
               </div>
@@ -333,12 +333,11 @@ export default function AddProductPage() {
                   ₦
                 </span>
                 <input
-                  type="number"
-                  min="0"
-                  step="500"
+                  type="text"
+                  inputMode="decimal"
                   value={salePrice}
-                  onChange={e => setSalePrice(e.target.value)}
-                  placeholder="55000"
+                  onChange={e => setSalePrice(e.target.value.replace(/[^0-9.]/g, ''))}
+                  placeholder="e.g. 1000"
                   className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900"
                 />
               </div>

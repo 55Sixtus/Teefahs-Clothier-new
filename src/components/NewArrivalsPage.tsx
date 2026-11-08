@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ShoppingBag } from 'lucide-react';
 import { getPublishedProducts } from '../lib/api';
 import { Product } from '../types/product';
+import { calculateProductPricing } from '../utils/pricing';
 import ProductCard from './ProductCard';
 import Header from './Header';
 import Footer from './Footer';
@@ -37,8 +38,12 @@ export default function NewArrivalsPage() {
 
   const sortedProducts = useMemo(() => {
     return [...products].sort((a, b) => {
-      if (selectedSort === 'price-asc') return (a.base_price || 0) - (b.base_price || 0);
-      if (selectedSort === 'price-desc') return (b.base_price || 0) - (a.base_price || 0);
+      if (selectedSort === 'price-asc') {
+        return calculateProductPricing(a).sellingPrice - calculateProductPricing(b).sellingPrice;
+      }
+      if (selectedSort === 'price-desc') {
+        return calculateProductPricing(b).sellingPrice - calculateProductPricing(a).sellingPrice;
+      }
       return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
     });
   }, [products, selectedSort]);

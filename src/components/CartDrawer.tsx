@@ -19,6 +19,7 @@ import { useCart } from '../context/CartContext';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import { trackBeginCheckout, trackWhatsAppConversion } from '../utils/analytics';
+import { calculateProductPricing } from '../utils/pricing';
 
 export default function CartDrawer() {
   const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -97,8 +98,19 @@ export default function CartDrawer() {
     };
   }, [isCartOpen, closeCart]);
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.product.base_price || 0) * item.quantity, 0);
   const totalItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const originalSubtotal = cart.reduce((sum, item) => {
+    const pricing = calculateProductPricing(item.product);
+    return sum + (pricing.originalPrice * item.quantity);
+  }, 0);
+
+  const subtotal = cart.reduce((sum, item) => {
+    const pricing = calculateProductPricing(item.product);
+    return sum + (pricing.sellingPrice * item.quantity);
+  }, 0);
+
+  const totalSavings = originalSubtotal - subtotal;
 
   // Generate structured, polite WhatsApp checkout order text
   const generateWhatsAppMessage = () => {
@@ -108,12 +120,20 @@ export default function CartDrawer() {
       '*ORDER SUMMARY*',
       '----------------------------------------',
       ...cart.map((item, idx) => {
-        const unit = item.product.base_price || 0;
+        const pricing = calculateProductPricing(item.product);
+        const unit = pricing.sellingPrice;
         const lineTotal = unit * item.quantity;
-        return `${idx + 1}. *${item.product.name}*\n   - Size: ${item.selectedSize || 'Standard'}\n   - Colour: ${item.selectedColour || 'Original'}\n   - Qty: ${item.quantity} × ₦${unit.toLocaleString()} = ₦${lineTotal.toLocaleString()}`;
+        const discountNote = pricing.hasDiscount 
+          ? ` (10% OFF from ₦${pricing.originalPrice.toLocaleString()})` 
+          : '';
+        return `${idx + 1}. *${item.product.name}*\n   - Size: ${item.selectedSize || 'Standard'}\n   - Colour: ${item.selectedColour || 'Original'}\n   - Qty: ${item.quantity} × ₦${unit.toLocaleString()}${discountNote} = ₦${lineTotal.toLocaleString()}`;
       }),
       '----------------------------------------',
-      `*ORDER SUBTOTAL (${totalItemCount} ${totalItemCount === 1 ? 'item' : 'items'}): ₦${subtotal.toLocaleString()}*`,
+      ...(totalSavings > 0 ? [
+        `*Original Subtotal: ₦${originalSubtotal.toLocaleString()}*`,
+        `*10% Promotional Savings: -₦${totalSavings.toLocaleString()}*`,
+      ] : []),
+      `*ORDER TOTAL (${totalItemCount} ${totalItemCount === 1 ? 'item' : 'items'}): ₦${subtotal.toLocaleString()}*`,
       '',
       '*CUSTOMER & DELIVERY DETAILS:*',
       `- Full Name: ${customerName.trim() || 'Awaiting customer entry'}`,
@@ -210,7 +230,8 @@ export default function CartDrawer() {
                   );
                   const maxStock = matchingVar?.stock_quantity ?? 50;
                   const isMax = item.quantity >= maxStock;
-                  const unitPrice = item.product.base_price || 0;
+                  const pricing = calculateProductPricing(item.product);
+                  const unitPrice = pricing.sellingPrice;
                   const lineTotal = unitPrice * item.quantity;
                   const itemImg = item.product.main_image_url || item.product.images?.[0]?.image_url || SUPPLIED_PHOTOS[0];
 
@@ -253,8 +274,20 @@ export default function CartDrawer() {
                             <span>Colour: <strong className="text-stone-800 dark:text-stone-200">{item.selectedColour || 'Original'}</strong></span>
                           </div>
 
-                          <div className="text-xs font-semibold text-emerald-950 dark:text-amber-300 mt-1">
-                            ₦{unitPrice.toLocaleString()} <span className="text-[10px] text-stone-400 font-normal">each</span>
+                          <div className="flex items-baseline flex-wrap gap-x-2 gap-y-0.5 mt-1.5">
+                            <span className="text-xs font-bold text-stone-900 dark:text-amber-300">
+                              {pricing.formattedSellingPrice} <span className="text-[10px] text-stone-400 font-normal">each</span>
+                            </span>
+                            {pricing.hasDiscount && (
+                              <span className="text-[11px] text-stone-400 line-through">
+                                {pricing.formattedOriginalPrice}
+                              </span>
+                            )}
+                            {pricing.hasDiscount && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded-xs uppercase tracking-wider">
+                                10% OFF
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -376,13 +409,29 @@ export default function CartDrawer() {
           <div className="p-4 sm:p-6 border-t border-stone-200 dark:border-stone-800 bg-stone-50/95 dark:bg-stone-950/95 sticky bottom-0 z-20 space-y-3.5 shadow-lg">
             
             {/* Order Summary Line */}
+            {totalSavings > 0 && (
+              <div className="space-y-1.5 pb-2 border-b border-stone-200 dark:border-stone-800 text-xs">
+                <div className="flex justify-between items-center text-stone-500">
+                  <span>Original Total</span>
+                  <span className="line-through">₦{originalSubtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-amber-800 dark:text-amber-400 font-semibold">
+                  <span className="flex items-center gap-1">
+                    <span className="px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[10px] rounded uppercase font-bold">10% OFF</span>
+                    <span>Promotional Discount</span>
+                  </span>
+                  <span>-₦{totalSavings.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-baseline">
               <div>
                 <span className="text-xs uppercase tracking-wider text-stone-600 dark:text-stone-400 font-semibold block">
                   Order Subtotal
                 </span>
                 <span className="text-[11px] text-stone-500 dark:text-stone-400 font-light">
-                  {totalItemCount} {totalItemCount === 1 ? 'garment' : 'garments'} selected
+                  {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'} selected
                 </span>
               </div>
               <div className="text-right">
