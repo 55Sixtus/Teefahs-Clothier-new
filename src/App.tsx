@@ -26,6 +26,7 @@ import OurStoryPage from './components/OurStoryPage';
 import ContactPage from './components/ContactPage';
 import GalleryPage from './components/GalleryPage';
 import GallerySection from './components/GallerySection';
+import PromoBanner from './components/PromoBanner';
 import SEO from './components/SEO';
 import { ASSETS } from './data/assets';
 
@@ -37,6 +38,7 @@ function HomePage() {
         description="Shop bespoke Dubai abayas, Malaysian hijabs, French khimars, prayer dresses, and veils at Teefahs Clothier. Handcrafted modesty & elegance in Lagos, Nigeria."
         keywords="Teefahs Clothier, abayas Lagos, buy abaya Nigeria, hijabs Lagos, French khimar, modest fashion Nigeria, Dubai abaya, Malaysian hijab, Islamic clothing Lagos, Queen Lateefah"
       />
+      <PromoBanner />
       <Header />
 
       {/* Hero Header */}

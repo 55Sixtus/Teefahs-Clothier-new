@@ -8,6 +8,7 @@ import ProductCard from './ProductCard';
 import Header from './Header';
 import Footer from './Footer';
 import SEO from './SEO';
+import PromoBanner from './PromoBanner';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -96,6 +97,7 @@ export default function ShopPage() {
         keywords="buy abayas Nigeria, abayas Lagos, modest clothing catalogue, khimar sets, prayer wear, luxury modest dresses"
       />
       <div>
+        <PromoBanner />
         <Header />
 
         {/* Page Banner */}
