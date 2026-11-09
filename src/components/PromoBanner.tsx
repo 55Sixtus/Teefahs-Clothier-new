@@ -9,7 +9,7 @@ export default function PromoBanner() {
           <span>Special Season Offer</span>
         </span>
         <span>
-          Enjoy <strong className="text-white font-bold">10% OFF</strong> automatically applied on all eligible abayas, khimars, and veils!
+          Enjoy <strong className="text-white font-bold">10% OFF</strong> automatically applied on all luxury abayas &amp; modest dresses!
         </span>
         <span className="hidden md:inline text-stone-400">•</span>
         <span className="text-stone-300 text-[11px] font-light">

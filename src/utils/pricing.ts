@@ -8,9 +8,12 @@ export const PROMOTION_CONFIG = {
   isEnabled: true,
   discountPercentage: 10, // 10% OFF
   badgeText: '10% OFF',
-  // Categories strictly excluded from promotion: Accessories and Caps
-  excludedCategorySlugs: ['accessories', 'caps'],
-  excludedCategoryNames: ['Accessories', 'Caps'],
+  // Strictly eligible categories: dresses and abayas only
+  eligibleCategorySlugs: ['abayas', 'occasion-wear', 'prayer-wear'],
+  eligibleCategoryNames: ['Abayas', 'Occasion Wear', 'Prayer Wear'],
+  // Excluded categories per owner explicit instruction: Hijabs, Veils, Khimars, Caps, Accessories
+  excludedCategorySlugs: ['hijabs', 'veils', 'khimars', 'caps', 'accessories'],
+  excludedCategoryNames: ['Hijabs', 'Veils', 'Khimars', 'Caps', 'Accessories'],
 };
 
 export interface ProductPricing {
@@ -25,50 +28,91 @@ export interface ProductPricing {
 }
 
 /**
- * Check whether a category or product is an accessory/cap (excluded from the 10% promotion).
+ * Check whether a product is eligible for the 10% promotion.
+ * Rule: ONLY dresses / abayas / occasion gowns / prayer dresses are eligible.
+ * Hijabs, veils, khimars, caps, and accessories are strictly EXCLUDED.
  */
-export function isAccessory(product: Partial<Product>, categories?: Category[]): boolean {
+export function isEligibleForPromotion(product: Partial<Product>, categories?: Category[]): boolean {
   if (!product) return false;
 
-  // Check product name/slug hints
   const slug = (product.slug || '').toLowerCase();
   const name = (product.name || '').toLowerCase();
+
+  // Explicitly check for excluded terms in name/slug
   if (
-    slug.includes('pin') || 
-    slug.includes('brooch') || 
-    slug.includes('jewel') || 
-    slug.includes('accessori') ||
-    slug.includes('cap')
+    slug.includes('hijab') ||
+    slug.includes('veil') ||
+    slug.includes('khimar') ||
+    slug.includes('cap') ||
+    slug.includes('pin') ||
+    slug.includes('brooch') ||
+    slug.includes('jewel') ||
+    slug.includes('accessori')
   ) {
-    return true;
-  }
-  if (
-    name.includes('pin') || 
-    name.includes('brooch') || 
-    name.includes('accessories') ||
-    name.includes('cap')
-  ) {
-    return true;
+    return false;
   }
 
-  // Check category
+  if (
+    name.includes('hijab') ||
+    name.includes('veil') ||
+    name.includes('khimar') ||
+    name.includes('cap') ||
+    name.includes('pin') ||
+    name.includes('brooch') ||
+    name.includes('accessories')
+  ) {
+    return false;
+  }
+
+  // Check category if available
   if (categories && product.category_id) {
     const cat = categories.find(c => c.id === product.category_id);
     if (cat) {
       const catSlug = cat.slug.toLowerCase();
       const catName = cat.name.toLowerCase();
-      if (
-        catSlug === 'accessories' || 
-        catName === 'accessories' ||
-        catSlug === 'caps' || 
-        catName === 'caps'
-      ) {
+
+      // Check if explicitly excluded category
+      if (PROMOTION_CONFIG.excludedCategorySlugs.includes(catSlug) || 
+          PROMOTION_CONFIG.excludedCategoryNames.some(n => n.toLowerCase() === catName)) {
+        return false;
+      }
+
+      // Check if explicitly eligible category
+      if (PROMOTION_CONFIG.eligibleCategorySlugs.includes(catSlug) || 
+          PROMOTION_CONFIG.eligibleCategoryNames.some(n => n.toLowerCase() === catName)) {
         return true;
       }
     }
   }
 
+  // Fallback to name/slug match for dresses / abayas / gowns / kimonos / kaftans / coords
+  if (
+    name.includes('abaya') ||
+    name.includes('dress') ||
+    name.includes('gown') ||
+    name.includes('kimono') ||
+    name.includes('kaftan') ||
+    name.includes('coord') ||
+    name.includes('robe') ||
+    slug.includes('abaya') ||
+    slug.includes('dress') ||
+    slug.includes('gown') ||
+    slug.includes('kimono') ||
+    slug.includes('kaftan') ||
+    slug.includes('coord') ||
+    slug.includes('robe')
+  ) {
+    return true;
+  }
+
   return false;
+}
+
+/**
+ * Backward compatibility helper
+ */
+export function isAccessory(product: Partial<Product>, categories?: Category[]): boolean {
+  return !isEligibleForPromotion(product, categories);
 }
 
 /**

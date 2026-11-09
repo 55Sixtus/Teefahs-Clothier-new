@@ -180,6 +180,36 @@ const getLocalStoredProducts = (): Product[] => {
               }),
             };
           }
+          // Update Photoshoot items to distinct names, verified prices and single-photo galleries
+          const photoshootFixes: Record<string, { name: string; slug: string; price: number }> = {
+            '00000000-0000-0000-0000-000000000025': { name: 'Zahra Embroidered Neckline Crepe Abaya', slug: 'zahra-embroidered-neckline-crepe-abaya', price: 68000 },
+            '00000000-0000-0000-0000-000000000026': { name: 'Amina Sage Minimalist Pleated Abaya', slug: 'amina-sage-minimalist-pleated-abaya', price: 75000 },
+            '00000000-0000-0000-0000-000000000027': { name: 'Safiyyah Festive White & Red Embroidered Abaya', slug: 'safiyyah-festive-white-red-embroidered-abaya', price: 105000 },
+            '00000000-0000-0000-0000-000000000034': { name: 'Hajar Classic Tailored Taupe Abaya', slug: 'hajar-classic-tailored-taupe-abaya', price: 85000 },
+            '00000000-0000-0000-0000-000000000028': { name: 'Maryam Plum Utility Modest Coord Set', slug: 'maryam-plum-utility-modest-coord-set', price: 70000 },
+            '00000000-0000-0000-0000-000000000035': { name: 'Sultana Golden Brocade Celebration Gown', slug: 'sultana-golden-brocade-celebration-gown', price: 150000 },
+            '00000000-0000-0000-0000-000000000029': { name: 'Nawal Minimalist Taupe Button Abaya', slug: 'nawal-minimalist-taupe-button-abaya', price: 85000 },
+            '00000000-0000-0000-0000-000000000036': { name: 'Aisha Royal Purple Elegant Coord Set', slug: 'aisha-royal-purple-elegant-coord-set', price: 70000 },
+            '00000000-0000-0000-0000-000000000030': { name: 'Farah Slate Blue Floral Embroidered Abaya', slug: 'farah-slate-blue-floral-embroidered-abaya', price: 68000 },
+            '00000000-0000-0000-0000-000000000031': { name: 'Zeenat Mint Green Hand-Embellished Occasion Gown', slug: 'zeenat-mint-green-hand-embellished-occasion-gown', price: 130000 },
+            '00000000-0000-0000-0000-000000000037': { name: 'Yasmin Midnight Blue Floral Kaftan', slug: 'yasmin-midnight-blue-floral-kaftan', price: 68000 },
+            '00000000-0000-0000-0000-000000000038': { name: 'Malika Jet Black Beaded Signature Abaya', slug: 'malika-jet-black-beaded-signature-abaya', price: 68000 },
+            '00000000-0000-0000-0000-000000000032': { name: 'Rukayyah Blush Ruffled Layered Abaya', slug: 'rukayyah-blush-ruffled-layered-abaya', price: 70000 },
+            '00000000-0000-0000-0000-000000000033': { name: 'Jamilah Seafoam Beaded Occasion Robe', slug: 'jamilah-seafoam-beaded-occasion-robe', price: 90000 },
+            '00000000-0000-0000-0000-000000000039': { name: 'Khadija Artisanal Embroidered Denim Dress', slug: 'khadija-artisanal-embroidered-denim-dress', price: 58000 },
+            '00000000-0000-0000-0000-000000000040': { name: 'Aaliyah Dusty Mauve Ruffled Batwing Abaya', slug: 'aaliyah-dusty-mauve-ruffled-batwing-abaya', price: 70000 },
+          };
+          if (photoshootFixes[p.id]) {
+            const fix = photoshootFixes[p.id];
+            if (p.name.includes('Editorial Photoshoot') || p.base_price !== fix.price) {
+              changed = true;
+              p.name = fix.name;
+              p.slug = fix.slug;
+              p.base_price = fix.price;
+              p.additionalImages = [];
+            }
+          }
+
           if (p.additionalImages === undefined) {
             changed = true;
             p.additionalImages = (p.images && p.images.length > 1)
@@ -646,6 +676,11 @@ export const saveProduct = async (product: Partial<Product>): Promise<Product> =
     }
   }
 
+  // Instant notification for storefront and admin synchronization
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: savedProduct.id } }));
+  }
+
   return savedProduct;
 };
 
@@ -727,6 +762,11 @@ export const archiveProduct = async (id: string, deletedBy = 'Queen Lateefah'): 
     console.warn('Could not sync archive state to Supabase:', e);
   }
 
+  // Instant notification for storefront and admin synchronization
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id, archived: true } }));
+  }
+
   return archivedProduct;
 };
 
@@ -761,6 +801,11 @@ export const restoreProduct = async (id: string): Promise<Product | null> => {
     console.warn('Could not sync restore state to Supabase:', e);
   }
 
+  // Instant notification for storefront and admin synchronization
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id, restored: true } }));
+  }
+
   return restoredProduct;
 };
 
@@ -781,6 +826,11 @@ export const permanentlyDeleteProduct = async (id: string): Promise<void> => {
     await supabase.from('products').delete().eq('id', id);
   } catch (e) {
     console.warn('Could not permanently delete from Supabase:', e);
+  }
+
+  // Instant notification for storefront and admin synchronization
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id, deleted: true } }));
   }
 };
 

@@ -407,7 +407,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
             <div className="md:w-2/5 p-6 md:p-8 flex flex-col justify-between bg-white overflow-y-auto">
               <div>
                 <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-emerald-800 block mb-2">
-                  {activeItem.category} • View all angles &amp; details
+                  {activeItem.category} • Verified Boutique Piece
                 </span>
                 <h3 className="text-2xl font-serif text-stone-900 mb-3">
                   {activeItem.title}
@@ -489,7 +489,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                       }}
                       className="w-full py-2.5 border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors cursor-pointer"
                     >
-                      <span>View Front, Back &amp; Side Views</span>
+                      <span>View Garment Details</span>
                     </button>
                   </>
                 ) : (
