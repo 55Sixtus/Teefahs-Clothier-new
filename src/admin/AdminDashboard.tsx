@@ -18,13 +18,16 @@ import {
   AlertTriangle, 
   ChevronRight,
   Lock,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Check,
+  X
 } from 'lucide-react';
 import { 
   getAllProducts, 
   getAllCategories, 
   getDatabaseDiagnostics, 
-  DatabaseDiagnostics 
+  DatabaseDiagnostics,
+  updateProductPrice 
 } from '../lib/api';
 import { Product, Category } from '../types/product';
 
@@ -35,7 +38,35 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [dbDiag, setDbDiag] = useState<DatabaseDiagnostics | null>(null);
 
+  // Quick Price Edit Modal
+  const [quickPriceProduct, setQuickPriceProduct] = useState<Product | null>(null);
+  const [newPriceInput, setNewPriceInput] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [quickPriceSuccess, setQuickPriceSuccess] = useState(false);
+
   const navigate = useNavigate();
+
+  const handleSaveQuickPrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickPriceProduct) return;
+    const priceNum = parseFloat(newPriceInput);
+    if (isNaN(priceNum) || priceNum < 0) return;
+
+    setSavingPrice(true);
+    try {
+      await updateProductPrice(quickPriceProduct.id, priceNum);
+      setQuickPriceSuccess(true);
+      await loadData();
+      setTimeout(() => {
+        setQuickPriceProduct(null);
+        setQuickPriceSuccess(false);
+      }, 700);
+    } catch (err) {
+      console.error('Failed to update price:', err);
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   // Authenticated store owner identity
   const storedAdminEmail = localStorage.getItem('teefahs_admin_email');
@@ -479,7 +510,21 @@ export default function AdminDashboard() {
                         {getCategoryName(product.category_id)}
                       </td>
                       <td className="py-3 px-4 font-mono font-semibold text-stone-900">
-                        ₦{product.base_price ? product.base_price.toLocaleString() : '—'}
+                        <div className="flex items-center gap-1.5">
+                          <span>₦{product.base_price ? product.base_price.toLocaleString() : '—'}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickPriceProduct(product);
+                              setNewPriceInput(product.base_price?.toString() || '');
+                            }}
+                            className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                            title="Quick Edit Price"
+                          >
+                            <Tag size={10} />
+                            <span>Edit</span>
+                          </button>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="font-semibold text-stone-800">{stock}</span>
@@ -500,7 +545,7 @@ export default function AdminDashboard() {
                           className="inline-flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50 hover:bg-emerald-100 font-semibold px-3 py-1.5 border border-emerald-300 rounded transition-colors shadow-2xs"
                         >
                           <Edit2 size={13} />
-                          <span>Edit Price &amp; Images</span>
+                          <span>Full Edit</span>
                         </Link>
                       </td>
                     </tr>
@@ -511,6 +556,104 @@ export default function AdminDashboard() {
           </table>
         </div>
       </div>
+
+      {/* Quick Price Edit Modal for Instant Storefront Updates */}
+      {quickPriceProduct && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setQuickPriceProduct(null)}
+        >
+          <div 
+            className="bg-white rounded-sm p-6 max-w-sm w-full shadow-2xl space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+              <div className="flex items-center gap-2">
+                <Tag size={16} className="text-emerald-800" />
+                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
+              </div>
+              <button 
+                onClick={() => setQuickPriceProduct(null)}
+                className="text-stone-400 hover:text-stone-600 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-stone-900">{quickPriceProduct.name}</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">Category: {getCategoryName(quickPriceProduct.category_id)}</p>
+            </div>
+
+            <form onSubmit={handleSaveQuickPrice} className="space-y-4">
+              <div>
+                <label className="text-[11px] uppercase font-semibold text-stone-600 block mb-1">
+                  New Selling Price (NGN)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-stone-500 text-xs">₦</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    required
+                    value={newPriceInput}
+                    onChange={e => setNewPriceInput(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2 text-sm font-semibold border border-stone-300 rounded focus:outline-none focus:border-stone-900"
+                    placeholder="e.g. 70000"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Quick Tap Price Chips */}
+                <div className="mt-2">
+                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Tap Price:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                      <button
+                        key={pVal}
+                        type="button"
+                        onClick={() => setNewPriceInput(pVal)}
+                        className={`px-2 py-0.5 text-[10px] font-mono rounded-xs border transition-colors cursor-pointer ${
+                          newPriceInput === pVal
+                            ? 'bg-emerald-900 text-white border-emerald-950 font-bold'
+                            : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
+                        }`}
+                      >
+                        ₦{parseInt(pVal).toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {quickPriceSuccess && (
+                <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded flex items-center gap-1.5 font-medium">
+                  <Check size={14} className="text-emerald-700" />
+                  <span>Price successfully updated on storefront!</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickPriceProduct(null)}
+                  className="w-1/2 py-2 border border-stone-300 text-xs font-semibold rounded hover:bg-stone-50 text-stone-700 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPrice}
+                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs cursor-pointer"
+                >
+                  {savingPrice ? 'Saving...' : 'Save Price'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

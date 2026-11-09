@@ -83,9 +83,23 @@ export default function EditProductPage() {
         setCategories(cats);
 
         if (prod) {
-          setName(prod.name);
-          setSlug(prod.slug || '');
-          setCategoryId(prod.category_id || (cats[0]?.id || ''));
+          // Robust Category Resolution to prevent accidental category reassignment
+          let resolvedCatId = '';
+          if (prod.category_id && cats.some(c => c.id === prod.category_id)) {
+            resolvedCatId = prod.category_id;
+          } else if (prod.category_id) {
+            const bySlug = cats.find(c => c.slug === prod.category_id);
+            if (bySlug) resolvedCatId = bySlug.id;
+          }
+          if (!resolvedCatId && (prod as any).category?.slug) {
+            const bySlug = cats.find(c => c.slug === (prod as any).category.slug);
+            if (bySlug) resolvedCatId = bySlug.id;
+          }
+          if (!resolvedCatId && (prod as any).category?.name) {
+            const byName = cats.find(c => c.name.toLowerCase() === (prod as any).category.name.toLowerCase());
+            if (byName) resolvedCatId = byName.id;
+          }
+          setCategoryId(resolvedCatId || prod.category_id || (cats[0]?.id || ''));
           setPrice(prod.base_price?.toString() || '');
           setSalePrice(prod.sale_price !== undefined && prod.sale_price !== null ? prod.sale_price.toString() : '');
           setDescription(prod.description || prod.short_description || '');
@@ -450,14 +464,39 @@ export default function EditProductPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-800 mb-1">
-              Choose Category *
+            <label className="block text-xs font-semibold text-stone-800 mb-1.5">
+              Assigned Category *
             </label>
+            {/* Visual Quick Select Category Pills */}
+            <div className="flex flex-wrap gap-1.5 mb-2.5">
+              {categories.map(cat => {
+                const isSelected = categoryId === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id)}
+                    className={`px-3 py-1.5 rounded-xs text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-900 text-white shadow-xs ring-2 ring-emerald-950/20'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200'
+                    }`}
+                  >
+                    {isSelected && <Check size={12} strokeWidth={3} className="text-amber-300" />}
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
               className="w-full p-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 font-medium text-stone-800"
             >
+              {!categories.some(c => c.id === categoryId) && categoryId && (
+                <option value={categoryId}>Retained Current Category ({categoryId})</option>
+              )}
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}

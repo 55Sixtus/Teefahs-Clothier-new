@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -12,7 +12,11 @@ import {
   Sparkle,
   Layers,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Camera,
+  CheckCircle2,
+  ExternalLink,
+  ShoppingBag
 } from 'lucide-react';
 import { saveProduct, getActiveCategories, uploadProductImage, generateValidUuid } from '../lib/api';
 import { Category } from '../types/product';
@@ -32,10 +36,14 @@ const PRESET_COLOURS = [
 
 export default function AddProductPage() {
   const navigate = useNavigate();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string; price: number; imageUrl?: string; slug?: string } | null>(null);
 
   // 1. Core Simple Product Details
   const [name, setName] = useState('');
@@ -214,7 +222,7 @@ export default function AddProductPage() {
         }
       }
 
-      await saveProduct({
+      const saved = await saveProduct({
         name: name.trim(),
         slug: generatedSlug,
         short_description: description.trim().slice(0, 160),
@@ -236,10 +244,16 @@ export default function AddProductPage() {
       });
 
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated'));
+        window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: saved.id } }));
       }
 
-      navigate('/admin/products');
+      setCreatedProduct({
+        id: saved.id,
+        name: saved.name,
+        price: saved.base_price || parsedPrice,
+        imageUrl: saved.main_image_url,
+        slug: saved.slug,
+      });
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Could not save the product. Please check your connection and try again.');
@@ -318,9 +332,30 @@ export default function AddProductPage() {
                   required
                   value={price}
                   onChange={e => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder="e.g. 700 or 1500"
-                  className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900"
+                  placeholder="e.g. 70000 or 150000"
+                  className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 font-mono font-semibold"
                 />
+              </div>
+
+              {/* Quick Tap Price Chips */}
+              <div className="mt-2">
+                <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Select Price:</p>
+                <div className="flex flex-wrap gap-1">
+                  {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                    <button
+                      key={pVal}
+                      type="button"
+                      onClick={() => setPrice(pVal)}
+                      className={`px-2 py-1 text-[11px] font-mono rounded-xs border transition-colors cursor-pointer ${
+                        price === pVal
+                          ? 'bg-emerald-900 text-white border-emerald-950 font-bold'
+                          : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
+                      }`}
+                    >
+                      ₦{parseInt(pVal).toLocaleString()}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -337,17 +372,42 @@ export default function AddProductPage() {
                   inputMode="decimal"
                   value={salePrice}
                   onChange={e => setSalePrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder="e.g. 1000"
-                  className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900"
+                  placeholder="e.g. 100000"
+                  className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 font-mono"
                 />
               </div>
+              <p className="text-[11px] text-stone-500 mt-1">
+                Leave empty if no discount. For dresses & abayas, the 10% discount badge is computed automatically.
+              </p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-800 mb-1">
+            <label className="block text-xs font-semibold text-stone-800 mb-1.5">
               Choose Category *
             </label>
+            {/* Visual Quick Select Category Pills */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {categories.map(cat => {
+                const isSelected = categoryId === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id)}
+                    className={`px-3 py-1.5 rounded-xs text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-900 text-white shadow-xs ring-2 ring-emerald-950/20'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200'
+                    }`}
+                  >
+                    {isSelected && <Check size={12} strokeWidth={3} className="text-amber-300" />}
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
@@ -369,7 +429,7 @@ export default function AddProductPage() {
               rows={4}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Describe the fabric (e.g. lightweight Zoom fabric, double-georgette), cut, modesty coverage, and special care details..."
+              placeholder="Describe the fabric (e.g. lightweight Zoom fabric, double-georgette, crepe), cut, modesty coverage, matching scarf, and special care details..."
               className="w-full p-3 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 leading-relaxed"
             />
           </div>
@@ -383,7 +443,7 @@ export default function AddProductPage() {
                 2. Upload Product Photo *
               </h2>
               <p className="text-[11px] text-stone-500 font-light mt-0.5">
-                Upload photos from your device, or pick directly from the 54 supplied photoshoot images.
+                Snap a new photo with your smartphone camera, upload from your photo gallery, or pick from the official photoshoot.
               </p>
             </div>
             {photos.length > 0 && (
@@ -393,34 +453,73 @@ export default function AddProductPage() {
             )}
           </div>
 
+          {/* Hidden Direct File and Camera Inputs */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileInput}
+            className="hidden"
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileInput}
+            className="hidden"
+          />
+
+          {/* Mobile-Friendly Upload Buttons Toolbar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="p-3 bg-emerald-900 hover:bg-emerald-800 text-white rounded-sm flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider transition-colors shadow-2xs cursor-pointer"
+            >
+              <Camera size={16} className="text-amber-300" />
+              <span>Take Phone Photo</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-3 bg-stone-900 hover:bg-stone-800 text-white rounded-sm flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider transition-colors shadow-2xs cursor-pointer"
+            >
+              <Upload size={16} />
+              <span>Choose from Photos</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowGalleryPicker(!showGalleryPicker)}
+              className="p-3 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-sm flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              <ImageIcon size={16} className="text-emerald-800" />
+              <span>54 Studio Photos</span>
+            </button>
+          </div>
+
           {/* Drag & Drop Upload Box */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-sm p-6 text-center transition-colors cursor-pointer ${
+            className={`border-2 border-dashed rounded-sm p-5 text-center transition-colors cursor-pointer ${
               isDragging
                 ? 'border-emerald-700 bg-emerald-50/50'
                 : 'border-stone-300 hover:border-stone-400 bg-stone-50/50'
             }`}
+            onClick={() => fileInputRef.current?.click()}
           >
-            <input
-              type="file"
-              id="file-upload"
-              accept="image/*"
-              multiple
-              onChange={handleFileInput}
-              className="hidden"
-            />
-            <label htmlFor="file-upload" className="cursor-pointer block">
-              <Upload size={28} className="mx-auto text-stone-400 mb-2" />
-              <p className="text-xs font-semibold text-stone-800">
-                Click here to upload photos, or drag and drop images
-              </p>
-              <p className="text-[11px] text-stone-500 mt-1">
-                PNG, JPG or WEBP supported. You can upload multiple angles.
-              </p>
-            </label>
+            <Upload size={24} className="mx-auto text-stone-400 mb-1.5" />
+            <p className="text-xs font-semibold text-stone-800">
+              Drag and drop garment images here
+            </p>
+            <p className="text-[11px] text-stone-500 mt-0.5">
+              High resolution phone photos are automatically optimized before uploading.
+            </p>
           </div>
 
           {uploading && (
@@ -718,7 +817,7 @@ export default function AddProductPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 sm:flex-none px-8 py-3.5 bg-stone-900 text-white text-xs uppercase tracking-widest font-semibold hover:bg-stone-800 transition-colors shadow-sm disabled:opacity-50"
+            className="flex-1 sm:flex-none px-8 py-3.5 bg-stone-900 text-white text-xs uppercase tracking-widest font-semibold hover:bg-stone-800 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Saving Garment...' : 'Save & Publish Product'}
           </button>
@@ -730,6 +829,86 @@ export default function AddProductPage() {
           </Link>
         </div>
       </form>
+
+      {/* Success Celebration Modal for Queen Lateefah */}
+      {createdProduct && (
+        <div className="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm max-w-md w-full p-6 text-center space-y-5 shadow-2xl border border-stone-200">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-900 rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 size={32} />
+            </div>
+
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Published & Live on Storefront
+              </span>
+              <h2 className="text-xl font-serif text-stone-900 mt-2">Garment Successfully Uploaded!</h2>
+              <p className="text-xs text-stone-600 mt-1">
+                Your new design has been saved to the boutique database and is live on the public storefront.
+              </p>
+            </div>
+
+            {/* Product Summary Card */}
+            <div className="flex items-center gap-3.5 p-3.5 bg-stone-50 border border-stone-200 rounded text-left">
+              {createdProduct.imageUrl ? (
+                <img
+                  src={createdProduct.imageUrl}
+                  alt={createdProduct.name}
+                  className="w-14 h-18 object-cover rounded-xs border border-stone-200 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-14 h-18 bg-stone-200 rounded-xs flex items-center justify-center text-stone-400 text-xs">
+                  Garment
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-stone-900 text-sm truncate">{createdProduct.name}</p>
+                <p className="text-sm font-mono font-bold text-emerald-900 mt-0.5">
+                  ₦{createdProduct.price.toLocaleString()}
+                </p>
+                <span className="text-[10px] text-stone-500 block mt-1">Ready for Customer Orders & WhatsApp</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-2">
+              <Link
+                to={`/product/${createdProduct.slug || createdProduct.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-3 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <span>View on Live Storefront</span>
+                <ExternalLink size={14} />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCreatedProduct(null);
+                  setName('');
+                  setPrice('');
+                  setSalePrice('');
+                  setDescription('');
+                  setPhotos([]);
+                  setMainPhotoIndex(0);
+                }}
+                className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>Upload Another Garment</span>
+              </button>
+
+              <Link
+                to="/admin/products"
+                className="w-full py-2.5 border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold uppercase tracking-wider rounded-xs block transition-colors text-center"
+              >
+                Go to All Garments
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

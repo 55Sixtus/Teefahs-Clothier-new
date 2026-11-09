@@ -515,6 +515,113 @@ export default function ProductsPage() {
         </table>
       </div>
 
+      {/* Mobile-First Card View (Displayed on phone screens < md) */}
+      <div className="block md:hidden space-y-3">
+        {loading ? (
+          <div className="py-10 text-center text-stone-400 bg-white border border-stone-200 rounded-sm">
+            <div className="inline-block animate-spin w-6 h-6 border-2 border-stone-900 border-t-transparent rounded-full mb-2" />
+            <p className="text-xs uppercase tracking-wider">Loading Catalogue...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-10 text-center text-stone-500 font-light bg-white border border-stone-200 rounded-sm px-4">
+            {statusFilter === 'deleted' 
+              ? 'No deleted garments found. Your catalogue is clean.' 
+              : 'No garments match your current search and filters.'}
+          </div>
+        ) : (
+          filtered.map(p => (
+            <div
+              key={p.id}
+              className="bg-white border border-stone-200 rounded-sm p-3.5 shadow-2xs space-y-3"
+            >
+              <div className="flex items-start gap-3">
+                {p.main_image_url ? (
+                  <img
+                    src={p.main_image_url}
+                    alt={p.name}
+                    className="w-16 h-22 object-cover object-top rounded-xs border border-stone-200 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-22 bg-stone-100 flex items-center justify-center rounded-xs text-stone-400 text-[10px] flex-shrink-0">
+                    No Photo
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-stone-100 text-stone-700 uppercase tracking-wider">
+                      {getCategoryName(p.category_id)}
+                    </span>
+                    {p.is_new_arrival && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                        New
+                      </span>
+                    )}
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${
+                        p.is_published
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : 'bg-stone-100 text-stone-500'
+                      }`}
+                    >
+                      {p.is_published ? 'Live' : 'Draft'}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-stone-900 text-xs sm:text-sm line-clamp-2 leading-snug">
+                    {p.name}
+                  </h3>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-sm font-mono font-bold text-stone-900">
+                      ₦{p.base_price?.toLocaleString()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickPriceProduct(p);
+                        setNewBasePrice(p.base_price?.toString() || '');
+                      }}
+                      className="px-2.5 py-1 bg-emerald-900 hover:bg-emerald-800 text-white rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                    >
+                      <Tag size={11} className="text-amber-300" />
+                      <span>Edit Price</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Actions Footer */}
+              <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
+                <Link
+                  to={`/admin/products/edit/${p.id}`}
+                  className="inline-flex items-center gap-1 text-stone-700 hover:text-stone-900 font-medium px-2.5 py-1.5 border border-stone-200 rounded text-[11px]"
+                >
+                  <Edit2 size={12} />
+                  <span>Full Edit</span>
+                </Link>
+
+                {statusFilter === 'deleted' ? (
+                  <button
+                    onClick={() => handleRestoreFromDeleted(p.id)}
+                    disabled={restoringId === p.id}
+                    className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 border border-emerald-300 font-semibold px-3 py-1.5 rounded"
+                  >
+                    <RotateCcw size={12} className={restoringId === p.id ? 'animate-spin' : ''} />
+                    <span>Restore</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setPendingArchive({ id: p.id, name: p.name })}
+                    className="p-1.5 text-stone-400 hover:text-red-600 transition-colors inline-flex items-center gap-1 text-[11px]"
+                  >
+                    <Trash2 size={13} />
+                    <span>Archive</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Floating Undo Toast Notification */}
       {undoToast && (
         <div className="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-5 py-4 rounded-sm shadow-2xl border border-stone-700 flex items-center gap-4 max-w-md animate-fade-in">
@@ -652,6 +759,27 @@ export default function ProductsPage() {
                   onChange={e => setNewBasePrice(e.target.value)}
                   className="w-full px-3 py-2.5 text-sm font-mono font-bold bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-emerald-700"
                 />
+
+                {/* Quick Tap Price Chips */}
+                <div className="mt-2">
+                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Tap Price:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                      <button
+                        key={pVal}
+                        type="button"
+                        onClick={() => setNewBasePrice(pVal)}
+                        className={`px-2 py-0.5 text-[10px] font-mono rounded-xs border transition-colors cursor-pointer ${
+                          newBasePrice === pVal
+                            ? 'bg-emerald-900 text-white border-emerald-950 font-bold'
+                            : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
+                        }`}
+                      >
+                        ₦{parseInt(pVal).toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-3 pt-2">
                 <button

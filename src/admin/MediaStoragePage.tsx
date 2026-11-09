@@ -150,69 +150,69 @@ export default function MediaStoragePage() {
         productSlug = 'hafsah-medina-silk-rounded-khimar';
         productName = 'Hafsah Medina Silk Rounded Khimar';
       } else if (idx === 30) {
-        title = 'Editorial Photoshoot #31 Abaya';
+        title = 'Zahra Embroidered Neckline Crepe Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-31-abaya';
-        productName = 'Editorial Photoshoot #31 Abaya';
+        productSlug = 'zahra-embroidered-neckline-crepe-abaya';
+        productName = 'Zahra Embroidered Neckline Crepe Abaya';
       } else if (idx === 31) {
-        title = 'Editorial Photoshoot #32 Abaya';
+        title = 'Amina Sage Minimalist Pleated Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-32-abaya';
-        productName = 'Editorial Photoshoot #32 Abaya';
+        productSlug = 'amina-sage-minimalist-pleated-abaya';
+        productName = 'Amina Sage Minimalist Pleated Abaya';
       } else if (idx === 32) {
-        title = 'Editorial Photoshoot #33 Abaya';
+        title = 'Safiyyah Festive White & Red Embroidered Abaya';
         category = 'Occasion Wear';
-        productSlug = 'editorial-photoshoot-33-abaya';
-        productName = 'Editorial Photoshoot #33 Abaya';
+        productSlug = 'safiyyah-festive-white-red-embroidered-abaya';
+        productName = 'Safiyyah Festive White & Red Embroidered Abaya';
       } else if (idx === 33) {
-        title = 'Editorial Photoshoot #34 Abaya';
+        title = 'Hajar Classic Tailored Taupe Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-34-abaya';
-        productName = 'Editorial Photoshoot #34 Abaya';
+        productSlug = 'hajar-classic-tailored-taupe-abaya';
+        productName = 'Hajar Classic Tailored Taupe Abaya';
       } else if (idx === 34) {
-        title = 'Editorial Photoshoot #35 Abaya';
+        title = 'Maryam Plum Utility Modest Coord Set';
         category = 'Occasion Wear';
-        productSlug = 'editorial-photoshoot-35-abaya';
-        productName = 'Editorial Photoshoot #35 Abaya';
+        productSlug = 'maryam-plum-utility-modest-coord-set';
+        productName = 'Maryam Plum Utility Modest Coord Set';
       } else if (idx === 35) {
-        title = 'Editorial Photoshoot #36 Abaya';
+        title = 'Sultana Golden Brocade Celebration Gown';
         category = 'Occasion Wear';
-        productSlug = 'editorial-photoshoot-36-abaya';
-        productName = 'Editorial Photoshoot #36 Abaya';
+        productSlug = 'sultana-golden-brocade-celebration-gown';
+        productName = 'Sultana Golden Brocade Celebration Gown';
       } else if (idx === 36) {
-        title = 'Editorial Photoshoot #37 Abaya';
+        title = 'Nawal Minimalist Taupe Button Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-37-abaya';
-        productName = 'Editorial Photoshoot #37 Abaya';
+        productSlug = 'nawal-minimalist-taupe-button-abaya';
+        productName = 'Nawal Minimalist Taupe Button Abaya';
       } else if (idx === 37) {
-        title = 'Editorial Photoshoot #38 Abaya';
+        title = 'Aisha Royal Purple Elegant Coord Set';
         category = 'Occasion Wear';
-        productSlug = 'editorial-photoshoot-38-abaya';
-        productName = 'Editorial Photoshoot #38 Abaya';
+        productSlug = 'aisha-royal-purple-elegant-coord-set';
+        productName = 'Aisha Royal Purple Elegant Coord Set';
       } else if (idx === 38) {
-        title = 'Editorial Photoshoot #39 Abaya';
+        title = 'Farah Slate Blue Floral Embroidered Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-39-abaya';
-        productName = 'Editorial Photoshoot #39 Abaya';
+        productSlug = 'farah-slate-blue-floral-embroidered-abaya';
+        productName = 'Farah Slate Blue Floral Embroidered Abaya';
       } else if (idx === 39) {
-        title = 'Editorial Photoshoot #40 Abaya';
+        title = 'Zeenat Mint Green Hand-Embellished Occasion Gown';
         category = 'Occasion Wear';
-        productSlug = 'editorial-photoshoot-40-abaya';
-        productName = 'Editorial Photoshoot #40 Abaya';
+        productSlug = 'zeenat-mint-green-hand-embellished-occasion-gown';
+        productName = 'Zeenat Mint Green Hand-Embellished Occasion Gown';
       } else if (idx === 40) {
-        title = 'Editorial Photoshoot #41 Abaya';
+        title = 'Yasmin Midnight Blue Floral Kaftan';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-41-abaya';
-        productName = 'Editorial Photoshoot #41 Abaya';
+        productSlug = 'yasmin-midnight-blue-floral-kaftan';
+        productName = 'Yasmin Midnight Blue Floral Kaftan';
       } else if (idx === 41) {
-        title = 'Editorial Photoshoot #42 Abaya';
+        title = 'Malika Jet Black Beaded Signature Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-42-abaya';
-        productName = 'Editorial Photoshoot #42 Abaya';
+        productSlug = 'malika-jet-black-beaded-signature-abaya';
+        productName = 'Malika Jet Black Beaded Signature Abaya';
       } else if (idx === 42) {
         title = 'Fatima Pleated Hem Minimalist Abaya';
         category = 'Abayas';
-        productSlug = 'fatima-pleated-hem-minimalist-abaya';
+        productSlug = 'fatima-pleated-crepe-maxi-abaya';
         productName = 'Fatima Pleated Hem Minimalist Abaya';
       } else if (idx === 43) {
         title = 'Amani Breathable Chiffon Veil & Hijab Set';
@@ -220,25 +220,25 @@ export default function MediaStoragePage() {
         productSlug = 'amani-breathable-chiffon-veil-hijab-set';
         productName = 'Amani Breathable Chiffon Veil & Hijab Set';
       } else if (idx === 44) {
-        title = 'Editorial Photoshoot #45 Abaya';
+        title = 'Rukayyah Blush Ruffled Layered Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-45-abaya';
-        productName = 'Editorial Photoshoot #45 Abaya';
+        productSlug = 'rukayyah-blush-ruffled-layered-abaya';
+        productName = 'Rukayyah Blush Ruffled Layered Abaya';
       } else if (idx === 45) {
-        title = 'Editorial Photoshoot #46 Abaya';
+        title = 'Jamilah Seafoam Beaded Occasion Robe';
         category = 'Occasion Wear';
-        productSlug = 'editorial-photoshoot-46-abaya';
-        productName = 'Editorial Photoshoot #46 Abaya';
+        productSlug = 'jamilah-seafoam-beaded-occasion-robe';
+        productName = 'Jamilah Seafoam Beaded Occasion Robe';
       } else if (idx === 46) {
-        title = 'Editorial Photoshoot #47 Embroidered Denim Dress';
+        title = 'Khadija Artisanal Embroidered Denim Dress';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-47-denim-dress';
-        productName = 'Editorial Photoshoot #47 Embroidered Denim Dress';
+        productSlug = 'khadija-artisanal-embroidered-denim-dress';
+        productName = 'Khadija Artisanal Embroidered Denim Dress';
       } else if (idx === 47) {
-        title = 'Editorial Photoshoot #48 Mauve Ruffled Abaya';
+        title = 'Aaliyah Dusty Mauve Ruffled Batwing Abaya';
         category = 'Abayas';
-        productSlug = 'editorial-photoshoot-48-mauve-abaya';
-        productName = 'Editorial Photoshoot #48 Mauve Ruffled Abaya';
+        productSlug = 'aaliyah-dusty-mauve-ruffled-batwing-abaya';
+        productName = 'Aaliyah Dusty Mauve Ruffled Batwing Abaya';
       } else if (idx === 48) {
         title = 'Rukayyah Zip-Front Prayer Abaya';
         category = 'Prayer Wear';
@@ -734,6 +734,27 @@ export default function MediaStoragePage() {
                     placeholder="e.g. 130000"
                     autoFocus
                   />
+                </div>
+
+                {/* Quick Tap Price Chips */}
+                <div className="mt-2">
+                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Tap Price:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                      <button
+                        key={pVal}
+                        type="button"
+                        onClick={() => setNewPriceInput(pVal)}
+                        className={`px-2 py-0.5 text-[10px] font-mono rounded-xs border transition-colors cursor-pointer ${
+                          newPriceInput === pVal
+                            ? 'bg-emerald-900 text-white border-emerald-950 font-bold'
+                            : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
+                        }`}
+                      >
+                        ₦{parseInt(pVal).toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
