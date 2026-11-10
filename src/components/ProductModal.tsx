@@ -7,6 +7,8 @@ import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 import { trackProductView, trackAddToCart, trackWhatsAppConversion } from '../utils/analytics';
 import { calculateProductPricing } from '../utils/pricing';
 
+import { getPublishedProducts } from '../lib/api';
+
 export interface ProductModalProps {
   product: Product | null;
   isOpen?: boolean;
@@ -21,12 +23,34 @@ interface GallerySlot {
 
 export default function ProductModal({ product, isOpen = true, onClose }: ProductModalProps) {
   const { addToCart } = useCart();
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(product);
   const [selectedImageKey, setSelectedImageKey] = useState<string>('0');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColour, setSelectedColour] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [addedNotice, setAddedNotice] = useState(false);
+
+  useEffect(() => {
+    setCurrentProduct(product);
+  }, [product]);
+
+  // Real-time synchronization while modal is open
+  useEffect(() => {
+    if (!product?.id) return;
+    const handleCatalogueUpdate = () => {
+      getPublishedProducts()
+        .then(prods => {
+          const fresh = prods.find(p => p.id === product.id);
+          if (fresh) {
+            setCurrentProduct(fresh);
+          }
+        })
+        .catch(err => console.error('Failed to sync open modal product:', err));
+    };
+    window.addEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
+  }, [product?.id]);
 
   // Close on Escape key
   useEffect(() => {
@@ -58,28 +82,29 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
   if (!product || !isOpen) return null;
 
-  const pricing = calculateProductPricing(product);
+  const activeProduct: Product = currentProduct || product;
+  const pricing = calculateProductPricing(activeProduct);
 
   // 1. Resolve product primary image
-  const primaryImage = product.main_image_url || 
-    (product.images && product.images[0]?.image_url) || 
-    (product.additionalImages && product.additionalImages[0]) || 
+  const primaryImage = activeProduct.main_image_url || 
+    (activeProduct.images && activeProduct.images[0]?.image_url) || 
+    (activeProduct.additionalImages && activeProduct.additionalImages[0]) || 
     SUPPLIED_PHOTOS[0];
 
   // 2. Resolve genuine images strictly belonging to this product
   const productImagesList: string[] = [];
   if (primaryImage) productImagesList.push(primaryImage);
 
-  if (product.additionalImages && Array.isArray(product.additionalImages)) {
-    product.additionalImages.forEach(url => {
+  if (activeProduct.additionalImages && Array.isArray(activeProduct.additionalImages)) {
+    activeProduct.additionalImages.forEach(url => {
       if (url && typeof url === 'string' && !productImagesList.includes(url)) {
         productImagesList.push(url);
       }
     });
   }
 
-  if (product.images && Array.isArray(product.images)) {
-    product.images.forEach(imgObj => {
+  if (activeProduct.images && Array.isArray(activeProduct.images)) {
+    activeProduct.images.forEach(imgObj => {
       const url = typeof imgObj === 'string' ? imgObj : imgObj?.image_url;
       if (url && typeof url === 'string' && !productImagesList.includes(url)) {
         productImagesList.push(url);

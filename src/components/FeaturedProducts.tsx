@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { getPublishedProducts } from '../lib/api';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 import { Product } from '../types/product';
 import ProductCard from './ProductCard';
 
@@ -14,26 +14,12 @@ export default function FeaturedProducts({
   filter?: (p: Product) => boolean;
   viewAllLink?: string;
 }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products: allProducts, loading } = useRealtimeProducts({ includeUnpublished: false });
 
-  const fetchProducts = () => {
-    getPublishedProducts()
-      .then(allProducts => {
-        const result = filter ? allProducts.filter(filter) : allProducts.filter(p => p.is_featured);
-        setProducts(result.length > 0 ? result : allProducts.slice(0, 24));
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    fetchProducts();
-
-    const handleUpdate = () => fetchProducts();
-    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
-    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
-  }, [filter]);
+  const products = useMemo(() => {
+    const result = filter ? allProducts.filter(filter) : allProducts.filter(p => p.is_featured);
+    return result.length > 0 ? result : allProducts.slice(0, 24);
+  }, [allProducts, filter]);
 
   return (
     <section id="featured-products" className="py-20 px-6 max-w-7xl mx-auto">

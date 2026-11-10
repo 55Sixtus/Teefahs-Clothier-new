@@ -27,9 +27,11 @@ import {
   getAllCategories, 
   getDatabaseDiagnostics, 
   DatabaseDiagnostics,
-  updateProductPrice 
+  updateProductPrice,
+  getActivePromotion,
+  savePromotion
 } from '../lib/api';
-import { Product, Category } from '../types/product';
+import { Product, Category, Promotion } from '../types/product';
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,6 +39,15 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dbDiag, setDbDiag] = useState<DatabaseDiagnostics | null>(null);
+
+  // Store Announcement Banner State
+  const [promo, setPromo] = useState<Promotion | null>(null);
+  const [promoBadge, setPromoBadge] = useState('PROMO ALERT');
+  const [promoMessage, setPromoMessage] = useState('✨ 10% PROMOTIONAL DISCOUNT ON ALL LUXURY ABAYAS & KHIMARS');
+  const [promoSubtext, setPromoSubtext] = useState('Excludes Caps & Accessories • Nationwide Delivery Across Nigeria');
+  const [promoActive, setPromoActive] = useState(true);
+  const [savingPromo, setSavingPromo] = useState(false);
+  const [promoSuccess, setPromoSuccess] = useState(false);
 
   // Quick Price Edit Modal
   const [quickPriceProduct, setQuickPriceProduct] = useState<Product | null>(null);
@@ -68,6 +79,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSavePromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPromo(true);
+    try {
+      const updated = await savePromotion({
+        title: 'Storefront Announcement',
+        badge_text: promoBadge,
+        message: promoMessage,
+        subtext: promoSubtext,
+        is_active: promoActive,
+      });
+      setPromo(updated);
+      setPromoSuccess(true);
+      setTimeout(() => setPromoSuccess(false), 2500);
+    } catch (err) {
+      console.error('Failed to save promotion:', err);
+    } finally {
+      setSavingPromo(false);
+    }
+  };
+
   // Authenticated store owner identity
   const storedAdminEmail = localStorage.getItem('teefahs_admin_email');
   const adminEmail = (storedAdminEmail && !storedAdminEmail.toLowerCase().includes('greatezirim'))
@@ -95,14 +127,22 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [prods, cats, diag] = await Promise.all([
+      const [prods, cats, diag, activePromo] = await Promise.all([
         getAllProducts(),
         getAllCategories(),
         getDatabaseDiagnostics(),
+        getActivePromotion(),
       ]);
       setProducts(prods);
       setCategories(cats);
       setDbDiag(diag);
+      if (activePromo) {
+        setPromo(activePromo);
+        setPromoBadge(activePromo.badge_text || 'PROMO ALERT');
+        setPromoMessage(activePromo.message || '');
+        setPromoSubtext(activePromo.subtext || '');
+        setPromoActive(activePromo.is_active);
+      }
     } catch (e) {
       console.error('Error loading dashboard data:', e);
     } finally {
@@ -410,6 +450,135 @@ export default function AdminDashboard() {
             </div>
           </Link>
         </div>
+      </div>
+
+      {/* 5. LIVE STOREFRONT PROMOTIONAL ANNOUNCEMENT MANAGER */}
+      <div className="bg-white border border-stone-200 rounded-sm shadow-2xs overflow-hidden">
+        <div className="p-5 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-50/50">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                Real-Time Store Announcement
+              </span>
+              <span className="text-stone-300">•</span>
+              <span className="text-xs text-stone-500 font-medium">Hero Top Bar</span>
+            </div>
+            <h2 className="text-base font-serif text-stone-900 font-medium mt-1">
+              Storefront Announcement &amp; Promotion Banner
+            </h2>
+            <p className="text-xs text-stone-500 font-light">
+              Edit the live announcement shown at the very top of your storefront. Changes synchronize instantly across all devices.
+            </p>
+          </div>
+
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider self-start sm:self-auto ${
+            promoActive ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-stone-200 text-stone-600'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${promoActive ? 'bg-emerald-600 animate-pulse' : 'bg-stone-400'}`} />
+            {promoActive ? 'Live on Storefront' : 'Hidden from Customers'}
+          </span>
+        </div>
+
+        {/* Live Banner Preview */}
+        <div className="p-5 bg-stone-900 text-white border-b border-stone-800">
+          <span className="text-[10px] uppercase tracking-wider text-stone-400 block mb-2 font-medium">
+            Live Preview (Customer View):
+          </span>
+          {promoActive ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center text-xs py-2 px-4 bg-stone-950/80 rounded border border-stone-800">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-xs bg-amber-400 text-stone-950">
+                {promoBadge || 'PROMO'}
+              </span>
+              <span className="font-medium text-stone-100">
+                {promoMessage || 'Announcement message...'}
+              </span>
+              {promoSubtext && (
+                <>
+                  <span className="hidden sm:inline text-stone-600">•</span>
+                  <span className="text-stone-400 text-[11px] font-light">{promoSubtext}</span>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-2 text-xs text-stone-400 italic">
+              Banner is currently disabled. Customers will not see a top bar.
+            </div>
+          )}
+        </div>
+
+        {/* Banner Edit Form */}
+        <form onSubmit={handleSavePromo} className="p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                Badge Label (Short)
+              </label>
+              <input
+                type="text"
+                value={promoBadge}
+                onChange={(e) => setPromoBadge(e.target.value)}
+                placeholder="e.g. 10% OFF PROMO"
+                className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-stone-500 focus:bg-white"
+                required
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                Headline Message
+              </label>
+              <input
+                type="text"
+                value={promoMessage}
+                onChange={(e) => setPromoMessage(e.target.value)}
+                placeholder="e.g. 10% Promotional Discount on All Luxury Abayas & Khimars"
+                className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-stone-500 focus:bg-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+              Secondary Subtext / Conditions
+            </label>
+            <input
+              type="text"
+              value={promoSubtext}
+              onChange={(e) => setPromoSubtext(e.target.value)}
+              placeholder="e.g. Excludes Caps & Accessories • Nationwide Delivery Across Nigeria"
+              className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-stone-500 focus:bg-white"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-stone-100 gap-3">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-stone-700">
+              <input
+                type="checkbox"
+                checked={promoActive}
+                onChange={(e) => setPromoActive(e.target.checked)}
+                className="w-4 h-4 text-emerald-800 rounded border-stone-300 focus:ring-emerald-500"
+              />
+              <span>Enable and display this announcement bar on live storefront</span>
+            </label>
+
+            <div className="flex items-center gap-3">
+              {promoSuccess && (
+                <span className="text-xs font-semibold text-emerald-800 flex items-center gap-1 animate-fade-in">
+                  <Check size={14} />
+                  <span>Announcement Updated in Real-Time!</span>
+                </span>
+              )}
+              <button
+                type="submit"
+                disabled={savingPromo}
+                className="px-5 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {savingPromo ? 'Saving Changes...' : 'Save & Publish Banner'}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
 
       {/* Mobile Ease-of-Use Banner for Queen Lateefah */}

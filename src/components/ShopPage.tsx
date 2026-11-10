@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, RotateCcw } from 'lucide-react';
-import { getPublishedProducts, getActiveCategories } from '../lib/api';
-import { Product, Category } from '../types/product';
+import { getActiveCategories } from '../lib/api';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
+import { Category } from '../types/product';
 import { calculateProductPricing } from '../utils/pricing';
 import ProductCard from './ProductCard';
 import Header from './Header';
@@ -11,39 +12,23 @@ import SEO from './SEO';
 import PromoBanner from './PromoBanner';
 
 export default function ShopPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { products, loading: productsLoading } = useRealtimeProducts({ includeUnpublished: false });
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingCats, setLoadingCats] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedCategory = searchParams.get('category') || 'all';
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'newest'>('featured');
 
-  const fetchShopData = () => {
-    Promise.all([getPublishedProducts(), getActiveCategories()])
-      .then(([prods, cats]) => {
-        setProducts(prods);
-        setCategories(cats);
-      })
-      .catch(err => {
-        console.error('Error loading shop data:', err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
   useEffect(() => {
-    setLoading(true);
-    fetchShopData();
-
-    const handleUpdate = () => {
-      fetchShopData();
-    };
-    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
-    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
+    getActiveCategories()
+      .then(cats => setCategories(cats))
+      .catch(err => console.error('Error loading shop categories:', err))
+      .finally(() => setLoadingCats(false));
   }, []);
+
+  const loading = productsLoading || loadingCats;
 
   const handleCategoryChange = (catIdOrSlug: string) => {
     const newParams = new URLSearchParams(searchParams);

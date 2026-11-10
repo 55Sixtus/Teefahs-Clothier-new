@@ -44,3 +44,15 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface Promotion {
+  id?: string;
+  title: string;
+  message: string;
+  badge_text: string;
+  subtext?: string;
+  link_url?: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+

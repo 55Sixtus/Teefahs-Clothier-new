@@ -1163,16 +1163,31 @@ export const PENDING_OWNER_SUPPLIED_IMAGES = [
 ];
 
 export const INITIAL_PRODUCTS: Product[] = RAW_INITIAL_PRODUCTS.map((prod) => {
+  // Owner directive: "the qty of each ABAYA DRESSES IS JUST 2"
+  const isAbayaOrDress = 
+    prod.category_id === 'c0000000-0000-0000-0000-000000000001' || // Abayas
+    prod.category_id === 'c0000000-0000-0000-0000-000000000006' || // Occasion Wear
+    prod.name.toLowerCase().includes('abaya') ||
+    prod.name.toLowerCase().includes('dress') ||
+    prod.name.toLowerCase().includes('kaftan');
+
+  const updatedVariations = (prod.variations || []).map(v => {
+    if (isAbayaOrDress) {
+      return { ...v, stock_quantity: 2 };
+    }
+    return v;
+  });
+
   // If additionalImages was explicitly defined (even as empty array), keep it
-  if (prod.additionalImages !== undefined) {
-    return prod;
-  }
-  // Otherwise populate from secondary images if available
-  const extras = (prod.images && prod.images.length > 1)
-    ? prod.images.slice(1).map(img => typeof img === 'string' ? img : img.image_url).filter(Boolean)
-    : [];
+  const extras = prod.additionalImages !== undefined
+    ? prod.additionalImages
+    : (prod.images && prod.images.length > 1)
+      ? prod.images.slice(1).map(img => typeof img === 'string' ? img : img.image_url).filter(Boolean)
+      : [];
+
   return {
     ...prod,
+    variations: updatedVariations,
     additionalImages: extras,
   };
 });

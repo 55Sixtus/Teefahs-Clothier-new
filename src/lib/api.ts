@@ -115,99 +115,31 @@ const getLocalStoredProducts = (): Product[] => {
         let changed = false;
 
         const updated = parsed.map((p: any) => {
-          // Ensure Layla is 68,000 as specified by the owner
-          if (p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') {
-            if (p.base_price === 130000 || p.base_price === 255000) {
-              changed = true;
-              return { ...p, name: 'Layla Embellished Luxury Occasion Silk Abaya', base_price: 68000 };
-            }
-          }
-          // Ensure Noor Abaya is 255,000 as specified by the owner
-          if (p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') {
-            if (p.base_price === 45000) {
-              changed = true;
-              return { ...p, base_price: 255000 };
-            }
-          }
-          // Ensure Caps product has confirmed owner supplied images and exact 700 price (blue cap as cover)
-          if (p.id === '00000000-0000-0000-0000-000000000048' || p.slug === 'jersey-cap' || p.slug === 'zainab-luxe-modal-hijab-under-cap') {
-            changed = true;
-            return {
-              ...p,
-              name: 'Comfort Fit Jersey Cap',
-              slug: 'jersey-cap',
-              base_price: 700,
-              main_image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg',
-              additionalImages: [
-                'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg',
-                'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg',
-              ],
-              images: [
-                { id: 'img-48-1', image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', alt_text: 'Blue jersey cap - Main Cover View' },
-                { id: 'img-48-2', image_url: 'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg', alt_text: 'Jersey cap - Additional Angle' },
-                { id: 'img-48-3', image_url: 'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg', alt_text: 'Jersey cap - Color Selection' },
-              ],
-            };
-          }
-          // Ensure Laced Chiffon Veil has confirmed owner supplied images and price 5500
-          if (p.id === '00000000-0000-0000-0000-000000000047' || p.slug === 'laced-chiffon-veil' || p.slug === 'luxe-lace-border-chiffon-veil') {
-            changed = true;
-            return {
-              ...p,
-              name: 'Laced Chiffon Veil',
-              slug: 'laced-chiffon-veil',
-              base_price: 5500,
-              main_image_url: 'https://i.ibb.co/qYSMqbNw/Whats-App-Image-2026-11-06-at-10-35-10-PM-1.jpg',
-              additionalImages: [
-                'https://i.ibb.co/848yGYpb/Whats-App-Image-2026-11-06-at-10-35-10-PM.jpg',
-                'https://i.ibb.co/nVMmHNK/Whats-App-Image-2026-11-06-at-10-35-11-PM.jpg',
-              ],
-              images: [
-                { id: 'img-47-1', image_url: 'https://i.ibb.co/qYSMqbNw/Whats-App-Image-2026-11-06-at-10-35-10-PM-1.jpg', alt_text: 'Laced Chiffon Veil - Main View' },
-                { id: 'img-47-2', image_url: 'https://i.ibb.co/848yGYpb/Whats-App-Image-2026-11-06-at-10-35-10-PM.jpg', alt_text: 'Laced Chiffon Veil - Detail View' },
-                { id: 'img-47-3', image_url: 'https://i.ibb.co/nVMmHNK/Whats-App-Image-2026-11-06-at-10-35-11-PM.jpg', alt_text: 'Laced Chiffon Veil - Border View' },
-              ],
-            };
-          }
-          // Remove photos 0-2 from Noor Abaya if still present
-          if (p.id === '00000000-0000-0000-0000-000000000001' && p.images && p.images.length > 6) {
-            changed = true;
-            return {
-              ...p,
-              images: p.images.filter((img: any) => {
-                const url = typeof img === 'string' ? img : img.image_url;
-                return !url?.includes('6-02-24-AM');
-              }),
-            };
-          }
-          // Update Photoshoot items to distinct names, verified prices and single-photo galleries
-          const photoshootFixes: Record<string, { name: string; slug: string; price: number }> = {
-            '00000000-0000-0000-0000-000000000025': { name: 'Zahra Embroidered Neckline Crepe Abaya', slug: 'zahra-embroidered-neckline-crepe-abaya', price: 68000 },
-            '00000000-0000-0000-0000-000000000026': { name: 'Amina Sage Minimalist Pleated Abaya', slug: 'amina-sage-minimalist-pleated-abaya', price: 75000 },
-            '00000000-0000-0000-0000-000000000027': { name: 'Safiyyah Festive White & Red Embroidered Abaya', slug: 'safiyyah-festive-white-red-embroidered-abaya', price: 105000 },
-            '00000000-0000-0000-0000-000000000034': { name: 'Hajar Classic Tailored Taupe Abaya', slug: 'hajar-classic-tailored-taupe-abaya', price: 85000 },
-            '00000000-0000-0000-0000-000000000028': { name: 'Maryam Plum Utility Modest Coord Set', slug: 'maryam-plum-utility-modest-coord-set', price: 70000 },
-            '00000000-0000-0000-0000-000000000035': { name: 'Sultana Golden Brocade Celebration Gown', slug: 'sultana-golden-brocade-celebration-gown', price: 150000 },
-            '00000000-0000-0000-0000-000000000029': { name: 'Nawal Minimalist Taupe Button Abaya', slug: 'nawal-minimalist-taupe-button-abaya', price: 85000 },
-            '00000000-0000-0000-0000-000000000036': { name: 'Aisha Royal Purple Elegant Coord Set', slug: 'aisha-royal-purple-elegant-coord-set', price: 70000 },
-            '00000000-0000-0000-0000-000000000030': { name: 'Farah Slate Blue Floral Embroidered Abaya', slug: 'farah-slate-blue-floral-embroidered-abaya', price: 68000 },
-            '00000000-0000-0000-0000-000000000031': { name: 'Zeenat Mint Green Hand-Embellished Occasion Gown', slug: 'zeenat-mint-green-hand-embellished-occasion-gown', price: 130000 },
-            '00000000-0000-0000-0000-000000000037': { name: 'Yasmin Midnight Blue Floral Kaftan', slug: 'yasmin-midnight-blue-floral-kaftan', price: 68000 },
-            '00000000-0000-0000-0000-000000000038': { name: 'Malika Jet Black Beaded Signature Abaya', slug: 'malika-jet-black-beaded-signature-abaya', price: 68000 },
-            '00000000-0000-0000-0000-000000000032': { name: 'Rukayyah Blush Ruffled Layered Abaya', slug: 'rukayyah-blush-ruffled-layered-abaya', price: 70000 },
-            '00000000-0000-0000-0000-000000000033': { name: 'Jamilah Seafoam Beaded Occasion Robe', slug: 'jamilah-seafoam-beaded-occasion-robe', price: 90000 },
-            '00000000-0000-0000-0000-000000000039': { name: 'Khadija Artisanal Embroidered Denim Dress', slug: 'khadija-artisanal-embroidered-denim-dress', price: 58000 },
-            '00000000-0000-0000-0000-000000000040': { name: 'Aaliyah Dusty Mauve Ruffled Batwing Abaya', slug: 'aaliyah-dusty-mauve-ruffled-batwing-abaya', price: 70000 },
+          // Update generic Photoshoot placeholder names to distinct boutique titles without touching price
+          const photoshootTitles: Record<string, { name: string; slug: string }> = {
+            '00000000-0000-0000-0000-000000000025': { name: 'Zahra Embroidered Neckline Crepe Abaya', slug: 'zahra-embroidered-neckline-crepe-abaya' },
+            '00000000-0000-0000-0000-000000000026': { name: 'Amina Sage Minimalist Pleated Abaya', slug: 'amina-sage-minimalist-pleated-abaya' },
+            '00000000-0000-0000-0000-000000000027': { name: 'Safiyyah Festive White & Red Embroidered Abaya', slug: 'safiyyah-festive-white-red-embroidered-abaya' },
+            '00000000-0000-0000-0000-000000000034': { name: 'Hajar Classic Tailored Taupe Abaya', slug: 'hajar-classic-tailored-taupe-abaya' },
+            '00000000-0000-0000-0000-000000000028': { name: 'Maryam Plum Utility Modest Coord Set', slug: 'maryam-plum-utility-modest-coord-set' },
+            '00000000-0000-0000-0000-000000000035': { name: 'Sultana Golden Brocade Celebration Gown', slug: 'sultana-golden-brocade-celebration-gown' },
+            '00000000-0000-0000-0000-000000000029': { name: 'Nawal Minimalist Taupe Button Abaya', slug: 'nawal-minimalist-taupe-button-abaya' },
+            '00000000-0000-0000-0000-000000000036': { name: 'Aisha Royal Purple Elegant Coord Set', slug: 'aisha-royal-purple-elegant-coord-set' },
+            '00000000-0000-0000-0000-000000000030': { name: 'Farah Slate Blue Floral Embroidered Abaya', slug: 'farah-slate-blue-floral-embroidered-abaya' },
+            '00000000-0000-0000-0000-000000000031': { name: 'Zeenat Mint Green Hand-Embellished Occasion Gown', slug: 'zeenat-mint-green-hand-embellished-occasion-gown' },
+            '00000000-0000-0000-0000-000000000037': { name: 'Yasmin Midnight Blue Floral Kaftan', slug: 'yasmin-midnight-blue-floral-kaftan' },
+            '00000000-0000-0000-0000-000000000038': { name: 'Malika Jet Black Beaded Signature Abaya', slug: 'malika-jet-black-beaded-signature-abaya' },
+            '00000000-0000-0000-0000-000000000032': { name: 'Rukayyah Blush Ruffled Layered Abaya', slug: 'rukayyah-blush-ruffled-layered-abaya' },
+            '00000000-0000-0000-0000-000000000033': { name: 'Jamilah Seafoam Beaded Occasion Robe', slug: 'jamilah-seafoam-beaded-occasion-robe' },
+            '00000000-0000-0000-0000-000000000039': { name: 'Khadija Artisanal Embroidered Denim Dress', slug: 'khadija-artisanal-embroidered-denim-dress' },
+            '00000000-0000-0000-0000-000000000040': { name: 'Aaliyah Dusty Mauve Ruffled Batwing Abaya', slug: 'aaliyah-dusty-mauve-ruffled-batwing-abaya' },
           };
-          if (photoshootFixes[p.id]) {
-            const fix = photoshootFixes[p.id];
-            if (p.name.includes('Editorial Photoshoot') || p.base_price !== fix.price) {
-              changed = true;
-              p.name = fix.name;
-              p.slug = fix.slug;
-              p.base_price = fix.price;
-              p.additionalImages = [];
-            }
+
+          if (photoshootTitles[p.id] && p.name.includes('Editorial Photoshoot')) {
+            changed = true;
+            p.name = photoshootTitles[p.id].name;
+            p.slug = photoshootTitles[p.id].slug;
+            p.additionalImages = [];
           }
 
           if (p.additionalImages === undefined) {
@@ -358,13 +290,7 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
             categoryId = hijabsCat.id;
           }
 
-          let basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
-          if ((p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') && basePrice === 45000) {
-            basePrice = 255000;
-          }
-          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 255000)) {
-            basePrice = 68000;
-          }
+          const basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
 
           return {
             ...p,
@@ -443,13 +369,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
             categoryId = hijabsCat.id;
           }
 
-          let basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
-          if ((p.id === '00000000-0000-0000-0000-000000000001' || p.slug === 'noor-embroidered-luxury-abaya') && basePrice === 45000) {
-            basePrice = 255000;
-          }
-          if ((p.id === '00000000-0000-0000-0000-000000000005' || p.slug === 'layla-embellished-occasion-silk-abaya') && (basePrice === 130000 || basePrice === 255000)) {
-            basePrice = 68000;
-          }
+          const basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
 
           return {
             ...p,
@@ -689,44 +609,118 @@ export const updateProductPrice = async (productId: string, newPrice: number): P
   const current = getLocalStoredProducts();
   const prod = current.find(p => p.id === productId || (p.slug && p.slug === productId));
   if (!prod) {
-    throw new Error('Product not found');
+    throw new Error('Garment not found in boutique catalogue');
   }
 
   const numericPrice = Math.max(0, Number(newPrice) || 0);
+  const nowIso = new Date().toISOString();
+
+  // 1. Sync directly to Supabase first if product has a valid UUID
+  if (isValidUuid(prod.id)) {
+    const { error } = await supabase
+      .from('products')
+      .update({
+        base_price: numericPrice,
+        updated_at: nowIso,
+      })
+      .eq('id', prod.id);
+
+    if (error) {
+      console.error('Supabase price update error:', error);
+      throw new Error(`Database error: ${error.message || 'Could not update price in database'}`);
+    }
+  }
+
+  // 2. Database confirmed: Update local cache
   const updatedProduct: Product = {
     ...prod,
     base_price: numericPrice,
-    updated_at: new Date().toISOString(),
+    updated_at: nowIso,
   };
 
   const updatedList = current.map(p => (p.id === prod.id || p.slug === prod.slug) ? updatedProduct : p);
   setLocalStoredProducts(updatedList);
 
-  // Sync to Supabase if valid UUID
-  if (isValidUuid(prod.id)) {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .update({
-          base_price: numericPrice,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', prod.id);
-
-      if (error) {
-        console.warn('Supabase product price update note:', error.message);
-      }
-    } catch (err) {
-      console.warn('Supabase price update error:', err);
-    }
-  }
-
-  // Dispatch window event so any listening admin pages refresh instantly
+  // 3. Dispatch local window event for immediate same-session refresh
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: prod.id, price: numericPrice } }));
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { 
+      detail: { productId: prod.id, price: numericPrice } 
+    }));
   }
 
   return updatedProduct;
+};
+
+// Promotions Management API
+export const getActivePromotion = async () => {
+  const defaultPromo = {
+    title: 'Special Season Offer',
+    message: 'Enjoy 10% OFF automatically applied on all luxury abayas & modest dresses!',
+    badge_text: 'Special Season Offer',
+    subtext: 'Luxurious Modest Couture • Express Delivery Across Nigeria',
+    link_url: '/shop',
+    is_active: true,
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('Could not fetch promotions from Supabase, using default fallback:', err);
+  }
+
+  return defaultPromo;
+};
+
+export const savePromotion = async (promo: any) => {
+  const payload = {
+    title: promo.title || 'Special Season Offer',
+    message: promo.message || 'Enjoy 10% OFF automatically applied on all luxury abayas & modest dresses!',
+    badge_text: promo.badge_text || 'Special Season Offer',
+    subtext: promo.subtext || 'Luxurious Modest Couture • Express Delivery Across Nigeria',
+    link_url: promo.link_url || '/shop',
+    is_active: promo.is_active ?? true,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (promo.id && isValidUuid(promo.id)) {
+    const { data, error } = await supabase
+      .from('promotions')
+      .update(payload)
+      .eq('id', promo.id)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('teefahs_promo_updated', { detail: data }));
+    }
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from('promotions')
+      .insert({
+        id: generateValidUuid(),
+        ...payload,
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('teefahs_promo_updated', { detail: data }));
+    }
+    return data;
+  }
 };
 
 // Soft-Delete / Archive product with undo support
