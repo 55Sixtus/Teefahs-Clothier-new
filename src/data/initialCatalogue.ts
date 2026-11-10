@@ -1127,7 +1127,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg',
       'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg',
     ],
-    base_price: 700,
+    base_price: 1500,
     currency: 'NGN',
     is_published: true,
     is_featured: true,
