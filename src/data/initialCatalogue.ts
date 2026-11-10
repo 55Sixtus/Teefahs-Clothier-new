@@ -61,7 +61,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Caps',
     slug: 'caps',
     description: 'Ergonomic tie-back under-caps and volumizing cotton caps.',
-    image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', // Blue cap as cover
+    image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.12.17_PM_f2218f6e.jpeg', // Blue cap as cover
     display_order: 7,
     is_active: true,
   },
@@ -1122,7 +1122,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     short_description: 'Ergonomic non-slip stretch jersey cap crafted for all-day comfort and hair security.',
     description: 'Breathable, non-slip cotton-jersey cap tailored for effortless all-day wear without pressure or tension. Features an ergonomic cut to keep hair neatly secured beneath any hijab or veil.',
     category_id: 'c0000000-0000-0000-0000-000000000007', // Caps
-    main_image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', // Blue cap MUST BE THE MAIN COVER IMAGE
+    main_image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.12.17_PM_f2218f6e.jpeg', // Blue cap cover image
     additionalImages: [
       'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg',
       'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg',
@@ -1133,7 +1133,7 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
     is_featured: true,
     is_new_arrival: true,
     images: [
-      { id: 'img-48-1', image_url: 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', alt_text: 'Blue jersey cap - Main Cover View' },
+      { id: 'img-48-1', image_url: '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.12.17_PM_f2218f6e.jpeg', alt_text: 'Comfort Fit Jersey Cap - Blue Cover View' },
       { id: 'img-48-2', image_url: 'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg', alt_text: 'Jersey cap - Additional Angle' },
       { id: 'img-48-3', image_url: 'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg', alt_text: 'Jersey cap - Color Selection' },
     ],

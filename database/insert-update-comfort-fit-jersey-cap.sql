@@ -11,7 +11,7 @@ VALUES (
   'Caps',
   'caps',
   'Ergonomic tie-back under-caps and volumizing cotton caps.',
-  'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg',
+  '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.12.17_PM_f2218f6e.jpeg',
   7,
   true
 )
@@ -39,7 +39,7 @@ VALUES (
   'Ergonomic non-slip stretch jersey cap crafted for all-day comfort and hair security.',
   'Breathable, non-slip cotton-jersey cap tailored for effortless all-day wear without pressure or tension. Features an ergonomic cut to keep hair neatly secured beneath any hijab or veil.',
   (SELECT id FROM categories WHERE slug = 'caps' LIMIT 1),
-  'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg',
+  '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.12.17_PM_f2218f6e.jpeg',
   1500,
   'NGN',
   true,
@@ -64,7 +64,7 @@ ON CONFLICT DO NOTHING;
 -- 4. Insert Gallery Images
 INSERT INTO product_images (product_id, image_url, alt_text, display_order)
 VALUES
-  ((SELECT id FROM products WHERE slug = 'jersey-cap' LIMIT 1), 'https://i.ibb.co/jvqcjngf/Whats-App-Image-2026-11-06-at-10-33-35-PM.jpg', 'Blue jersey cap - Main Cover View', 0),
+  ((SELECT id FROM products WHERE slug = 'jersey-cap' LIMIT 1), '/assets/aistudio/WhatsApp_Image_2026-11-06_at_10.12.17_PM_f2218f6e.jpeg', 'Blue jersey cap - Main Cover View', 0),
   ((SELECT id FROM products WHERE slug = 'jersey-cap' LIMIT 1), 'https://i.ibb.co/s9GMr74w/Whats-App-Image-2026-11-06-at-10-11-47-PM.jpg', 'Jersey cap - Additional Angle', 1),
   ((SELECT id FROM products WHERE slug = 'jersey-cap' LIMIT 1), 'https://i.ibb.co/7NBG3fs0/Whats-App-Image-2026-11-06-at-10-12-17-PM.jpg', 'Jersey cap - Color Selection', 2)
 ON CONFLICT DO NOTHING;
