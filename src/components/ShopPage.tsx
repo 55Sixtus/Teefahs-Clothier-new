@@ -1,9 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, RotateCcw } from 'lucide-react';
-import { getActiveCategories } from '../lib/api';
 import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
-import { Category } from '../types/product';
 import { calculateProductPricing } from '../utils/pricing';
 import ProductCard from './ProductCard';
 import Header from './Header';
@@ -12,23 +10,12 @@ import SEO from './SEO';
 import PromoBanner from './PromoBanner';
 
 export default function ShopPage() {
-  const { products, loading: productsLoading } = useRealtimeProducts({ includeUnpublished: false });
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCats, setLoadingCats] = useState(true);
+  const { products, categories, loading } = useRealtimeProducts({ includeUnpublished: false });
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedCategory = searchParams.get('category') || 'all';
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'newest'>('featured');
-
-  useEffect(() => {
-    getActiveCategories()
-      .then(cats => setCategories(cats))
-      .catch(err => console.error('Error loading shop categories:', err))
-      .finally(() => setLoadingCats(false));
-  }, []);
-
-  const loading = productsLoading || loadingCats;
 
   const handleCategoryChange = (catIdOrSlug: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -40,10 +27,14 @@ export default function ShopPage() {
     setSearchParams(newParams);
   };
 
+  const activeCategoryObj = useMemo(() => {
+    if (selectedCategory === 'all') return undefined;
+    return categories.find(c => c.id === selectedCategory || c.slug === selectedCategory);
+  }, [categories, selectedCategory]);
+
   const filteredProducts = useMemo(() => {
     return products
       .filter(p => {
-        // Category filtering
         if (selectedCategory !== 'all') {
           const matchId = p.category_id === selectedCategory;
           const cat = categories.find(c => c.id === p.category_id);
@@ -51,7 +42,6 @@ export default function ShopPage() {
           if (!matchId && !matchSlug) return false;
         }
 
-        // Search filtering
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchName = p.name.toLowerCase().includes(q);
@@ -69,7 +59,6 @@ export default function ShopPage() {
           return calculateProductPricing(b, categories).sellingPrice - calculateProductPricing(a, categories).sellingPrice;
         }
         if (sortBy === 'newest') return (b.is_new_arrival ? 1 : 0) - (a.is_new_arrival ? 1 : 0);
-        // Default featured
         return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
       });
   }, [products, categories, selectedCategory, searchQuery, sortBy]);
@@ -77,7 +66,7 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex flex-col justify-between transition-colors duration-500">
       <SEO
-        title={selectedCategory !== 'all' ? `${selectedCategory.toUpperCase()} Collection` : 'Shop All Pieces — Abayas, Khimars & Hijabs'}
+        title={selectedCategory !== 'all' ? `${activeCategoryObj?.name || selectedCategory} Collection` : 'Shop All Pieces — Abayas, Khimars & Hijabs'}
         description="Explore the complete modest fashion catalogue at Teefahs Clothier. Bespoke Dubai abayas, Malaysian hijabs, French khimars, prayer dresses, and lightweight stretch veils."
         keywords="buy abayas Nigeria, abayas Lagos, modest clothing catalogue, khimar sets, prayer wear, luxury modest dresses"
       />
@@ -91,9 +80,12 @@ export default function ShopPage() {
             <span className="text-xs uppercase tracking-[0.25em] text-emerald-400 font-medium block mb-3">
               The Complete Collection
             </span>
-            <h1 className="text-4xl md:text-5xl font-serif tracking-tight">Shop All Pieces</h1>
+            <h1 className="text-4xl md:text-5xl font-serif tracking-tight">
+              {activeCategoryObj ? activeCategoryObj.name : 'Shop All Pieces'}
+            </h1>
             <p className="text-stone-300 text-sm md:text-base mt-3 max-w-xl mx-auto font-light">
-              Explore our curated selection of bespoke abayas, flowing khimars, prayer sets, and modest essentials.
+              {activeCategoryObj?.description ||
+                'Explore our curated selection of bespoke abayas, flowing khimars, prayer sets, and modest essentials.'}
             </p>
           </div>
         </section>
@@ -105,7 +97,7 @@ export default function ShopPage() {
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
               <button
                 onClick={() => handleCategoryChange('all')}
-                className={`px-4 py-1.5 text-xs font-medium rounded-full uppercase tracking-wider transition-all whitespace-nowrap ${
+                className={`px-4 py-1.5 text-xs font-medium rounded-full uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                   selectedCategory === 'all'
                     ? 'bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 shadow-xs font-semibold'
                     : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
@@ -120,7 +112,7 @@ export default function ShopPage() {
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.slug || cat.id)}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-full uppercase tracking-wider transition-all whitespace-nowrap ${
+                    className={`px-4 py-1.5 text-xs font-medium rounded-full uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                       isSelected
                         ? 'bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 shadow-xs font-semibold'
                         : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
@@ -167,7 +159,7 @@ export default function ShopPage() {
           <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 mb-8 pb-3 border-b border-stone-200 dark:border-stone-800">
             <span>
               Showing <strong className="text-stone-800 dark:text-stone-200">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'garment' : 'garments'}
-              {selectedCategory !== 'all' && ` in ${categories.find(c => c.id === selectedCategory || c.slug === selectedCategory)?.name || selectedCategory}`}
+              {selectedCategory !== 'all' && ` in ${activeCategoryObj?.name || selectedCategory}`}
               {searchQuery && ` matching "${searchQuery}"`}
             </span>
 
@@ -177,7 +169,7 @@ export default function ShopPage() {
                   handleCategoryChange('all');
                   setSearchQuery('');
                 }}
-                className="flex items-center gap-1.5 text-emerald-800 font-medium hover:underline"
+                className="flex items-center gap-1.5 text-emerald-800 dark:text-amber-300 font-medium hover:underline cursor-pointer"
               >
                 <RotateCcw size={12} />
                 Reset Filters
@@ -188,28 +180,34 @@ export default function ShopPage() {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-[3/4] bg-stone-200 rounded-sm" />
+                <div key={i} className="aspect-[3/4] bg-stone-200 dark:bg-stone-800 rounded-sm" />
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {filteredProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} categories={categories} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-24 bg-white border border-stone-200 rounded-sm p-8 max-w-md mx-auto">
-              <SlidersHorizontal size={40} className="mx-auto text-stone-300 mb-4" />
-              <h3 className="font-serif text-xl text-stone-900 mb-2">No Garments Found</h3>
-              <p className="text-sm text-stone-500 mb-6">
-                We couldn't find any garments matching your current filter criteria.
+            <div className="text-center py-24 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-sm p-8 max-w-md mx-auto">
+              <SlidersHorizontal size={40} className="mx-auto text-stone-300 dark:text-stone-600 mb-4" />
+              <h3 className="font-serif text-xl text-stone-900 dark:text-white mb-2">
+                {selectedCategory !== 'all' && !searchQuery.trim()
+                  ? `New ${activeCategoryObj?.name || selectedCategory} Collection Coming Soon`
+                  : 'No Garments Found'}
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-stone-400 mb-6 font-light">
+                {selectedCategory !== 'all' && !searchQuery.trim()
+                  ? 'Our atelier is curating fresh owner-approved pieces for this collection. Explore our full active catalogue in the meantime.'
+                  : "We couldn't find any garments matching your current filter criteria."}
               </p>
               <button
                 onClick={() => {
                   handleCategoryChange('all');
                   setSearchQuery('');
                 }}
-                className="px-6 py-2.5 bg-stone-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-stone-800 transition-colors"
+                className="px-6 py-2.5 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 text-xs font-semibold uppercase tracking-wider hover:bg-stone-800 dark:hover:bg-amber-300 transition-colors cursor-pointer rounded-xs"
               >
                 View All Garments
               </button>

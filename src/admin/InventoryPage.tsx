@@ -1,8 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Save, Edit2, Tag, X, ArrowRightLeft } from 'lucide-react';
-import { getAllProducts, updateVariationStock, updateProductPrice } from '../lib/api';
-import { Product, ProductVariation } from '../types/product';
+import {
+  Search,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Save,
+  Edit2,
+  Tag,
+  X,
+  ArrowRightLeft,
+} from 'lucide-react';
+import { updateVariationStock, updateProductPrice } from '../lib/api';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 
 interface FlatVariation {
   id: string;
@@ -16,71 +28,72 @@ interface FlatVariation {
 }
 
 export default function InventoryPage() {
-  const [items, setItems] = useState<FlatVariation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, loading, error: realtimeError, refreshProducts } = useRealtimeProducts({
+    includeUnpublished: true,
+  });
+
+  const [draftStocks, setDraftStocks] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'low' | 'out'>('all');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedSuccessId, setSavedSuccessId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   // Quick Price Modal state
   const [quickPriceItem, setQuickPriceItem] = useState<FlatVariation | null>(null);
   const [newPriceInput, setNewPriceInput] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
+  const [quickPriceError, setQuickPriceError] = useState('');
 
-  useEffect(() => {
-    loadInventory();
-
-    const handleCatalogueUpdated = () => {
-      loadInventory();
-    };
-    window.addEventListener('teefahs_catalogue_updated', handleCatalogueUpdated);
-    return () => window.removeEventListener('teefahs_catalogue_updated', handleCatalogueUpdated);
-  }, []);
-
-  const loadInventory = async () => {
-    setLoading(true);
-    try {
-      const prods = await getAllProducts();
-      const flatList: FlatVariation[] = [];
-
-      for (const p of prods) {
-        if (p.variations && p.variations.length > 0) {
-          for (const v of p.variations) {
-            flatList.push({
-              id: v.id,
-              productId: p.id,
-              productName: p.name,
-              productImage: p.main_image_url || '',
-              size: v.size || 'One Size',
-              colour: v.colour || 'Standard',
-              stockQuantity: Number(v.stock_quantity) || 0,
-              price: Number(v.price ?? p.base_price) || 0,
-            });
-          }
+  const items: FlatVariation[] = useMemo(() => {
+    const flatList: FlatVariation[] = [];
+    for (const p of products) {
+      if (p.variations && p.variations.length > 0) {
+        for (const v of p.variations) {
+          const liveQty = Math.max(0, Number(v.stock_quantity) || 0);
+          flatList.push({
+            id: v.id,
+            productId: p.id,
+            productName: p.name,
+            productImage: p.main_image_url || '',
+            size: v.size || 'One Size',
+            colour: v.colour || 'Standard',
+            stockQuantity: draftStocks[v.id] !== undefined ? draftStocks[v.id] : liveQty,
+            price: Number(v.price ?? p.base_price) || 0,
+          });
         }
       }
-      setItems(flatList);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
     }
-  };
+    return flatList;
+  }, [products, draftStocks]);
 
   const handleStockChange = (id: string, newQty: number) => {
-    const validQty = Math.max(0, newQty);
-    setItems(prev => prev.map(item => item.id === id ? { ...item, stockQuantity: validQty } : item));
+    const validQty = Math.max(0, isNaN(newQty) ? 0 : newQty);
+    setDraftStocks(prev => ({ ...prev, [id]: validQty }));
   };
 
   const handleCommitStock = async (id: string, newQty: number) => {
+    const validQty = Math.max(0, isNaN(newQty) ? 0 : newQty);
     setSavingId(id);
+    setErrorMsg('');
     try {
-      await updateVariationStock(id, newQty);
+      await updateVariationStock(id, validQty);
+      setDraftStocks(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       setSavedSuccessId(id);
-      setTimeout(() => setSavedSuccessId(null), 2000);
-    } catch (e) {
+      setSuccessMsg(`Stock updated to ${validQty} units in Supabase.`);
+      await refreshProducts();
+      setTimeout(() => {
+        setSavedSuccessId(null);
+        setSuccessMsg('');
+      }, 2500);
+    } catch (e: any) {
       console.error('Failed to commit stock:', e);
+      setErrorMsg(e?.message || 'Failed to update stock level in Supabase.');
     } finally {
       setSavingId(null);
     }
@@ -89,6 +102,7 @@ export default function InventoryPage() {
   const openQuickPrice = (item: FlatVariation) => {
     setQuickPriceItem(item);
     setNewPriceInput(item.price ? item.price.toString() : '');
+    setQuickPriceError('');
   };
 
   const handleSavePrice = async (e: React.FormEvent) => {
@@ -96,22 +110,28 @@ export default function InventoryPage() {
     if (!quickPriceItem) return;
 
     const parsed = parseFloat(newPriceInput);
-    if (isNaN(parsed) || parsed < 0) return;
+    if (isNaN(parsed) || parsed < 0) {
+      setQuickPriceError('Please enter a valid price in Naira (₦).');
+      return;
+    }
 
     setSavingPrice(true);
+    setQuickPriceError('');
+    setErrorMsg('');
     try {
       await updateProductPrice(quickPriceItem.productId, parsed);
-      // Update local item row prices
-      setItems(prev => prev.map(i => i.productId === quickPriceItem.productId ? { ...i, price: parsed } : i));
+      setSuccessMsg(`Updated price for "${quickPriceItem.productName}" to ₦${parsed.toLocaleString()}.`);
       setQuickPriceItem(null);
-    } catch (err) {
+      await refreshProducts();
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err: any) {
       console.error('Failed to update price:', err);
+      setQuickPriceError(err?.message || 'Failed to update price in Supabase.');
     } finally {
       setSavingPrice(false);
     }
   };
 
-  // Filter items
   const filtered = items.filter(item => {
     const matchesSearch =
       item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,13 +145,12 @@ export default function InventoryPage() {
     return true;
   });
 
-  // KPI stats
   const totalUnits = items.reduce((sum, item) => sum + item.stockQuantity, 0);
   const lowStockCount = items.filter(item => item.stockQuantity > 0 && item.stockQuantity < 5).length;
   const outOfStockCount = items.filter(item => item.stockQuantity === 0).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-stone-200 gap-4">
         <div>
@@ -144,13 +163,40 @@ export default function InventoryPage() {
           </p>
         </div>
         <button
-          onClick={loadInventory}
+          onClick={() => refreshProducts()}
           className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-stone-300 text-stone-700 text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-50 transition-colors self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           <span>Refresh Stock</span>
         </button>
       </div>
+
+      {/* Feedback Banners */}
+      {(errorMsg || realtimeError) && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-800 text-xs rounded-sm flex items-start justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <span className="font-medium">{errorMsg || realtimeError}</span>
+          </div>
+          {errorMsg && (
+            <button onClick={() => setErrorMsg('')} className="text-red-500 hover:text-red-800 cursor-pointer">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-sm flex items-start justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <CheckCircle2 size={16} className="text-emerald-700 flex-shrink-0 mt-0.5" />
+            <span className="font-medium">{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg('')} className="text-emerald-600 hover:text-emerald-900 cursor-pointer">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -198,7 +244,7 @@ export default function InventoryPage() {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
           <button
             onClick={() => setFilterMode('all')}
             className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer ${
@@ -232,22 +278,17 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Horizontal Scroll Hint Banner for Mobile / Smaller Screens */}
+      {/* Horizontal Scroll Hint */}
       <div className="flex items-center justify-between p-2.5 bg-stone-100/80 border border-stone-200/90 rounded-sm text-xs text-stone-600">
         <div className="flex items-center gap-2">
           <ArrowRightLeft size={14} className="text-emerald-700 flex-shrink-0" />
-          <span className="font-medium text-stone-800">
-            Horizontal Scroll Enabled:
-          </span>
+          <span className="font-medium text-stone-800">Inventory Table:</span>
           <span className="text-stone-500 text-[11px] hidden sm:inline">
-            Scroll sideways to view all columns, prices, and quick stock updates.
-          </span>
-          <span className="text-stone-500 text-[11px] sm:hidden">
-            Swipe left/right to view price &amp; update buttons.
+            Edit any quantity and click Save (or leave the field) to commit directly to Supabase.
           </span>
         </div>
         <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-          {filtered.length} Items Loaded
+          {filtered.length} Variations
         </span>
       </div>
 
@@ -267,7 +308,14 @@ export default function InventoryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 text-xs">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-stone-400">
+                  <div className="inline-block animate-spin w-6 h-6 border-2 border-stone-900 border-t-transparent rounded-full mb-2" />
+                  <p className="text-xs uppercase tracking-wider">Loading Inventory...</p>
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-stone-500 font-light">
                   No inventory variations found matching your filters.
@@ -343,11 +391,11 @@ export default function InventoryPage() {
                           type="number"
                           min="0"
                           value={v.stockQuantity}
-                          onChange={e => handleStockChange(v.id, parseInt(e.target.value) || 0)}
-                          onBlur={e => handleCommitStock(v.id, parseInt(e.target.value) || 0)}
+                          onChange={e => handleStockChange(v.id, parseInt(e.target.value, 10))}
                           className="w-16 p-1 text-center font-mono text-xs bg-stone-50 border border-stone-300 rounded focus:outline-none focus:border-stone-900"
                         />
                         <button
+                          type="button"
                           onClick={() => handleCommitStock(v.id, v.stockQuantity)}
                           disabled={savingId === v.id}
                           className={`p-1.5 rounded transition-colors cursor-pointer ${
@@ -369,7 +417,7 @@ export default function InventoryPage() {
         </table>
       </div>
 
-      {/* Quick Price Edit Modal for Inventory */}
+      {/* Quick Price Edit Modal */}
       {quickPriceItem && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
@@ -399,6 +447,13 @@ export default function InventoryPage() {
               </p>
             </div>
 
+            {quickPriceError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
+                <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <span>{quickPriceError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSavePrice} noValidate className="space-y-4">
               <div>
                 <label className="text-[11px] uppercase font-semibold text-stone-600 block mb-1">
@@ -413,7 +468,7 @@ export default function InventoryPage() {
                     inputMode="decimal"
                     value={newPriceInput}
                     onChange={e => setNewPriceInput(e.target.value.replace(/[^0-9.]/g, ''))}
-                    placeholder="e.g. 700 or 1500"
+                    placeholder="e.g. 1500 or 229500"
                     autoFocus
                     className="w-full pl-7 pr-3 py-2 text-sm font-mono font-semibold bg-stone-50 border border-stone-300 rounded focus:outline-none focus:border-stone-900 focus:bg-white"
                   />
@@ -443,4 +498,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-

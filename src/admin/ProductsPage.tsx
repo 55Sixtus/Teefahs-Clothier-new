@@ -1,40 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  PlusCircle, 
-  Search, 
-  Edit2, 
-  Trash2, 
-  RotateCcw, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  PlusCircle,
+  Search,
+  Edit2,
+  Trash2,
+  RotateCcw,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
   X,
   Archive,
   History,
-  Tag
+  Tag,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import { 
-  getAllProducts, 
-  getAllCategories, 
-  archiveProduct, 
-  restoreProduct, 
-  permanentlyDeleteProduct, 
-  getRecentlyDeletedProducts,
-  saveProduct,
-  updateProductPrice
+import {
+  getArchivedProducts,
+  archiveProduct,
+  restoreProduct,
+  permanentlyDeleteProduct,
+  updateProductPrice,
+  updateProductStatus,
 } from '../lib/api';
-import { Product, Category } from '../types/product';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
+import { Product } from '../types/product';
 
 export default function ProductsPage() {
   const location = useLocation();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { products, categories, loading, error: realtimeError, refreshProducts } = useRealtimeProducts({
+    includeUnpublished: true,
+  });
+
   const [recentlyDeleted, setRecentlyDeleted] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingDeleted, setLoadingDeleted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'new_arrival' | 'deleted'>('all');
-  
+
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
     id: string;
@@ -49,60 +56,86 @@ export default function ProductsPage() {
   const [pendingPermanentDelete, setPendingPermanentDelete] = useState<{ id: string; name: string } | null>(null);
   const [permanentDeletingId, setPermanentDeletingId] = useState<string | null>(null);
 
-  // Restoring state
+  // Restoring / status toggle state
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
 
   // Quick Price Edit Modal state
   const [quickPriceProduct, setQuickPriceProduct] = useState<Product | null>(null);
   const [newBasePrice, setNewBasePrice] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
+  const [quickPriceError, setQuickPriceError] = useState('');
+
+  const loadDeleted = useCallback(async () => {
+    setLoadingDeleted(true);
+    try {
+      const archived = await getArchivedProducts();
+      setRecentlyDeleted(archived);
+    } catch (e: any) {
+      console.error('Failed to load archived products:', e);
+    } finally {
+      setLoadingDeleted(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDeleted();
+    const handleCatalogueUpdate = () => {
+      loadDeleted();
+    };
+    window.addEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
+    return () => window.removeEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
+  }, [loadDeleted]);
+
+  useEffect(() => {
+    if (location.state && (location.state as any).archivedProductName) {
+      const state = location.state as any;
+      setUndoToast({ id: state.archivedProductId, name: state.archivedProductName });
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleSaveQuickPrice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickPriceProduct) return;
     const priceNum = parseFloat(newBasePrice);
-    if (isNaN(priceNum) || priceNum < 0) return;
+    if (isNaN(priceNum) || priceNum < 0) {
+      setQuickPriceError('Please enter a valid price in Naira (₦).');
+      return;
+    }
 
     setSavingPrice(true);
+    setQuickPriceError('');
+    setErrorMsg('');
     try {
       await updateProductPrice(quickPriceProduct.id, priceNum);
+      setSuccessMsg(`Updated price of "${quickPriceProduct.name}" to ₦${priceNum.toLocaleString()}.`);
       setQuickPriceProduct(null);
-      await loadData();
-    } catch (err) {
+      await refreshProducts();
+      setTimeout(() => setSuccessMsg(''), 3500);
+    } catch (err: any) {
       console.error('Failed to update price:', err);
+      setQuickPriceError(err?.message || 'Could not update price in Supabase.');
     } finally {
       setSavingPrice(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-
-    // Check if navigated from EditProductPage after archiving
-    if (location.state && (location.state as any).archivedProductName) {
-      const state = location.state as any;
-      triggerUndoToast(state.archivedProductId, state.archivedProductName);
-      // Clean history state
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
-
-  const loadData = async () => {
-    setLoading(true);
+  const handleTogglePublished = async (prod: Product) => {
+    setTogglingStatusId(prod.id);
+    setErrorMsg('');
     try {
-      const [prods, cats] = await Promise.all([getAllProducts(), getAllCategories()]);
-      setProducts(prods);
-      setCategories(cats);
-      setRecentlyDeleted(getRecentlyDeletedProducts());
-    } catch (e) {
-      console.error(e);
+      await updateProductStatus(prod.id, { is_published: !prod.is_published });
+      setSuccessMsg(
+        `"${prod.name}" is now ${!prod.is_published ? 'Published live on storefront' : 'moved to Draft'}.`
+      );
+      await refreshProducts();
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Could not update publication status.');
     } finally {
-      setLoading(false);
+      setTogglingStatusId(null);
     }
-  };
-
-  const triggerUndoToast = (id: string, name: string) => {
-    setUndoToast({ id, name });
   };
 
   const handleUndo = async () => {
@@ -110,11 +143,13 @@ export default function ProductsPage() {
     const targetId = undoToast.id;
     setUndoToast(null);
     setRestoringId(targetId);
+    setErrorMsg('');
     try {
       await restoreProduct(targetId);
-      await loadData();
-    } catch (e) {
+      await Promise.all([refreshProducts(), loadDeleted()]);
+    } catch (e: any) {
       console.error('Failed to restore product via undo:', e);
+      setErrorMsg(e?.message || 'Failed to restore product.');
     } finally {
       setRestoringId(null);
     }
@@ -124,12 +159,14 @@ export default function ProductsPage() {
     if (!pendingArchive) return;
     const target = pendingArchive;
     setArchivingId(target.id);
+    setErrorMsg('');
     try {
       await archiveProduct(target.id, 'Queen Lateefah');
-      triggerUndoToast(target.id, target.name);
-      await loadData();
-    } catch (e) {
+      setUndoToast({ id: target.id, name: target.name });
+      await Promise.all([refreshProducts(), loadDeleted()]);
+    } catch (e: any) {
       console.error('Failed to move product to Recently Deleted:', e);
+      setErrorMsg(e?.message || 'Failed to archive garment in Supabase.');
     } finally {
       setArchivingId(null);
       setPendingArchive(null);
@@ -138,11 +175,15 @@ export default function ProductsPage() {
 
   const handleRestoreFromDeleted = async (id: string) => {
     setRestoringId(id);
+    setErrorMsg('');
     try {
       await restoreProduct(id);
-      await loadData();
-    } catch (e) {
+      setSuccessMsg('Garment restored and published cleanly.');
+      await Promise.all([refreshProducts(), loadDeleted()]);
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (e: any) {
       console.error('Failed to restore product:', e);
+      setErrorMsg(e?.message || 'Failed to restore garment from Supabase.');
     } finally {
       setRestoringId(null);
     }
@@ -152,11 +193,15 @@ export default function ProductsPage() {
     if (!pendingPermanentDelete) return;
     const target = pendingPermanentDelete;
     setPermanentDeletingId(target.id);
+    setErrorMsg('');
     try {
       await permanentlyDeleteProduct(target.id);
-      await loadData();
-    } catch (e) {
+      setSuccessMsg(`"${target.name}" permanently deleted from Supabase.`);
+      await Promise.all([refreshProducts(), loadDeleted()]);
+      setTimeout(() => setSuccessMsg(''), 3500);
+    } catch (e: any) {
       console.error('Failed to permanently delete product:', e);
+      setErrorMsg(e?.message || 'Failed to permanently delete garment from Supabase.');
     } finally {
       setPermanentDeletingId(null);
       setPendingPermanentDelete(null);
@@ -165,14 +210,12 @@ export default function ProductsPage() {
 
   const getCategoryName = (catId?: string) => {
     if (!catId) return 'Unassigned';
-    const match = categories.find(c => c.id === catId);
+    const match = categories.find(c => c.id === catId || c.slug === catId);
     return match ? match.name : catId;
   };
 
-  // Determine current active display list
   const currentItems = statusFilter === 'deleted' ? recentlyDeleted : products;
 
-  // Filter products
   const filtered = currentItems.filter(p => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -190,6 +233,8 @@ export default function ProductsPage() {
 
     return true;
   });
+
+  const isTableLoading = statusFilter === 'deleted' ? loadingDeleted : loading;
 
   return (
     <div className="space-y-8 pb-16">
@@ -213,6 +258,33 @@ export default function ProductsPage() {
         </Link>
       </div>
 
+      {/* Feedback Banners */}
+      {(errorMsg || realtimeError) && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-800 text-xs rounded-sm flex items-start justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <span className="font-medium">{errorMsg || realtimeError}</span>
+          </div>
+          {errorMsg && (
+            <button onClick={() => setErrorMsg('')} className="text-red-500 hover:text-red-800 cursor-pointer">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-sm flex items-start justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <CheckCircle2 size={16} className="text-emerald-700 flex-shrink-0 mt-0.5" />
+            <span className="font-medium">{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg('')} className="text-emerald-600 hover:text-emerald-900 cursor-pointer">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="relative w-full lg:w-72">
@@ -227,7 +299,6 @@ export default function ProductsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          {/* Category Dropdown */}
           <select
             value={selectedCategory}
             onChange={e => setSelectedCategory(e.target.value)}
@@ -235,15 +306,16 @@ export default function ProductsPage() {
           >
             <option value="all">All Categories ({products.length})</option>
             {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
 
-          {/* Status Tabs including Recently Deleted */}
           <div className="flex items-center border border-stone-200 rounded-sm bg-white overflow-hidden flex-wrap">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                 statusFilter === 'all' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'
               }`}
             >
@@ -251,7 +323,7 @@ export default function ProductsPage() {
             </button>
             <button
               onClick={() => setStatusFilter('published')}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                 statusFilter === 'published' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'
               }`}
             >
@@ -259,7 +331,7 @@ export default function ProductsPage() {
             </button>
             <button
               onClick={() => setStatusFilter('draft')}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                 statusFilter === 'draft' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'
               }`}
             >
@@ -267,17 +339,20 @@ export default function ProductsPage() {
             </button>
             <button
               onClick={() => setStatusFilter('new_arrival')}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
                 statusFilter === 'new_arrival' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-50'
               }`}
             >
               New Arrivals
             </button>
             <button
-              onClick={() => setStatusFilter('deleted')}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 ${
-                statusFilter === 'deleted' 
-                  ? 'bg-amber-900 text-white' 
+              onClick={() => {
+                setStatusFilter('deleted');
+                loadDeleted();
+              }}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer ${
+                statusFilter === 'deleted'
+                  ? 'bg-amber-900 text-white'
                   : 'text-stone-600 hover:bg-amber-50 hover:text-amber-900'
               }`}
               title="Recently deleted garments that can be restored"
@@ -285,9 +360,11 @@ export default function ProductsPage() {
               <History size={13} />
               <span>Recently Deleted</span>
               {recentlyDeleted.length > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  statusFilter === 'deleted' ? 'bg-white text-amber-950' : 'bg-amber-100 text-amber-900'
-                }`}>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    statusFilter === 'deleted' ? 'bg-white text-amber-950' : 'bg-amber-100 text-amber-900'
+                  }`}
+                >
                   {recentlyDeleted.length}
                 </span>
               )}
@@ -302,22 +379,22 @@ export default function ProductsPage() {
           <div className="flex items-start gap-2.5">
             <Archive size={16} className="text-amber-700 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Recently Deleted Archive</p>
+              <p className="font-semibold">Recently Deleted Archive (Supabase)</p>
               <p className="text-[11px] text-amber-800 mt-0.5">
-                These garments have been removed from the public storefront and customer cart listings. You can restore them anytime or permanently delete them.
+                These garments are archived in Supabase and hidden from the public storefront and customer shopping bags. You can restore them anytime or permanently delete them.
               </p>
             </div>
           </div>
           <button
             onClick={() => setStatusFilter('all')}
-            className="text-[11px] text-amber-900 font-semibold underline hover:text-amber-950 flex-shrink-0"
+            className="text-[11px] text-amber-900 font-semibold underline hover:text-amber-950 flex-shrink-0 cursor-pointer"
           >
             Back to Active Garments &rarr;
           </button>
         </div>
       )}
 
-      {/* Products Table with Horizontal Scrollbar for Mobile/Desktop */}
+      {/* Desktop Products Table */}
       <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-x-auto w-full scrollbar-thin">
         <table className="w-full min-w-[900px] text-left border-collapse">
           <thead>
@@ -343,7 +420,7 @@ export default function ProductsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 text-xs">
-            {loading ? (
+            {isTableLoading ? (
               <tr>
                 <td colSpan={statusFilter === 'deleted' ? 7 : 8} className="py-12 text-center text-stone-400">
                   <div className="inline-block animate-spin w-6 h-6 border-2 border-stone-900 border-t-transparent rounded-full mb-2" />
@@ -353,8 +430,8 @@ export default function ProductsPage() {
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={statusFilter === 'deleted' ? 7 : 8} className="py-12 text-center text-stone-500 font-light">
-                  {statusFilter === 'deleted' 
-                    ? 'No deleted garments found. Your catalogue is clean.' 
+                  {statusFilter === 'deleted'
+                    ? 'No deleted garments found. Your catalogue is clean.'
                     : 'No garments match your current search and filters.'}
                 </td>
               </tr>
@@ -379,12 +456,10 @@ export default function ProductsPage() {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="font-semibold text-stone-900 block line-through text-stone-500">{p.name}</span>
+                        <span className="font-semibold block line-through text-stone-500">{p.name}</span>
                         <span className="text-[10px] text-stone-400 font-mono">{p.slug}</span>
                       </td>
-                      <td className="py-3 px-4 text-stone-600 font-medium">
-                        {getCategoryName(p.category_id)}
-                      </td>
+                      <td className="py-3 px-4 text-stone-600 font-medium">{getCategoryName(p.category_id)}</td>
                       <td className="py-3 px-4 font-mono font-semibold text-stone-700">
                         ₦{p.base_price?.toLocaleString()}
                       </td>
@@ -399,7 +474,7 @@ export default function ProductsPage() {
                           <button
                             onClick={() => handleRestoreFromDeleted(p.id)}
                             disabled={restoringId === p.id}
-                            className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-semibold px-2.5 py-1 rounded transition-colors shadow-2xs"
+                            className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 font-semibold px-2.5 py-1 rounded transition-colors shadow-2xs cursor-pointer"
                             title="Restore garment to active catalogue"
                           >
                             <RotateCcw size={12} className={restoringId === p.id ? 'animate-spin' : ''} />
@@ -407,7 +482,7 @@ export default function ProductsPage() {
                           </button>
                           <button
                             onClick={() => setPendingPermanentDelete({ id: p.id, name: p.name })}
-                            className="p-1 text-stone-400 hover:text-red-600 transition-colors"
+                            className="p-1 text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
                             title="Permanently delete from database"
                           >
                             <Trash2 size={14} />
@@ -437,9 +512,7 @@ export default function ProductsPage() {
                       <span className="font-semibold text-stone-900 block">{p.name}</span>
                       <span className="text-[10px] text-stone-400 font-mono">{p.slug}</span>
                     </td>
-                    <td className="py-3 px-4 text-stone-600 font-medium">
-                      {getCategoryName(p.category_id)}
-                    </td>
+                    <td className="py-3 px-4 text-stone-600 font-medium">{getCategoryName(p.category_id)}</td>
                     <td className="py-3 px-4 font-mono font-semibold text-stone-900">
                       <div className="flex items-center gap-2 group/price">
                         <span>₦{p.base_price?.toLocaleString()}</span>
@@ -448,6 +521,7 @@ export default function ProductsPage() {
                           onClick={() => {
                             setQuickPriceProduct(p);
                             setNewBasePrice(p.base_price?.toString() || '');
+                            setQuickPriceError('');
                           }}
                           className="opacity-80 group-hover/price:opacity-100 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer shadow-2xs border border-emerald-200"
                           title="Quick Edit Price"
@@ -458,12 +532,25 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className="text-stone-700 font-medium">
-                        {(p.variations || []).length} variations
-                      </span>
-                      <span className="text-[10px] text-stone-400 block">
-                        ({totalStock} total units)
-                      </span>
+                      {(p.variations || []).length === 0 ? (
+                        <>
+                          <span className="text-amber-800 font-medium block">Needs input</span>
+                          <span className="text-[10px] text-stone-400 block">No variations set</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-stone-700 font-medium">
+                            {(p.variations || []).length} variations
+                          </span>
+                          <span
+                            className={`text-[10px] block ${
+                              totalStock === 0 ? 'text-red-600 font-semibold' : 'text-stone-400'
+                            }`}
+                          >
+                            ({totalStock} total units)
+                          </span>
+                        </>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-center space-x-1">
                       {p.is_new_arrival && (
@@ -478,15 +565,20 @@ export default function ProductsPage() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                      <button
+                        type="button"
+                        disabled={togglingStatusId === p.id}
+                        onClick={() => handleTogglePublished(p)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
                           p.is_published
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                            : 'bg-stone-100 text-stone-600'
+                            ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-stone-100 hover:bg-stone-200 text-stone-600 border border-stone-200'
                         }`}
+                        title={p.is_published ? 'Click to unpublish (Draft)' : 'Click to publish live'}
                       >
-                        {p.is_published ? 'Published' : 'Draft'}
-                      </span>
+                        {p.is_published ? <Eye size={11} /> : <EyeOff size={11} />}
+                        <span>{togglingStatusId === p.id ? 'Updating...' : p.is_published ? 'Published' : 'Draft'}</span>
+                      </button>
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="inline-flex items-center gap-2 justify-end">
@@ -500,7 +592,7 @@ export default function ProductsPage() {
                         <button
                           onClick={() => setPendingArchive({ id: p.id, name: p.name })}
                           disabled={archivingId === p.id}
-                          className="p-1 text-stone-400 hover:text-red-600 transition-colors"
+                          className="p-1 text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
                           title="Move garment to Recently Deleted"
                         >
                           <Trash2 size={14} />
@@ -515,17 +607,17 @@ export default function ProductsPage() {
         </table>
       </div>
 
-      {/* Mobile-First Card View (Displayed on phone screens < md) */}
+      {/* Mobile-First Card View */}
       <div className="block md:hidden space-y-3">
-        {loading ? (
+        {isTableLoading ? (
           <div className="py-10 text-center text-stone-400 bg-white border border-stone-200 rounded-sm">
             <div className="inline-block animate-spin w-6 h-6 border-2 border-stone-900 border-t-transparent rounded-full mb-2" />
             <p className="text-xs uppercase tracking-wider">Loading Catalogue...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-10 text-center text-stone-500 font-light bg-white border border-stone-200 rounded-sm px-4">
-            {statusFilter === 'deleted' 
-              ? 'No deleted garments found. Your catalogue is clean.' 
+            {statusFilter === 'deleted'
+              ? 'No deleted garments found. Your catalogue is clean.'
               : 'No garments match your current search and filters.'}
           </div>
         ) : (
@@ -556,15 +648,18 @@ export default function ProductsPage() {
                         New
                       </span>
                     )}
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${
-                        p.is_published
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'bg-stone-100 text-stone-500'
-                      }`}
-                    >
-                      {p.is_published ? 'Live' : 'Draft'}
-                    </span>
+                    {statusFilter !== 'deleted' && (
+                      <button
+                        type="button"
+                        disabled={togglingStatusId === p.id}
+                        onClick={() => handleTogglePublished(p)}
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider cursor-pointer ${
+                          p.is_published ? 'bg-emerald-50 text-emerald-800' : 'bg-stone-100 text-stone-500'
+                        }`}
+                      >
+                        {p.is_published ? 'Live' : 'Draft'}
+                      </button>
+                    )}
                   </div>
                   <h3 className="font-semibold text-stone-900 text-xs sm:text-sm line-clamp-2 leading-snug">
                     {p.name}
@@ -573,48 +668,60 @@ export default function ProductsPage() {
                     <span className="text-sm font-mono font-bold text-stone-900">
                       ₦{p.base_price?.toLocaleString()}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuickPriceProduct(p);
-                        setNewBasePrice(p.base_price?.toString() || '');
-                      }}
-                      className="px-2.5 py-1 bg-emerald-900 hover:bg-emerald-800 text-white rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs cursor-pointer"
-                    >
-                      <Tag size={11} className="text-amber-300" />
-                      <span>Edit Price</span>
-                    </button>
+                    {statusFilter !== 'deleted' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickPriceProduct(p);
+                          setNewBasePrice(p.base_price?.toString() || '');
+                          setQuickPriceError('');
+                        }}
+                        className="px-2.5 py-1 bg-emerald-900 hover:bg-emerald-800 text-white rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                      >
+                        <Tag size={11} className="text-amber-300" />
+                        <span>Edit Price</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Mobile Actions Footer */}
               <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
-                <Link
-                  to={`/admin/products/edit/${p.id}`}
-                  className="inline-flex items-center gap-1 text-stone-700 hover:text-stone-900 font-medium px-2.5 py-1.5 border border-stone-200 rounded text-[11px]"
-                >
-                  <Edit2 size={12} />
-                  <span>Full Edit</span>
-                </Link>
-
                 {statusFilter === 'deleted' ? (
-                  <button
-                    onClick={() => handleRestoreFromDeleted(p.id)}
-                    disabled={restoringId === p.id}
-                    className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 border border-emerald-300 font-semibold px-3 py-1.5 rounded"
-                  >
-                    <RotateCcw size={12} className={restoringId === p.id ? 'animate-spin' : ''} />
-                    <span>Restore</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleRestoreFromDeleted(p.id)}
+                      disabled={restoringId === p.id}
+                      className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 border border-emerald-300 font-semibold px-3 py-1.5 rounded cursor-pointer"
+                    >
+                      <RotateCcw size={12} className={restoringId === p.id ? 'animate-spin' : ''} />
+                      <span>Restore</span>
+                    </button>
+                    <button
+                      onClick={() => setPendingPermanentDelete({ id: p.id, name: p.name })}
+                      className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-900 font-medium px-2.5 py-1.5 cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete Permanently</span>
+                    </button>
+                  </>
                 ) : (
-                  <button
-                    onClick={() => setPendingArchive({ id: p.id, name: p.name })}
-                    className="p-1.5 text-stone-400 hover:text-red-600 transition-colors inline-flex items-center gap-1 text-[11px]"
-                  >
-                    <Trash2 size={13} />
-                    <span>Archive</span>
-                  </button>
+                  <>
+                    <Link
+                      to={`/admin/products/edit/${p.id}`}
+                      className="inline-flex items-center gap-1 text-stone-700 hover:text-stone-900 font-medium px-2.5 py-1.5 border border-stone-200 rounded text-[11px]"
+                    >
+                      <Edit2 size={12} />
+                      <span>Full Edit</span>
+                    </Link>
+                    <button
+                      onClick={() => setPendingArchive({ id: p.id, name: p.name })}
+                      className="p-1.5 text-stone-400 hover:text-red-600 transition-colors inline-flex items-center gap-1 text-[11px] cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                      <span>Archive</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -645,7 +752,7 @@ export default function ProductsPage() {
             </button>
             <button
               onClick={() => setUndoToast(null)}
-              className="p-1 text-stone-400 hover:text-white"
+              className="p-1 text-stone-400 hover:text-white cursor-pointer"
             >
               <X size={16} />
             </button>
@@ -670,7 +777,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setPendingArchive(null)}
-                className="flex-1 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-stone-50 transition-colors"
+                className="flex-1 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-stone-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -678,7 +785,7 @@ export default function ProductsPage() {
                 type="button"
                 onClick={handleArchiveConfirm}
                 disabled={archivingId !== null}
-                className="flex-1 py-2.5 bg-red-600 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-red-700 transition-colors shadow-xs"
+                className="flex-1 py-2.5 bg-red-600 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-red-700 transition-colors shadow-xs cursor-pointer"
               >
                 {archivingId ? 'Moving...' : 'Move to Deleted'}
               </button>
@@ -707,7 +814,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setPendingPermanentDelete(null)}
-                className="flex-1 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-stone-50 transition-colors"
+                className="flex-1 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-stone-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -715,7 +822,7 @@ export default function ProductsPage() {
                 type="button"
                 onClick={handlePermanentDeleteConfirm}
                 disabled={permanentDeletingId !== null}
-                className="flex-1 py-2.5 bg-red-700 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-red-800 transition-colors shadow-xs"
+                className="flex-1 py-2.5 bg-red-700 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-red-800 transition-colors shadow-xs cursor-pointer"
               >
                 {permanentDeletingId ? 'Deleting...' : 'Permanently Delete'}
               </button>
@@ -723,6 +830,7 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
       {/* Quick Price Edit Modal */}
       {quickPriceProduct && (
         <div className="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-xs flex items-center justify-center p-4">
@@ -744,6 +852,14 @@ export default function ProductsPage() {
               <p className="text-xs font-semibold text-stone-900 mb-1">{quickPriceProduct.name}</p>
               <p className="text-[11px] text-stone-500">Update base selling price in Nigerian Naira (₦).</p>
             </div>
+
+            {quickPriceError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
+                <AlertCircle size={13} className="flex-shrink-0 mt-0.5 text-red-600" />
+                <span>{quickPriceError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSaveQuickPrice} className="space-y-4">
               <div>
                 <label className="block text-[11px] uppercase tracking-wider font-semibold text-stone-700 mb-1">
@@ -753,18 +869,19 @@ export default function ProductsPage() {
                   type="number"
                   required
                   min="0"
-                  step="100"
+                  step="any"
                   autoFocus
                   value={newBasePrice}
                   onChange={e => setNewBasePrice(e.target.value)}
                   className="w-full px-3 py-2.5 text-sm font-mono font-bold bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-emerald-700"
                 />
 
-                {/* Quick Tap Price Chips */}
                 <div className="mt-2">
-                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Tap Price:</p>
+                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">
+                    Quick Tap Price:
+                  </p>
                   <div className="flex flex-wrap gap-1">
-                    {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                    {['1500', '15000', '35000', '68000', '85000', '130000', '229500'].map(pVal => (
                       <button
                         key={pVal}
                         type="button"
@@ -775,7 +892,7 @@ export default function ProductsPage() {
                             : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
                         }`}
                       >
-                        ₦{parseInt(pVal).toLocaleString()}
+                        ₦{parseInt(pVal, 10).toLocaleString()}
                       </button>
                     ))}
                   </div>

@@ -81,6 +81,7 @@ export default function Footer() {
             <li><Link to="/gallery" className="hover:text-emerald-300 transition-colors font-medium">The Teefahs Gallery</Link></li>
             <li><Link to="/shop?category=abayas" className="hover:text-white transition-colors">Abayas</Link></li>
             <li><Link to="/shop?category=khimars" className="hover:text-white transition-colors">Khimars</Link></li>
+            <li><Link to="/shop?category=workerwear" className="hover:text-white transition-colors">Workerwear</Link></li>
             <li><Link to="/shop?category=prayer-wear" className="hover:text-white transition-colors">Prayer Wear</Link></li>
           </ul>
         </div>

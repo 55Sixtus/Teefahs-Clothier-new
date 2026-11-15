@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product } from '../types/product';
+import { Category, Product } from '../types/product';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 
 export interface CartItem {
   product: Product;
@@ -8,8 +9,15 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface ProductStockInfo {
+  hasVariations: boolean;
+  maxStock: number;
+  isOutOfStock: boolean;
+}
+
 interface CartContextType {
   cart: CartItem[];
+  categories: Category[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (index: number) => void;
   updateQuantity: (index: number, quantity: number) => void;
@@ -23,7 +31,52 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = 'teefahs_cart_session_v2';
 
+export function getProductStockInfo(
+  product: Product,
+  selectedSize?: string,
+  selectedColour?: string
+): ProductStockInfo {
+  const variations = product.variations || [];
+  if (variations.length === 0) {
+    // Attributes & stock not yet specified by owner — allow customer cart & WhatsApp order
+    return { hasVariations: false, maxStock: 20, isOutOfStock: false };
+  }
+
+  const totalStock = variations.reduce(
+    (sum, v) => sum + Math.max(0, Number(v.stock_quantity) || 0),
+    0
+  );
+
+  const matchingVar = variations.find(
+    v =>
+      (!v.size || !selectedSize || v.size === selectedSize) &&
+      (!v.colour || !selectedColour || v.colour === selectedColour)
+  );
+
+  const maxStock = matchingVar
+    ? Math.max(0, Number(matchingVar.stock_quantity) || 0)
+    : totalStock;
+
+  return {
+    hasVariations: true,
+    maxStock,
+    isOutOfStock: maxStock <= 0,
+  };
+}
+
+export function getVariationMaxStock(
+  product: Product,
+  selectedSize?: string,
+  selectedColour?: string
+): number {
+  return getProductStockInfo(product, selectedSize, selectedColour).maxStock;
+}
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { products: liveProducts, categories, loading: liveLoading } = useRealtimeProducts({
+    includeUnpublished: false,
+  });
+
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
@@ -48,6 +101,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  // Persist cart changes
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
@@ -56,34 +110,96 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [cart]);
 
+  // Synchronize stored cart items with authoritative live Supabase prices, stock, and availability
+  useEffect(() => {
+    if (liveLoading) return;
+
+    setCart(prev => {
+      if (prev.length === 0) return prev;
+
+      let changed = false;
+      const synced: CartItem[] = [];
+
+      for (const item of prev) {
+        const freshProduct = liveProducts.find(p => p.id === item.product.id);
+        if (!freshProduct || !freshProduct.is_published || freshProduct.is_archived || freshProduct.deleted_at) {
+          changed = true;
+          continue;
+        }
+
+        const stockInfo = getProductStockInfo(
+          freshProduct,
+          item.selectedSize,
+          item.selectedColour
+        );
+        if (stockInfo.hasVariations && stockInfo.isOutOfStock) {
+          changed = true;
+          continue;
+        }
+
+        const clampedQty = Math.min(stockInfo.maxStock, Math.max(1, item.quantity));
+        const priceChanged =
+          Number(freshProduct.base_price) !== Number(item.product.base_price) ||
+          Number(freshProduct.sale_price ?? 0) !== Number(item.product.sale_price ?? 0);
+        const metaChanged =
+          freshProduct.name !== item.product.name ||
+          freshProduct.main_image_url !== item.product.main_image_url ||
+          freshProduct.updated_at !== item.product.updated_at ||
+          clampedQty !== item.quantity;
+
+        if (priceChanged || metaChanged) {
+          changed = true;
+        }
+
+        synced.push({
+          ...item,
+          product: freshProduct,
+          quantity: clampedQty,
+        });
+      }
+
+      return changed ? synced : prev;
+    });
+  }, [liveProducts, liveLoading]);
+
   const addToCart = (newItem: CartItem) => {
+    const freshProduct = liveProducts.find(p => p.id === newItem.product.id) || newItem.product;
+    const stockInfo = getProductStockInfo(
+      freshProduct,
+      newItem.selectedSize,
+      newItem.selectedColour
+    );
+
+    if (stockInfo.hasVariations && stockInfo.isOutOfStock) {
+      return;
+    }
+
     setCart(prev => {
       const existingIndex = prev.findIndex(
         item =>
-          item.product.id === newItem.product.id &&
+          item.product.id === freshProduct.id &&
           item.selectedSize === newItem.selectedSize &&
           item.selectedColour === newItem.selectedColour
       );
 
-      // Determine stock limit
-      const matchingVar = newItem.product.variations?.find(
-        v =>
-          (!v.size || v.size === newItem.selectedSize) &&
-          (!v.colour || v.colour === newItem.selectedColour)
-      );
-      const maxStock = matchingVar?.stock_quantity ?? 50;
-
       if (existingIndex > -1) {
         return prev.map((item, i) => {
           if (i === existingIndex) {
-            const merged = Math.min(maxStock, item.quantity + newItem.quantity);
-            return { ...item, quantity: merged };
+            const merged = Math.min(stockInfo.maxStock, item.quantity + Math.max(1, newItem.quantity));
+            return { ...item, product: freshProduct, quantity: merged };
           }
           return item;
         });
       }
 
-      return [...prev, { ...newItem, quantity: Math.min(maxStock, newItem.quantity) }];
+      return [
+        ...prev,
+        {
+          ...newItem,
+          product: freshProduct,
+          quantity: Math.min(stockInfo.maxStock, Math.max(1, newItem.quantity)),
+        },
+      ];
     });
     setIsCartOpen(true);
   };
@@ -98,18 +214,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setCart(prev =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
-        const matchingVar = item.product.variations?.find(
-          v =>
-            (!v.size || v.size === item.selectedSize) &&
-            (!v.colour || v.colour === item.selectedColour)
+    setCart(prev => {
+      const next: CartItem[] = [];
+      prev.forEach((item, i) => {
+        if (i !== index) {
+          next.push(item);
+          return;
+        }
+        const stockInfo = getProductStockInfo(
+          item.product,
+          item.selectedSize,
+          item.selectedColour
         );
-        const maxStock = matchingVar?.stock_quantity ?? 50;
-        return { ...item, quantity: Math.min(maxStock, quantity) };
-      })
-    );
+        if (stockInfo.hasVariations && stockInfo.isOutOfStock) {
+          return;
+        }
+        next.push({ ...item, quantity: Math.min(stockInfo.maxStock, quantity) });
+      });
+      return next;
+    });
   };
 
   const clearCart = () => setCart([]);
@@ -121,6 +244,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     <CartContext.Provider
       value={{
         cart,
+        categories,
         addToCart,
         removeFromCart,
         updateQuantity,

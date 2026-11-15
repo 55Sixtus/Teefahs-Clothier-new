@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Menu, X, Lock, ArrowRight, Tag } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, Lock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ASSETS } from '../data/assets';
 import { useCart } from '../context/CartContext';
@@ -20,20 +20,29 @@ export default function Header() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (searchOpen && products.length === 0) {
+    if (!searchOpen) return;
+    let active = true;
+    const loadSearchData = () => {
       Promise.all([getPublishedProducts(), getActiveCategories()])
         .then(([prods, cats]) => {
+          if (!active) return;
           setProducts(prods);
           setCategories(cats);
         })
         .catch(err => console.error('Error loading search data:', err));
-    }
+    };
+    loadSearchData();
+    window.addEventListener('teefahs_catalogue_updated', loadSearchData);
+    return () => {
+      active = false;
+      window.removeEventListener('teefahs_catalogue_updated', loadSearchData);
+    };
   }, [searchOpen]);
 
   const filteredCategories = searchQuery.trim() ? categories.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : categories.slice(0, 6);
+  ) : categories;
 
   const filteredProducts = searchQuery.trim() ? products.filter(p => {
     const q = searchQuery.toLowerCase();
@@ -91,9 +100,10 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-7 text-[12px] font-medium text-stone-700 dark:text-stone-300 uppercase tracking-widest">
+          <nav className="hidden lg:flex items-center gap-6 text-[12px] font-medium text-stone-700 dark:text-stone-300 uppercase tracking-widest">
             <Link to="/" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Home</Link>
             <Link to="/shop" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Shop All</Link>
+            <Link to="/shop?category=workerwear" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Workerwear</Link>
             <Link to="/new-arrivals" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">New Arrivals</Link>
             <Link to="/collections" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Collections</Link>
             <Link to="/gallery" className="hover:text-stone-900 dark:hover:text-amber-300 transition-colors">Gallery</Link>
@@ -220,7 +230,7 @@ export default function Header() {
                         <div
                           key={prod.id}
                           onClick={() => {
-                            navigate(`/shop?q=${encodeURIComponent(prod.name)}`);
+                            navigate(`/product/${prod.slug || prod.id}`);
                             setSearchOpen(false);
                             setSearchQuery('');
                           }}
@@ -353,6 +363,13 @@ export default function Header() {
                   className="hover:text-emerald-900 transition-colors pb-2 border-b border-stone-100"
                 >
                   Shop All Pieces
+                </Link>
+                <Link
+                  to="/shop?category=workerwear"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-emerald-900 transition-colors pb-2 border-b border-stone-100"
+                >
+                  Workerwear
                 </Link>
                 <Link
                   to="/new-arrivals"

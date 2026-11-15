@@ -1,16 +1,28 @@
-import { useState, useEffect } from 'react';
-import { X, Check, ShoppingBag, MessageCircle, Eye, Camera, Sparkles, Maximize2, ShieldCheck, Tag } from 'lucide-react';
-import { Product } from '../types/product';
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  X,
+  Check,
+  ShoppingBag,
+  MessageCircle,
+  Eye,
+  Sparkles,
+  Maximize2,
+  ShieldCheck,
+  ExternalLink,
+} from 'lucide-react';
+import { Category, Product } from '../types/product';
 import { useCart } from '../context/CartContext';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 import { trackProductView, trackAddToCart, trackWhatsAppConversion } from '../utils/analytics';
 import { calculateProductPricing } from '../utils/pricing';
-
-import { getPublishedProducts } from '../lib/api';
+import { getProductById, getActiveCategories } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 export interface ProductModalProps {
   product: Product | null;
+  categories?: Category[];
   isOpen?: boolean;
   onClose: () => void;
 }
@@ -21,9 +33,16 @@ interface GallerySlot {
   image: string;
 }
 
-export default function ProductModal({ product, isOpen = true, onClose }: ProductModalProps) {
+export default function ProductModal({
+  product,
+  categories,
+  isOpen = true,
+  onClose,
+}: ProductModalProps) {
   const { addToCart } = useCart();
   const [currentProduct, setCurrentProduct] = useState<Product | null>(product);
+  const [activeCategories, setActiveCategories] = useState<Category[]>(categories || []);
+  const [isUnavailable, setIsUnavailable] = useState(false);
   const [selectedImageKey, setSelectedImageKey] = useState<string>('0');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -33,27 +52,75 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
   useEffect(() => {
     setCurrentProduct(product);
+    setIsUnavailable(false);
+    setSelectedImageKey('0');
+    setSelectedSize('');
+    setSelectedColour('');
+    setQuantity(1);
   }, [product]);
 
-  // Real-time synchronization while modal is open
   useEffect(() => {
+    if (categories && categories.length > 0) {
+      setActiveCategories(categories);
+    }
+  }, [categories]);
+
+  const syncModalProduct = useCallback(async () => {
     if (!product?.id) return;
+    try {
+      const [fresh, cats] = await Promise.all([
+        getProductById(product.id),
+        categories && categories.length > 0 ? Promise.resolve(categories) : getActiveCategories(),
+      ]);
+      setActiveCategories(cats);
+      if (fresh && fresh.is_published && !fresh.is_archived && !fresh.deleted_at) {
+        setCurrentProduct(fresh);
+        setIsUnavailable(false);
+      } else {
+        setIsUnavailable(true);
+      }
+    } catch (err) {
+      console.error('Failed to sync open modal product:', err);
+    }
+  }, [product?.id, categories]);
+
+  // Direct cross-device Supabase Realtime + local catalogue sync while modal is open
+  useEffect(() => {
+    if (!isOpen || !product?.id) return;
+
+    syncModalProduct();
+
     const handleCatalogueUpdate = () => {
-      getPublishedProducts()
-        .then(prods => {
-          const fresh = prods.find(p => p.id === product.id);
-          if (fresh) {
-            setCurrentProduct(fresh);
-          }
-        })
-        .catch(err => console.error('Failed to sync open modal product:', err));
+      syncModalProduct();
     };
     window.addEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
-    return () => window.removeEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
-  }, [product?.id]);
+
+    const channelName = `modal-product-${product.id}-${Math.random().toString(36).slice(2, 8)}`;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        syncModalProduct();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_variations' }, () => {
+        syncModalProduct();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_images' }, () => {
+        syncModalProduct();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        syncModalProduct();
+      })
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('teefahs_catalogue_updated', handleCatalogueUpdate);
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen, product?.id, syncModalProduct]);
 
   // Close on Escape key
   useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (lightboxImage) {
@@ -65,30 +132,73 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxImage, onClose]);
+  }, [isOpen, lightboxImage, onClose]);
 
   // Track product view on load
   useEffect(() => {
-    if (product) {
+    if (isOpen && product) {
+      const cat = activeCategories.find(
+        c => c.id === product.category_id || c.slug === product.category_id
+      );
       trackProductView({
         id: product.id,
         name: product.name,
         price: product.base_price || 0,
-        category: (product as any).category?.name || 'Modest Wear',
+        category: cat?.name || 'Modest Wear',
       });
-      setSelectedImageKey('0');
     }
-  }, [product?.id]);
+  }, [isOpen, product?.id]);
 
-  if (!product || !isOpen) return null;
+  const activeProduct: Product | null = currentProduct || product;
+  const variations = activeProduct?.variations || [];
+  const hasVariations = variations.length > 0;
 
-  const activeProduct: Product = currentProduct || product;
-  const pricing = calculateProductPricing(activeProduct);
+  const sizes = Array.from(
+    new Set(variations.map(v => v.size).filter(Boolean) as string[])
+  );
+  const colours = Array.from(
+    new Set(variations.map(v => v.colour).filter(Boolean) as string[])
+  );
+
+  const currentSize = sizes.length > 0
+    ? (selectedSize && sizes.includes(selectedSize) ? selectedSize : sizes[0])
+    : 'To Confirm';
+  const currentColour = colours.length > 0
+    ? (selectedColour && colours.includes(selectedColour) ? selectedColour : colours[0])
+    : 'As Pictured';
+
+  const totalStock = variations.reduce(
+    (acc, v) => acc + Math.max(0, Number(v.stock_quantity) || 0),
+    0
+  );
+  const matchingVariation = variations.find(
+    v => (!v.size || v.size === currentSize) && (!v.colour || v.colour === currentColour)
+  );
+  const variationStock = hasVariations
+    ? (matchingVariation ? Math.max(0, Number(matchingVariation.stock_quantity) || 0) : totalStock)
+    : 20;
+  const isOutOfStock = isUnavailable || (hasVariations && variationStock <= 0);
+
+  useEffect(() => {
+    if (variationStock > 0 && quantity > variationStock) {
+      setQuantity(variationStock);
+    } else if (variationStock > 0 && quantity < 1) {
+      setQuantity(1);
+    }
+  }, [variationStock, quantity]);
+
+  if (!activeProduct || !isOpen) return null;
+
+  const pricing = calculateProductPricing(activeProduct, activeCategories);
+  const categoryObj = activeCategories.find(
+    c => c.id === activeProduct.category_id || c.slug === activeProduct.category_id
+  );
 
   // 1. Resolve product primary image
-  const primaryImage = activeProduct.main_image_url || 
-    (activeProduct.images && activeProduct.images[0]?.image_url) || 
-    (activeProduct.additionalImages && activeProduct.additionalImages[0]) || 
+  const primaryImage =
+    activeProduct.main_image_url ||
+    (activeProduct.images && activeProduct.images[0]?.image_url) ||
+    (activeProduct.additionalImages && activeProduct.additionalImages[0]) ||
     SUPPLIED_PHOTOS[0];
 
   // 2. Resolve genuine images strictly belonging to this product
@@ -114,8 +224,6 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
   // 3. Construct Gallery Slots belonging ONLY to this product with neutral, truthful labels
   const gallerySlots: GallerySlot[] = productImagesList.map((url, idx) => {
-    // If only 1 image, label it Primary View
-    // If multiple, label View 1, View 2, etc. (never invent front/back/side without verified angle data)
     let title = `Photograph ${idx + 1}`;
     if (idx === 0) {
       title = productImagesList.length > 1 ? 'Primary View' : 'Garment Photograph';
@@ -130,46 +238,27 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
     };
   });
 
-  // Find active focused gallery image
   const currentSlotIndex = parseInt(selectedImageKey, 10);
   const activeSlot = gallerySlots[currentSlotIndex] || gallerySlots[0];
   const activeDisplayImage = activeSlot?.image || primaryImage;
 
-  // Variations: sizes and colours
-  const rawSizes = product.variations?.map(v => v.size).filter(Boolean) as string[] | undefined;
-  const sizes = Array.from(new Set(rawSizes && rawSizes.length > 0 ? rawSizes : ['52', '54', '56', '58', '60']));
-  
-  const rawColours = product.variations?.map(v => v.colour).filter(Boolean) as string[] | undefined;
-  const colours = Array.from(new Set(rawColours && rawColours.length > 0 ? rawColours : ['Classic / As Pictured']));
-
-  const currentSize = selectedSize || sizes[0] || 'Standard';
-  const currentColour = selectedColour || colours[0] || 'Original';
-
-  const rawTotal = product.variations?.reduce((acc, v) => acc + (v.stock_quantity || 0), 0) ?? 15;
-  const matchingVariation = product.variations?.find(
-    v => (!v.size || v.size === currentSize) && (!v.colour || v.colour === currentColour)
-  );
-  const matchedQty = matchingVariation?.stock_quantity ?? rawTotal;
-  const variationStock = matchedQty > 0 ? matchedQty : 15;
-  const isOutOfStock = false;
-
   const handleAddToCart = () => {
     if (isOutOfStock) return;
-    const addedQty = Math.min(variationStock, quantity);
+    const addedQty = Math.min(variationStock, Math.max(1, quantity));
     addToCart({
-      product,
+      product: activeProduct,
       selectedSize: currentSize,
       selectedColour: currentColour,
       quantity: addedQty,
     });
     trackAddToCart({
-      id: product.id,
-      name: product.name,
-      price: product.base_price || 0,
+      id: activeProduct.id,
+      name: activeProduct.name,
+      price: pricing.sellingPrice,
       quantity: addedQty,
       size: currentSize,
       color: currentColour,
-      category: (product as any).category?.name || 'Modest Wear',
+      category: categoryObj?.name || 'Modest Wear',
     });
     setAddedNotice(true);
     setTimeout(() => {
@@ -179,29 +268,39 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
   };
 
   const chatNumber = getActiveWhatsAppChatNumber();
-  const priceDisplayNote = pricing.hasDiscount 
-    ? `₦${pricing.sellingPrice.toLocaleString()} (10% OFF from ₦${pricing.originalPrice.toLocaleString()})`
+  const priceDisplayNote = pricing.hasDiscount
+    ? `₦${pricing.sellingPrice.toLocaleString()} (${pricing.discountPercentage}% OFF from ₦${pricing.originalPrice.toLocaleString()})`
     : `₦${pricing.sellingPrice.toLocaleString()}`;
 
   const whatsappMessage = encodeURIComponent(
-    `Assalamu Alaikum Teefahs Clothier! I am viewing:\n\n*${product.name}*\nPrice: ${priceDisplayNote}\nSize: ${currentSize}\nColour: ${currentColour}\n\nCould you please confirm availability and order details?`
+    `Assalamu Alaikum Teefahs Clothier! I am viewing:\n\n*${activeProduct.name}*\nPrice: ${priceDisplayNote}\nSize: ${currentSize}\nColour: ${currentColour}\n\nCould you please confirm availability and order details?`
   );
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-md overflow-y-auto"
         onClick={onClose}
       >
-        <div 
+        <div
           className="relative w-full max-w-5xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl rounded-xs overflow-hidden my-4 transition-all"
           onClick={e => e.stopPropagation()}
         >
           {/* Header Close Bar */}
           <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
-            <button
+            <Link
+              to={`/product/${activeProduct.slug || activeProduct.id}`}
               onClick={onClose}
-              className="p-2 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white bg-white/90 dark:bg-stone-800/90 rounded-full shadow-md transition-colors"
+              className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-stone-700 hover:text-stone-950 dark:text-stone-200 dark:hover:text-white bg-white/90 dark:bg-stone-800/90 rounded-full shadow-md transition-colors inline-flex items-center gap-1"
+              title="Open Full Product Page"
+            >
+              <span>Full Page</span>
+              <ExternalLink size={12} />
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white bg-white/90 dark:bg-stone-800/90 rounded-full shadow-md transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X size={20} />
@@ -215,16 +314,18 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
               <div className="relative aspect-[3/4] w-full max-h-[440px] sm:max-h-[500px] overflow-hidden bg-stone-100 dark:bg-stone-900 shadow-sm border border-stone-200/70 dark:border-stone-800 rounded-xs group">
                 <img
                   src={activeDisplayImage}
-                  alt={`${product.name} - ${activeSlot?.title || 'View'}`}
+                  alt={`${activeProduct.name} - ${activeSlot?.title || 'View'}`}
                   className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                 />
-                
+
                 {/* Active Photo Badge */}
                 <div className="absolute bottom-3 left-3 bg-stone-900/80 backdrop-blur-sm text-stone-100 text-xs px-3 py-1.5 rounded-xs flex items-center gap-2 border border-stone-700/60 shadow">
                   <Sparkles size={13} className="text-amber-400" />
                   <span className="font-medium tracking-wide">{activeSlot?.title || 'Photograph'}</span>
                   {gallerySlots.length > 1 && (
-                    <span className="text-[10px] text-stone-300">({currentSlotIndex + 1} of {gallerySlots.length})</span>
+                    <span className="text-[10px] text-stone-300">
+                      ({currentSlotIndex + 1} of {gallerySlots.length})
+                    </span>
                   )}
                 </div>
 
@@ -232,14 +333,14 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                 <button
                   type="button"
                   onClick={() => setLightboxImage(activeDisplayImage)}
-                  className="absolute top-3 right-3 p-2 bg-stone-900/70 hover:bg-stone-900 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                  className="absolute top-3 right-3 p-2 bg-stone-900/70 hover:bg-stone-900 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-pointer"
                   title="Expand full screen"
                 >
                   <Maximize2 size={16} />
                 </button>
               </div>
 
-              {/* Grid View of Genuine Product Photographs (Only if product has multiple views) */}
+              {/* Grid View of Genuine Product Photographs */}
               {gallerySlots.length > 1 && (
                 <div>
                   <div className="flex items-center justify-between mb-2.5">
@@ -252,7 +353,6 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                     </span>
                   </div>
 
-                  {/* Responsive Grid of Genuine Product Photos Only */}
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
                     {gallerySlots.map((slot, idx) => {
                       const isSelected = selectedImageKey === `${idx}`;
@@ -262,7 +362,7 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                           key={slot.key}
                           type="button"
                           onClick={() => setSelectedImageKey(`${idx}`)}
-                          className={`relative aspect-[3/4] rounded-xs overflow-hidden border-2 transition-all text-left group ${
+                          className={`relative aspect-[3/4] rounded-xs overflow-hidden border-2 transition-all text-left group cursor-pointer ${
                             isSelected
                               ? 'border-amber-500 ring-2 ring-amber-500/50'
                               : 'border-stone-200 dark:border-stone-700 hover:border-stone-400'
@@ -297,23 +397,29 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   {pricing.hasDiscount && (
                     <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold bg-amber-600 text-white rounded-xs">
-                      10% OFF PROMOTION
+                      {pricing.discountPercentage}% OFF PROMOTION
                     </span>
                   )}
-                  {product.is_new_arrival && (
+                  {activeProduct.is_new_arrival && (
                     <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold bg-emerald-800 text-white rounded-xs">
                       New Collection
                     </span>
                   )}
-                  {product.is_featured && (
+                  {activeProduct.is_featured && (
                     <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold bg-stone-900 text-white rounded-xs">
                       Featured
                     </span>
                   )}
                 </div>
 
+                {isUnavailable && (
+                  <div className="mb-3 p-2.5 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs rounded-xs font-medium">
+                    This garment was just unpublished or archived and is no longer available for purchase.
+                  </div>
+                )}
+
                 <h1 className="text-2xl sm:text-3xl font-serif text-stone-900 dark:text-white leading-tight">
-                  {product.name}
+                  {activeProduct.name}
                 </h1>
 
                 {/* Price Display */}
@@ -330,31 +436,33 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
                 {pricing.hasDiscount && (
                   <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mb-3">
-                    You save {pricing.formattedDiscountAmount} (10% promotional discount applied)
+                    You save {pricing.formattedDiscountAmount} ({pricing.discountPercentage}% promotional discount applied)
                   </p>
                 )}
 
                 {/* Description */}
                 <div className="text-sm text-stone-600 dark:text-stone-300 py-3 border-t border-b border-stone-100 dark:border-stone-800 my-4 leading-relaxed font-light">
-                  {product.description || product.short_description || 'Handcrafted bespoke modest couture by Queen Lateefah. Tailored from Dubai crepe and luxury silks.'}
+                  {activeProduct.description ||
+                    activeProduct.short_description ||
+                    'Specifications, fabric notes & measurements awaiting owner update. Inquire via WhatsApp for full garment details.'}
                 </div>
 
                 {/* Size Selector */}
-                {sizes.length > 0 && (
+                {sizes.length > 0 ? (
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300">
                         Size: <strong className="text-stone-900 dark:text-amber-300 font-bold">{currentSize}</strong>
                       </span>
-                      <span className="text-[11px] text-stone-400">Modest length & chest fit</span>
+                      <span className="text-[11px] text-stone-400">Modest length &amp; chest fit</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {sizes.map((sz) => (
+                      {sizes.map(sz => (
                         <button
                           key={sz}
                           type="button"
                           onClick={() => setSelectedSize(sz)}
-                          className={`px-3 py-1.5 text-xs font-medium border rounded-xs transition-colors ${
+                          className={`px-3 py-1.5 text-xs font-medium border rounded-xs transition-colors cursor-pointer ${
                             currentSize === sz
                               ? 'border-amber-500 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 font-bold'
                               : 'border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-400'
@@ -365,21 +473,21 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                       ))}
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Colour Selector */}
-                {colours.length > 0 && (
+                {colours.length > 0 ? (
                   <div className="mb-4">
                     <span className="block text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
                       Colour: <strong className="text-stone-900 dark:text-amber-300 font-bold">{currentColour}</strong>
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {colours.map((col) => (
+                      {colours.map(col => (
                         <button
                           key={col}
                           type="button"
                           onClick={() => setSelectedColour(col)}
-                          className={`px-3 py-1.5 text-xs font-medium border rounded-xs transition-colors ${
+                          className={`px-3 py-1.5 text-xs font-medium border rounded-xs transition-colors cursor-pointer ${
                             currentColour === col
                               ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 font-semibold'
                               : 'border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-400'
@@ -389,6 +497,12 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                         </button>
                       ))}
                     </div>
+                  </div>
+                ) : null}
+
+                {sizes.length === 0 && colours.length === 0 && (
+                  <div className="mb-4 p-2.5 bg-stone-50 dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 rounded-xs text-[11px] text-stone-600 dark:text-stone-300">
+                    Sizes &amp; colour options are awaiting owner update — your fit will be confirmed on order via WhatsApp.
                   </div>
                 )}
 
@@ -402,7 +516,7 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                       type="button"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       disabled={quantity <= 1 || isOutOfStock}
-                      className="px-3 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40"
+                      className="px-3 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 cursor-pointer"
                     >
                       -
                     </button>
@@ -413,14 +527,26 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                       type="button"
                       onClick={() => setQuantity(Math.min(variationStock, quantity + 1))}
                       disabled={quantity >= variationStock || isOutOfStock}
-                      className="px-3 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40"
+                      className="px-3 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 cursor-pointer"
                     >
                       +
                     </button>
                   </div>
-                  <span className={`text-xs font-medium ${isOutOfStock ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                    {isOutOfStock
+                  <span
+                    className={`text-xs font-medium ${
+                      isOutOfStock
+                        ? 'text-red-600 dark:text-red-400'
+                        : hasVariations && variationStock < 5
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-emerald-700 dark:text-emerald-400'
+                    }`}
+                  >
+                    {isUnavailable
+                      ? 'Unavailable'
+                      : isOutOfStock
                       ? 'Out of Stock'
+                      : !hasVariations
+                      ? 'Available (Confirm fit on order)'
                       : variationStock < 5
                       ? `Low Stock (${variationStock} left)`
                       : `In Stock (${variationStock} available)`}
@@ -429,18 +555,25 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
                 <div className="flex items-center gap-2 text-stone-500 text-xs mb-5">
                   <ShieldCheck size={14} className="text-emerald-600 flex-shrink-0" />
-                  <span>Authentic Teefahs Clothier tailoring & nationwide delivery.</span>
+                  <span>Authentic Teefahs Clothier tailoring &amp; nationwide delivery.</span>
                 </div>
               </div>
 
-              {/* Secure Customer Actions (Strictly Storefront - No Admin Edit Buttons) */}
+              {/* Secure Customer Actions */}
               <div className="pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-col gap-3">
                 <button
                   type="button"
+                  disabled={isOutOfStock}
                   onClick={handleAddToCart}
-                  className="w-full py-3.5 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 rounded-xs shadow-sm cursor-pointer"
+                  className={`w-full py-3.5 text-xs font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 rounded-xs shadow-sm ${
+                    isOutOfStock
+                      ? 'bg-stone-200 dark:bg-stone-800 text-stone-400 dark:text-stone-500 cursor-not-allowed'
+                      : 'bg-stone-900 hover:bg-stone-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-stone-950 cursor-pointer'
+                  }`}
                 >
-                  {addedNotice ? (
+                  {isOutOfStock ? (
+                    <span>{isUnavailable ? 'Unavailable' : 'Out of Stock'}</span>
+                  ) : addedNotice ? (
                     <>
                       <Check size={16} className="text-emerald-400 dark:text-stone-950" />
                       Added to Shopping Bag!
@@ -459,8 +592,8 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
                   rel="noreferrer"
                   onClick={() => {
                     trackWhatsAppConversion('inquire_whatsapp', {
-                      product_id: product.id,
-                      product_name: product.name,
+                      product_id: activeProduct.id,
+                      product_name: activeProduct.name,
                       value: pricing.sellingPrice,
                     });
                   }}
@@ -477,13 +610,14 @@ export default function ProductModal({ product, isOpen = true, onClose }: Produc
 
       {/* Lightbox full-size image viewer */}
       {lightboxImage && (
-        <div 
+        <div
           className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
           onClick={() => setLightboxImage(null)}
         >
           <button
+            type="button"
             onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 p-2.5 text-white/80 hover:text-white bg-white/10 rounded-full"
+            className="absolute top-4 right-4 p-2.5 text-white/80 hover:text-white bg-white/10 rounded-full cursor-pointer"
             aria-label="Close fullscreen"
           >
             <X size={24} />

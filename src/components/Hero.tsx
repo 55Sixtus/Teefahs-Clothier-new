@@ -93,7 +93,7 @@ export default function Hero() {
               }
             `}
           >
-            <span>Explore 8 Collections</span>
+            <span>Explore All Collections</span>
           </Link>
         </div>
       </motion.div>

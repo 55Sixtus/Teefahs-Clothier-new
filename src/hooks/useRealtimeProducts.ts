@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Product } from '../types/product';
-import { getPublishedProducts, getAllProducts } from '../lib/api';
+import { Category, Product } from '../types/product';
+import { getPublishedProducts, getAllProducts, getActiveCategories, getAllCategories } from '../lib/api';
 
 interface UseRealtimeProductsOptions {
   includeUnpublished?: boolean;
@@ -10,16 +10,21 @@ interface UseRealtimeProductsOptions {
 export function useRealtimeProducts(options: UseRealtimeProductsOptions = {}) {
   const { includeUnpublished = false } = options;
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchCatalogue = useCallback(async () => {
     try {
       setError(null);
-      const data = includeUnpublished ? await getAllProducts() : await getPublishedProducts();
-      setProducts(data);
+      const [prodsData, catsData] = await Promise.all([
+        includeUnpublished ? getAllProducts() : getPublishedProducts(),
+        includeUnpublished ? getAllCategories() : getActiveCategories(),
+      ]);
+      setProducts(prodsData);
+      setCategories(catsData);
     } catch (err: any) {
-      console.error('Failed to fetch realtime products:', err);
+      console.error('Failed to fetch realtime catalogue:', err);
       setError(err?.message || 'Could not load products');
     } finally {
       setLoading(false);
@@ -27,47 +32,41 @@ export function useRealtimeProducts(options: UseRealtimeProductsOptions = {}) {
   }, [includeUnpublished]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchCatalogue();
 
-    // 1. Listen for local window broadcast events (same-tab immediate updates)
     const handleLocalUpdate = () => {
-      fetchProducts();
+      fetchCatalogue();
     };
     window.addEventListener('teefahs_catalogue_updated', handleLocalUpdate);
 
-    // 2. Setup Supabase Realtime Subscription for cross-device instant sync
-    const channelName = `realtime-products-${includeUnpublished ? 'admin' : 'store'}-${Date.now()}`;
+    const channelName = `realtime-catalogue-${includeUnpublished ? 'admin' : 'store'}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
       .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products',
-        },
-        (payload) => {
-          console.log('[Supabase Realtime] Product change received:', payload.eventType, payload.new);
-          // Always re-fetch authoritative data from Supabase to guarantee relations & calculations
-          fetchProducts();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`[Supabase Realtime] Connected to products channel (${channelName})`);
-        }
-      });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        fetchCatalogue();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_variations' }, () => {
+        fetchCatalogue();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_images' }, () => {
+        fetchCatalogue();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        fetchCatalogue();
+      })
+      .subscribe();
 
     return () => {
       window.removeEventListener('teefahs_catalogue_updated', handleLocalUpdate);
       supabase.removeChannel(channel);
     };
-  }, [fetchProducts, includeUnpublished]);
+  }, [fetchCatalogue, includeUnpublished]);
 
   return {
     products,
+    categories,
     loading,
     error,
-    refreshProducts: fetchProducts,
+    refreshProducts: fetchCatalogue,
   };
 }

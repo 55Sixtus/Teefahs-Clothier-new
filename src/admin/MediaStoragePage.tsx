@@ -1,20 +1,22 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Upload, 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  Search, 
+import {
+  Upload,
+  Copy,
+  Check,
+  ExternalLink,
+  Search,
   Zap,
   HardDrive,
   Maximize2,
   X,
   Edit2,
-  Tag
+  Tag,
+  AlertCircle,
 } from 'lucide-react';
 import { SUPPLIED_PHOTOS, NEW_PRODUCT_PHOTOS } from '../data/assets';
-import { uploadProductImage, getAllProducts, saveProduct, updateProductPrice } from '../lib/api';
+import { uploadProductImage, updateProductPrice } from '../lib/api';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 import { Product } from '../types/product';
 
 interface MediaItem {
@@ -27,6 +29,8 @@ interface MediaItem {
 }
 
 export default function MediaStoragePage() {
+  const { products, categories, refreshProducts } = useRealtimeProducts({ includeUnpublished: true });
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,61 +38,87 @@ export default function MediaStoragePage() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [uploadError, setUploadError] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
 
   // Quick Price Edit Modal
   const [quickPriceProduct, setQuickPriceProduct] = useState<{ product: Product; itemTitle: string } | null>(null);
   const [newPriceInput, setNewPriceInput] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
   const [quickPriceSuccess, setQuickPriceSuccess] = useState(false);
+  const [quickPriceError, setQuickPriceError] = useState('');
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      const prods = await getAllProducts();
-      setProducts(prods);
-    } catch (err) {
-      console.error('Failed to load products:', err);
-    }
-  };
-
-  // Find exact matching product for media item (never fall back to first product)
   const findProductForMedia = (item: MediaItem): Product | undefined => {
-    // 1. Match by explicit product slug first (highest specificity)
     if (item.productSlug) {
       const matchSlug = products.find(p => p.slug === item.productSlug);
       if (matchSlug) return matchSlug;
     }
 
-    // 2. Match by exact product name
     if (item.productName) {
       const matchName = products.find(p => p.name.toLowerCase() === item.productName?.toLowerCase());
       if (matchName) return matchName;
     }
 
-    // 3. Match by exact main_image_url
     const exactMain = products.find(p => p.main_image_url === item.url);
     if (exactMain) return exactMain;
 
-    // 4. Match by secondary images list only as last resort
-    const exactGallery = products.find(p => p.images && p.images.some(img => {
-      const url = typeof img === 'string' ? img : img.image_url;
-      return url === item.url;
-    }));
+    const exactGallery = products.find(
+      p =>
+        p.images &&
+        p.images.some(img => {
+          const url = typeof img === 'string' ? img : img.image_url;
+          return url === item.url;
+        })
+    );
     if (exactGallery) return exactGallery;
 
     return undefined;
   };
 
-  // Build the complete boutique media registry
+  // Build verified media registry dynamically from approved studio photography + live Supabase products
   const mediaList: MediaItem[] = useMemo(() => {
     const list: MediaItem[] = [];
+    const seenUrls = new Set<string>();
 
-    // 1. 54 Editorial Photoshoot Photographs
+    const getCatName = (catId?: string) => {
+      if (!catId) return 'Boutique Garments';
+      const found = categories.find(c => c.id === catId || c.slug === catId);
+      return found ? found.name : 'Boutique Garments';
+    };
+
+    // 1. Live Supabase products & attached photos (always authoritative first)
+    products.forEach(p => {
+      const catName = getCatName(p.category_id);
+      if (p.main_image_url && !seenUrls.has(p.main_image_url)) {
+        seenUrls.add(p.main_image_url);
+        list.push({
+          id: `live-main-${p.id}`,
+          url: p.main_image_url,
+          title: `${p.name} (Main Photo)`,
+          category: catName,
+          productSlug: p.slug,
+          productName: p.name,
+        });
+      }
+      (p.images || []).forEach((img, idx) => {
+        const url = typeof img === 'string' ? img : img.image_url;
+        if (url && !seenUrls.has(url)) {
+          seenUrls.add(url);
+          list.push({
+            id: `live-img-${p.id}-${idx}`,
+            url,
+            title: `${p.name} - View ${idx + 2}`,
+            category: catName,
+            productSlug: p.slug,
+            productName: p.name,
+          });
+        }
+      });
+    });
+
+    // 2. Approved editorial studio photography not already represented above
     SUPPLIED_PHOTOS.forEach((url, idx) => {
+      if (seenUrls.has(url)) return;
+      seenUrls.add(url);
+
       let title = `Editorial Photograph #${idx + 1}`;
       let category = 'Editorial Studio';
       let productSlug = '';
@@ -110,10 +140,10 @@ export default function MediaStoragePage() {
         productSlug = 'kamp-elegance-embroidered-evening-abaya';
         productName = 'Kamp Elegance Embroidered Evening Abaya';
       } else if (idx >= 3 && idx <= 8) {
-        title = `Noor Luxury Embroidered Abaya - Angle ${idx - 2}`;
+        title = `Noor Embellished Luxury Abaya - Angle ${idx - 2}`;
         category = 'Abayas';
         productSlug = 'noor-embroidered-luxury-abaya';
-        productName = 'Noor Embroidered Luxury Abaya';
+        productName = 'Noor Embellished Luxury Abaya';
       } else if (idx >= 9 && idx <= 14) {
         title = `Ameera Tiered Chiffon Open Abaya - Shot ${idx - 8}`;
         category = 'Abayas';
@@ -129,124 +159,9 @@ export default function MediaStoragePage() {
         category = 'Prayer Wear';
         productSlug = 'maryam-flowing-two-piece-prayer-set';
         productName = 'Maryam Flowing Two-Piece Prayer Set';
-      } else if (idx === 26) {
-        title = 'Layla Embellished Luxury Occasion Silk Abaya';
-        category = 'Occasion Wear';
-        productSlug = 'layla-embellished-occasion-silk-abaya';
-        productName = 'Layla Embellished Luxury Occasion Silk Abaya';
-      } else if (idx === 27) {
-        title = 'Zeenat Royal Gold Thread Occasion Abaya';
-        category = 'Occasion Wear';
-        productSlug = 'zeenat-royal-gold-thread-occasion-abaya';
-        productName = 'Zeenat Royal Gold Thread Occasion Abaya';
-      } else if (idx === 28) {
-        title = 'Malika Crystal-Draped Evening Occasion Gown';
-        category = 'Occasion Wear';
-        productSlug = 'malika-crystal-draped-evening-occasion-gown';
-        productName = 'Malika Crystal-Draped Evening Occasion Gown';
-      } else if (idx === 29) {
-        title = 'Hafsah Medina Silk Rounded Khimar';
-        category = 'Khimars';
-        productSlug = 'hafsah-medina-silk-rounded-khimar';
-        productName = 'Hafsah Medina Silk Rounded Khimar';
-      } else if (idx === 30) {
-        title = 'Zahra Embroidered Neckline Crepe Abaya';
-        category = 'Abayas';
-        productSlug = 'zahra-embroidered-neckline-crepe-abaya';
-        productName = 'Zahra Embroidered Neckline Crepe Abaya';
-      } else if (idx === 31) {
-        title = 'Amina Sage Minimalist Pleated Abaya';
-        category = 'Abayas';
-        productSlug = 'amina-sage-minimalist-pleated-abaya';
-        productName = 'Amina Sage Minimalist Pleated Abaya';
-      } else if (idx === 32) {
-        title = 'Safiyyah Festive White & Red Embroidered Abaya';
-        category = 'Occasion Wear';
-        productSlug = 'safiyyah-festive-white-red-embroidered-abaya';
-        productName = 'Safiyyah Festive White & Red Embroidered Abaya';
-      } else if (idx === 33) {
-        title = 'Hajar Classic Tailored Taupe Abaya';
-        category = 'Abayas';
-        productSlug = 'hajar-classic-tailored-taupe-abaya';
-        productName = 'Hajar Classic Tailored Taupe Abaya';
-      } else if (idx === 34) {
-        title = 'Maryam Plum Utility Modest Coord Set';
-        category = 'Occasion Wear';
-        productSlug = 'maryam-plum-utility-modest-coord-set';
-        productName = 'Maryam Plum Utility Modest Coord Set';
-      } else if (idx === 35) {
-        title = 'Sultana Golden Brocade Celebration Gown';
-        category = 'Occasion Wear';
-        productSlug = 'sultana-golden-brocade-celebration-gown';
-        productName = 'Sultana Golden Brocade Celebration Gown';
-      } else if (idx === 36) {
-        title = 'Nawal Minimalist Taupe Button Abaya';
-        category = 'Abayas';
-        productSlug = 'nawal-minimalist-taupe-button-abaya';
-        productName = 'Nawal Minimalist Taupe Button Abaya';
-      } else if (idx === 37) {
-        title = 'Aisha Royal Purple Elegant Coord Set';
-        category = 'Occasion Wear';
-        productSlug = 'aisha-royal-purple-elegant-coord-set';
-        productName = 'Aisha Royal Purple Elegant Coord Set';
-      } else if (idx === 38) {
-        title = 'Farah Slate Blue Floral Embroidered Abaya';
-        category = 'Abayas';
-        productSlug = 'farah-slate-blue-floral-embroidered-abaya';
-        productName = 'Farah Slate Blue Floral Embroidered Abaya';
-      } else if (idx === 39) {
-        title = 'Zeenat Mint Green Hand-Embellished Occasion Gown';
-        category = 'Occasion Wear';
-        productSlug = 'zeenat-mint-green-hand-embellished-occasion-gown';
-        productName = 'Zeenat Mint Green Hand-Embellished Occasion Gown';
-      } else if (idx === 40) {
-        title = 'Yasmin Midnight Blue Floral Kaftan';
-        category = 'Abayas';
-        productSlug = 'yasmin-midnight-blue-floral-kaftan';
-        productName = 'Yasmin Midnight Blue Floral Kaftan';
-      } else if (idx === 41) {
-        title = 'Malika Jet Black Beaded Signature Abaya';
-        category = 'Abayas';
-        productSlug = 'malika-jet-black-beaded-signature-abaya';
-        productName = 'Malika Jet Black Beaded Signature Abaya';
-      } else if (idx === 42) {
-        title = 'Fatima Pleated Hem Minimalist Abaya';
-        category = 'Abayas';
-        productSlug = 'fatima-pleated-crepe-maxi-abaya';
-        productName = 'Fatima Pleated Hem Minimalist Abaya';
-      } else if (idx === 43) {
-        title = 'Amani Breathable Chiffon Veil & Hijab Set';
-        category = 'Veils & Hijabs';
-        productSlug = 'amani-breathable-chiffon-veil-hijab-set';
-        productName = 'Amani Breathable Chiffon Veil & Hijab Set';
-      } else if (idx === 44) {
-        title = 'Rukayyah Blush Ruffled Layered Abaya';
-        category = 'Abayas';
-        productSlug = 'rukayyah-blush-ruffled-layered-abaya';
-        productName = 'Rukayyah Blush Ruffled Layered Abaya';
-      } else if (idx === 45) {
-        title = 'Jamilah Seafoam Beaded Occasion Robe';
-        category = 'Occasion Wear';
-        productSlug = 'jamilah-seafoam-beaded-occasion-robe';
-        productName = 'Jamilah Seafoam Beaded Occasion Robe';
-      } else if (idx === 46) {
-        title = 'Khadija Artisanal Embroidered Denim Dress';
-        category = 'Abayas';
-        productSlug = 'khadija-artisanal-embroidered-denim-dress';
-        productName = 'Khadija Artisanal Embroidered Denim Dress';
-      } else if (idx === 47) {
-        title = 'Aaliyah Dusty Mauve Ruffled Batwing Abaya';
-        category = 'Abayas';
-        productSlug = 'aaliyah-dusty-mauve-ruffled-batwing-abaya';
-        productName = 'Aaliyah Dusty Mauve Ruffled Batwing Abaya';
-      } else if (idx === 48) {
-        title = 'Rukayyah Zip-Front Prayer Abaya';
-        category = 'Prayer Wear';
-        productSlug = 'rukayyah-zip-front-hooded-prayer-abaya';
-        productName = 'Rukayyah Zip-Front Hooded Prayer Abaya';
       } else if (idx >= 49 && idx <= 53) {
         title = `Zainab Modal Hijab & Under-Cap - Shot ${idx - 48}`;
-        category = 'Caps & Hijabs';
+        category = 'Caps';
         productSlug = 'zainab-luxe-modal-hijab-under-cap-set';
         productName = 'Zainab Luxe Modal Hijab & Under-Cap Set';
       }
@@ -261,115 +176,47 @@ export default function MediaStoragePage() {
       });
     });
 
-    // 2. 34 New Product Photographs
-    NEW_PRODUCT_PHOTOS.malaysianHijabs.forEach((url, idx) => {
-      list.push({
-        id: `malaysian-${idx + 1}`,
-        url,
-        title: `Malaysian Hijabs - Shot ${idx + 1}`,
-        category: 'Hijabs',
-        productSlug: 'malaysian-hijabs',
-        productName: 'Malaysian Hijabs',
+    // 3. Approved Hijab & Veil studio batch
+    const addBatch = (urls: string[], prefix: string, cat: string, slug: string, name: string) => {
+      urls.forEach((url, idx) => {
+        if (seenUrls.has(url)) return;
+        seenUrls.add(url);
+        list.push({
+          id: `${prefix}-${idx + 1}`,
+          url,
+          title: `${name} - Shot ${idx + 1}`,
+          category: cat,
+          productSlug: slug,
+          productName: name,
+        });
       });
-    });
+    };
 
-    NEW_PRODUCT_PHOTOS.luxeJerseyVeil.forEach((url, idx) => {
-      list.push({
-        id: `luxe-veil-${idx + 1}`,
-        url,
-        title: `Luxe Jersey Veil - Shot ${idx + 1}`,
-        category: 'Veils',
-        productSlug: 'luxe-jersey-veil',
-        productName: 'Luxe Jersey Veil',
-      });
-    });
-
-    NEW_PRODUCT_PHOTOS.khadeejahHijab.forEach((url, idx) => {
-      list.push({
-        id: `khadeejah-${idx + 1}`,
-        url,
-        title: `Khadeejah Hijab - Shot ${idx + 1}`,
-        category: 'Hijabs',
-        productSlug: 'khadeejah-hijab',
-        productName: 'Khadeejah Hijab',
-      });
-    });
-
-    NEW_PRODUCT_PHOTOS.aishaLuxeAllWhite.forEach((url, idx) => {
-      list.push({
-        id: `aisha-${idx + 1}`,
-        url,
-        title: `Aisha Luxe All-White - Shot ${idx + 1}`,
-        category: 'Hijabs',
-        productSlug: 'aisha-luxe-all-white',
-        productName: 'Aisha Luxe All-White',
-      });
-    });
-
-    NEW_PRODUCT_PHOTOS.jacquardJerseyLaserCutHijab.forEach((url, idx) => {
-      list.push({
-        id: `jacquard-${idx + 1}`,
-        url,
-        title: `Jacquard Laser-Cut - Shot ${idx + 1}`,
-        category: 'Hijabs',
-        productSlug: 'jacquard-jersey-laser-cut-hijab',
-        productName: 'Jacquard Jersey Laser-Cut Hijab',
-      });
-    });
-
-    // 3. New Khimars & Hijabs
-    list.push({
-      id: 'hijab-palette-cover',
-      url: '/assets/aistudio/image_60c3b658.png',
-      title: 'Hijabs Master Palette Collection',
-      category: 'Hijabs',
-      productSlug: 'hijabs',
-      productName: 'Hijabs Master Palette Collection',
-    });
-
-    list.push({
-      id: 'khimar-flowing-trio',
-      url: '/assets/aistudio/image_f09b866e.png',
-      title: 'French Flowing Trio Crepe Khimar Set',
-      category: 'Khimars',
-      productSlug: 'french-flowing-trio-crepe-khimar-set',
-      productName: 'French Flowing Trio Crepe Khimar Set',
-    });
-
-    list.push({
-      id: 'khimar-diamond-drape',
-      url: '/assets/aistudio/image_7b2317e4.png',
-      title: 'Diamond Back-Drape French Khimar',
-      category: 'Khimars',
-      productSlug: 'diamond-back-drape-french-khimar',
-      productName: 'Diamond Back-Drape French Khimar',
-    });
-
-    list.push({
-      id: 'khimar-layered-niqab',
-      url: '/assets/aistudio/image_7378d334.png',
-      title: 'Medina Layered Niqab Khimar & Free Handsocks Set',
-      category: 'Khimars',
-      productSlug: 'medina-layered-niqab-khimar-handsocks-set',
-      productName: 'Medina Layered Niqab Khimar & Free Handsocks Set',
-    });
-
-    list.push({
-      id: 'khimar-palette-spectrum',
-      url: '/assets/aistudio/image_93cf9d3d.png',
-      title: 'Signature French Medina Khimar Palette Collection',
-      category: 'Khimars',
-      productSlug: 'signature-french-medina-khimar-palette-collection',
-      productName: 'Signature French Medina Khimar Palette Collection',
-    });
+    addBatch(NEW_PRODUCT_PHOTOS.malaysianHijabs, 'malaysian', 'Hijabs', 'malaysian-hijabs', 'Malaysian Hijabs');
+    addBatch(NEW_PRODUCT_PHOTOS.luxeJerseyVeil, 'luxe-veil', 'Veils', 'luxe-jersey-veil', 'Luxe Jersey Veil');
+    addBatch(NEW_PRODUCT_PHOTOS.khadeejahHijab, 'khadeejah', 'Hijabs', 'khadeejah-hijab', 'Khadeejah Hijab');
+    addBatch(NEW_PRODUCT_PHOTOS.aishaLuxeAllWhite, 'aisha', 'Hijabs', 'aisha-luxe-all-white', 'Aisha Luxe All-White');
+    addBatch(
+      NEW_PRODUCT_PHOTOS.jacquardJerseyLaserCutHijab,
+      'jacquard',
+      'Hijabs',
+      'jacquard-jersey-laser-cut-hijab',
+      'Jacquard Jersey Laser-Cut Hijab'
+    );
 
     return list;
-  }, []);
+  }, [products, categories]);
+
+  const categoryTabs = useMemo(() => {
+    const uniqueCats = Array.from(new Set(mediaList.map(m => m.category).filter(Boolean)));
+    return ['all', ...uniqueCats];
+  }, [mediaList]);
 
   const filteredMedia = useMemo(() => {
     return mediaList.filter(item => {
       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-      const matchesSearch = !searchQuery.trim() || 
+      const matchesSearch =
+        !searchQuery.trim() ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.productName && item.productName.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
@@ -392,7 +239,7 @@ export default function MediaStoragePage() {
     try {
       const file = files[0];
       const uploadedUrl = await uploadProductImage(file);
-      setUploadSuccess(`Image uploaded successfully! URL: ${uploadedUrl.slice(0, 40)}...`);
+      setUploadSuccess(`Uploaded to Supabase Storage: ${uploadedUrl}`);
     } catch (err: any) {
       setUploadError(err.message || 'Upload failed.');
     } finally {
@@ -405,25 +252,31 @@ export default function MediaStoragePage() {
     setQuickPriceProduct({ product, itemTitle });
     setNewPriceInput(product.base_price?.toString() || '');
     setQuickPriceSuccess(false);
+    setQuickPriceError('');
   };
 
   const handleSaveQuickPrice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickPriceProduct) return;
     const priceNum = parseFloat(newPriceInput);
-    if (isNaN(priceNum) || priceNum < 0) return;
+    if (isNaN(priceNum) || priceNum < 0) {
+      setQuickPriceError('Please enter a valid price in Naira (₦).');
+      return;
+    }
 
     setSavingPrice(true);
+    setQuickPriceError('');
     try {
       await updateProductPrice(quickPriceProduct.product.id, priceNum);
       setQuickPriceSuccess(true);
-      await loadProducts();
+      await refreshProducts();
       setTimeout(() => {
         setQuickPriceProduct(null);
         setQuickPriceSuccess(false);
-      }, 700);
-    } catch (err) {
+      }, 650);
+    } catch (err: any) {
       console.error('Failed to update price:', err);
+      setQuickPriceError(err?.message || 'Could not update price in Supabase.');
     } finally {
       setSavingPrice(false);
     }
@@ -440,18 +293,17 @@ export default function MediaStoragePage() {
             </span>
             <span className="text-stone-300">&bull;</span>
             <span className="text-[11px] font-medium text-stone-500">
-              CDN &amp; Storage Management
+              Supabase Storage &amp; Studio Library
             </span>
           </div>
           <h1 className="text-3xl font-serif text-stone-900 tracking-tight">
             Media &amp; Storage Manager
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-1 font-light max-w-2xl leading-relaxed">
-            Manage your high-resolution garment photographs, view connected products, edit prices directly, and upload new boutique assets.
+            Manage approved garment photographs, inspect connected Supabase products, edit prices directly, and upload new assets.
           </p>
         </div>
 
-        {/* Upload Trigger */}
         <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-emerald-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm transition-all cursor-pointer shadow-sm self-start sm:self-auto">
           <Upload size={15} />
           <span>{uploading ? 'Compressing & Uploading...' : 'Upload New Photo'}</span>
@@ -465,16 +317,16 @@ export default function MediaStoragePage() {
         </label>
       </div>
 
-      {/* Storage Health & Optimization Banner */}
+      {/* Live Storage Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold font-serif text-lg">
-              88
+              {mediaList.length}
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-950">Active Photographs</p>
-              <p className="text-[11px] text-stone-600 mt-0.5">54 editorial photoshoot + 34 new product batch</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-950">Approved Photographs</p>
+              <p className="text-[11px] text-stone-600 mt-0.5">Verified boutique studio &amp; live Supabase assets</p>
             </div>
           </div>
         </div>
@@ -485,8 +337,8 @@ export default function MediaStoragePage() {
               <Zap size={18} />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-amber-950">CDN Acceleration</p>
-              <p className="text-[11px] text-stone-600 mt-0.5">High-speed global image delivery via ImageBB &amp; SSL</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-950">Supabase Storage</p>
+              <p className="text-[11px] text-stone-600 mt-0.5">Direct authenticated uploads to `product-images`</p>
             </div>
           </div>
         </div>
@@ -497,23 +349,32 @@ export default function MediaStoragePage() {
               <HardDrive size={18} />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-900">Auto Compression</p>
-              <p className="text-[11px] text-stone-600 mt-0.5">Canvas 82% quality WebP/JPEG keeps storage light</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-stone-900">Auto Optimization</p>
+              <p className="text-[11px] text-stone-600 mt-0.5">Resized JPEG (85% quality) for fast mobile loads</p>
             </div>
           </div>
         </div>
       </div>
 
       {uploadSuccess && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded flex items-center gap-2">
-          <Check size={16} className="text-emerald-700" />
-          <span>{uploadSuccess}</span>
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Check size={16} className="text-emerald-700 flex-shrink-0" />
+            <span className="truncate">{uploadSuccess}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(uploadSuccess.replace('Uploaded to Supabase Storage: ', ''))}
+            className="text-[11px] font-semibold underline flex-shrink-0 cursor-pointer"
+          >
+            Copy URL
+          </button>
         </div>
       )}
 
       {uploadError && (
         <div className="p-3 bg-red-50 border border-red-200 text-red-900 text-xs rounded flex items-center gap-2">
-          <X size={16} className="text-red-700" />
+          <AlertCircle size={16} className="text-red-700 flex-shrink-0" />
           <span>{uploadError}</span>
         </div>
       )}
@@ -532,11 +393,11 @@ export default function MediaStoragePage() {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
-          {['all', 'Occasion Wear', 'Abayas', 'Khimars', 'Prayer Wear', 'Hijabs', 'Veils', 'Caps & Hijabs'].map(cat => (
+          {categoryTabs.map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors whitespace-nowrap ${
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors whitespace-nowrap cursor-pointer ${
                 selectedCategory === cat
                   ? 'bg-stone-900 text-white'
                   : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -558,7 +419,6 @@ export default function MediaStoragePage() {
               key={item.id}
               className="bg-white border border-stone-200 rounded-sm overflow-hidden shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between group"
             >
-              {/* Image Frame */}
               <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden">
                 <img
                   src={item.url}
@@ -567,15 +427,13 @@ export default function MediaStoragePage() {
                   className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                 />
 
-                {/* Category Badge */}
                 <div className="absolute top-2 left-2 z-10">
                   <span className="px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider bg-stone-900/80 text-white rounded-xs">
                     {item.category}
                   </span>
                 </div>
 
-                {/* Live Price Tag on image if product matched */}
-                {matchedProduct?.base_price && (
+                {matchedProduct?.base_price !== undefined && (
                   <div className="absolute top-2 right-2 z-10">
                     <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider bg-emerald-900/90 text-white rounded-xs shadow-sm">
                       ₦{matchedProduct.base_price.toLocaleString()}
@@ -583,7 +441,6 @@ export default function MediaStoragePage() {
                   </div>
                 )}
 
-                {/* Overlay actions */}
                 <div className="absolute inset-0 bg-stone-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
                     type="button"
@@ -605,7 +462,6 @@ export default function MediaStoragePage() {
                 </div>
               </div>
 
-              {/* Card Meta & Dedicated Edit Action */}
               <div className="p-2.5 flex flex-col justify-between flex-1 gap-2 bg-white">
                 <div>
                   <p className="text-[11px] font-semibold text-stone-900 line-clamp-1" title={item.title}>
@@ -621,18 +477,15 @@ export default function MediaStoragePage() {
                       </p>
                     </div>
                   ) : item.productName ? (
-                    <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                      {item.productName}
-                    </p>
+                    <p className="text-[10px] text-stone-500 truncate mt-0.5">{item.productName}</p>
                   ) : null}
                 </div>
 
                 <div className="space-y-1.5 pt-1 border-t border-stone-100">
-                  {/* Copy URL */}
                   <button
                     type="button"
                     onClick={() => copyUrl(item.id, item.url)}
-                    className={`w-full py-1 px-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors ${
+                    className={`w-full py-1 px-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors cursor-pointer ${
                       copiedId === item.id
                         ? 'bg-emerald-800 text-white'
                         : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
@@ -651,14 +504,12 @@ export default function MediaStoragePage() {
                     )}
                   </button>
 
-                  {/* Primary Edit Button for Owner */}
                   {matchedProduct ? (
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => openQuickPrice(matchedProduct, item.title)}
                         className="flex-1 py-1.5 px-2 bg-emerald-900 hover:bg-emerald-800 text-white text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1.5 transition-colors text-center shadow-2xs cursor-pointer"
-                        title="Click to instantly edit price for this garment"
                       >
                         <Tag size={11} className="text-amber-300" />
                         <span>Edit Price</span>
@@ -676,7 +527,6 @@ export default function MediaStoragePage() {
                     <Link
                       to="/admin/products/add"
                       className="w-full py-1 px-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-1 transition-colors text-center"
-                      title="Create garment listing for this photograph"
                     >
                       <span>+ Create Garment</span>
                     </Link>
@@ -690,11 +540,11 @@ export default function MediaStoragePage() {
 
       {/* Quick Price Edit Modal */}
       {quickPriceProduct && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setQuickPriceProduct(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-sm p-6 max-w-sm w-full shadow-2xl space-y-4"
             onClick={e => e.stopPropagation()}
           >
@@ -703,9 +553,9 @@ export default function MediaStoragePage() {
                 <Tag size={16} className="text-emerald-800" />
                 <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setQuickPriceProduct(null)}
-                className="text-stone-400 hover:text-stone-600"
+                className="text-stone-400 hover:text-stone-600 cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -715,6 +565,13 @@ export default function MediaStoragePage() {
               <p className="text-xs font-semibold text-stone-900">{quickPriceProduct.product.name}</p>
               <p className="text-[11px] text-stone-500 mt-0.5">Asset: {quickPriceProduct.itemTitle}</p>
             </div>
+
+            {quickPriceError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
+                <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <span>{quickPriceError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSaveQuickPrice} className="space-y-4">
               <div>
@@ -731,30 +588,9 @@ export default function MediaStoragePage() {
                     value={newPriceInput}
                     onChange={e => setNewPriceInput(e.target.value)}
                     className="w-full pl-8 pr-3 py-2 text-sm font-semibold border border-stone-300 rounded focus:outline-none focus:border-stone-900"
-                    placeholder="e.g. 130000"
+                    placeholder="e.g. 229500"
                     autoFocus
                   />
-                </div>
-
-                {/* Quick Tap Price Chips */}
-                <div className="mt-2">
-                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Tap Price:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
-                      <button
-                        key={pVal}
-                        type="button"
-                        onClick={() => setNewPriceInput(pVal)}
-                        className={`px-2 py-0.5 text-[10px] font-mono rounded-xs border transition-colors cursor-pointer ${
-                          newPriceInput === pVal
-                            ? 'bg-emerald-900 text-white border-emerald-950 font-bold'
-                            : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
-                        }`}
-                      >
-                        ₦{parseInt(pVal).toLocaleString()}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -769,14 +605,14 @@ export default function MediaStoragePage() {
                 <button
                   type="button"
                   onClick={() => setQuickPriceProduct(null)}
-                  className="w-1/2 py-2 border border-stone-300 text-xs font-semibold rounded hover:bg-stone-50 text-stone-700"
+                  className="w-1/2 py-2 border border-stone-300 text-xs font-semibold rounded hover:bg-stone-50 text-stone-700 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingPrice}
-                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs"
+                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs cursor-pointer"
                 >
                   {savingPrice ? 'Saving...' : 'Save Price'}
                 </button>
@@ -788,14 +624,17 @@ export default function MediaStoragePage() {
 
       {/* Full-Screen Preview Modal */}
       {previewImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setPreviewImage(null)}
         >
-          <div className="relative max-w-3xl max-h-[90vh] bg-stone-900 p-2 rounded-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div
+            className="relative max-w-3xl max-h-[90vh] bg-stone-900 p-2 rounded-sm shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
             <button
               onClick={() => setPreviewImage(null)}
-              className="absolute -top-3 -right-3 p-1.5 bg-white text-stone-900 rounded-full hover:bg-stone-200 shadow-lg"
+              className="absolute -top-3 -right-3 p-1.5 bg-white text-stone-900 rounded-full hover:bg-stone-200 shadow-lg cursor-pointer"
             >
               <X size={18} />
             </button>

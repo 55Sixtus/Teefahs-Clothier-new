@@ -1,140 +1,74 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ShoppingBag, 
-  CheckCircle2, 
-  Clock, 
-  FolderTree, 
-  Tag, 
-  PlusCircle, 
-  ExternalLink, 
-  Boxes, 
-  Home, 
-  Database, 
-  RefreshCw, 
-  Edit2, 
-  Eye, 
-  AlertCircle, 
-  AlertTriangle, 
+import {
+  ShoppingBag,
+  CheckCircle2,
+  FolderTree,
+  Tag,
+  PlusCircle,
+  ExternalLink,
+  Boxes,
+  Home,
+  Database,
+  RefreshCw,
+  Edit2,
+  AlertCircle,
   ChevronRight,
   Lock,
   Image as ImageIcon,
   Check,
-  X
+  X,
 } from 'lucide-react';
-import { 
-  getAllProducts, 
-  getAllCategories, 
-  getDatabaseDiagnostics, 
+import {
+  getDatabaseDiagnostics,
   DatabaseDiagnostics,
   updateProductPrice,
   getActivePromotion,
-  savePromotion
+  savePromotion,
 } from '../lib/api';
-import { Product, Category, Promotion } from '../types/product';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
+import { Product, Promotion } from '../types/product';
 
 export default function AdminDashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { products, categories, loading, refreshProducts } = useRealtimeProducts({
+    includeUnpublished: true,
+  });
+
   const [refreshing, setRefreshing] = useState(false);
   const [dbDiag, setDbDiag] = useState<DatabaseDiagnostics | null>(null);
 
   // Store Announcement Banner State
   const [promo, setPromo] = useState<Promotion | null>(null);
   const [promoBadge, setPromoBadge] = useState('PROMO ALERT');
-  const [promoMessage, setPromoMessage] = useState('✨ 10% PROMOTIONAL DISCOUNT ON ALL LUXURY ABAYAS & KHIMARS');
+  const [promoMessage, setPromoMessage] = useState('10% PROMOTIONAL DISCOUNT ON SELECTED LUXURY ABAYAS');
   const [promoSubtext, setPromoSubtext] = useState('Excludes Caps & Accessories • Nationwide Delivery Across Nigeria');
   const [promoActive, setPromoActive] = useState(true);
   const [savingPromo, setSavingPromo] = useState(false);
   const [promoSuccess, setPromoSuccess] = useState(false);
+  const [promoError, setPromoError] = useState('');
 
   // Quick Price Edit Modal
   const [quickPriceProduct, setQuickPriceProduct] = useState<Product | null>(null);
   const [newPriceInput, setNewPriceInput] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
   const [quickPriceSuccess, setQuickPriceSuccess] = useState(false);
+  const [quickPriceError, setQuickPriceError] = useState('');
 
   const navigate = useNavigate();
 
-  const handleSaveQuickPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPriceProduct) return;
-    const priceNum = parseFloat(newPriceInput);
-    if (isNaN(priceNum) || priceNum < 0) return;
+  const adminEmail = user?.email || 'queenlateefalive@yahoo.com';
+  const adminRole =
+    adminEmail.toLowerCase() === 'queenlateefalive@yahoo.com' ? 'Store Owner' : 'Administrator';
 
-    setSavingPrice(true);
+  const loadAuxData = useCallback(async () => {
     try {
-      await updateProductPrice(quickPriceProduct.id, priceNum);
-      setQuickPriceSuccess(true);
-      await loadData();
-      setTimeout(() => {
-        setQuickPriceProduct(null);
-        setQuickPriceSuccess(false);
-      }, 700);
-    } catch (err) {
-      console.error('Failed to update price:', err);
-    } finally {
-      setSavingPrice(false);
-    }
-  };
-
-  const handleSavePromo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingPromo(true);
-    try {
-      const updated = await savePromotion({
-        title: 'Storefront Announcement',
-        badge_text: promoBadge,
-        message: promoMessage,
-        subtext: promoSubtext,
-        is_active: promoActive,
-      });
-      setPromo(updated);
-      setPromoSuccess(true);
-      setTimeout(() => setPromoSuccess(false), 2500);
-    } catch (err) {
-      console.error('Failed to save promotion:', err);
-    } finally {
-      setSavingPromo(false);
-    }
-  };
-
-  // Authenticated store owner identity
-  const storedAdminEmail = localStorage.getItem('teefahs_admin_email');
-  const adminEmail = (storedAdminEmail && !storedAdminEmail.toLowerCase().includes('greatezirim'))
-    ? storedAdminEmail
-    : 'queenlateefalive@yahoo.com';
-  const rawRole = localStorage.getItem('teefahs_admin_role') || 'Store Owner';
-  const adminRole = rawRole.toLowerCase().includes('temporal') ? 'Store Owner' : rawRole;
-
-  useEffect(() => {
-    loadData();
-    const handleUpdate = () => loadData();
-    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
-    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
-  }, []);
-
-  const handleLockDashboard = () => {
-    localStorage.removeItem('teefahs_admin_authorized');
-    localStorage.removeItem('teefahs_admin_session_token');
-    localStorage.removeItem('teefahs_admin_expires_at');
-    localStorage.removeItem('teefahs_admin_email');
-    localStorage.removeItem('teefahs_admin_role');
-    navigate('/admin/login');
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [prods, cats, diag, activePromo] = await Promise.all([
-        getAllProducts(),
-        getAllCategories(),
+      const [diag, activePromo] = await Promise.all([
         getDatabaseDiagnostics(),
         getActivePromotion(),
       ]);
-      setProducts(prods);
-      setCategories(cats);
       setDbDiag(diag);
       if (activePromo) {
         setPromo(activePromo);
@@ -144,15 +78,95 @@ export default function AdminDashboard() {
         setPromoActive(activePromo.is_active);
       }
     } catch (e) {
-      console.error('Error loading dashboard data:', e);
-    } finally {
-      setLoading(false);
+      console.error('Error loading dashboard diagnostics/promotions:', e);
     }
+  }, []);
+
+  useEffect(() => {
+    loadAuxData();
+
+    const handleUpdate = () => loadAuxData();
+    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
+    window.addEventListener('teefahs_promo_updated', handleUpdate);
+
+    const promoChannel = supabase
+      .channel(`admin-promo-sync-${Math.random().toString(36).slice(2, 8)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'promotions' }, () => {
+        loadAuxData();
+      })
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
+      window.removeEventListener('teefahs_promo_updated', handleUpdate);
+      supabase.removeChannel(promoChannel);
+    };
+  }, [loadAuxData]);
+
+  const handleSaveQuickPrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickPriceProduct) return;
+    const priceNum = parseFloat(newPriceInput);
+    if (isNaN(priceNum) || priceNum < 0) {
+      setQuickPriceError('Please enter a valid price in Naira (₦).');
+      return;
+    }
+
+    setSavingPrice(true);
+    setQuickPriceError('');
+    try {
+      await updateProductPrice(quickPriceProduct.id, priceNum);
+      setQuickPriceSuccess(true);
+      await Promise.all([refreshProducts(), loadAuxData()]);
+      setTimeout(() => {
+        setQuickPriceProduct(null);
+        setQuickPriceSuccess(false);
+      }, 650);
+    } catch (err: any) {
+      console.error('Failed to update price:', err);
+      setQuickPriceError(err?.message || 'Failed to update price in Supabase.');
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
+  const handleSavePromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPromo(true);
+    setPromoError('');
+    setPromoSuccess(false);
+    try {
+      const updated = await savePromotion({
+        id: promo?.id,
+        title: 'Storefront Announcement',
+        badge_text: promoBadge,
+        message: promoMessage,
+        subtext: promoSubtext,
+        is_active: promoActive,
+      });
+      setPromo(updated);
+      setPromoSuccess(true);
+      setTimeout(() => setPromoSuccess(false), 2500);
+    } catch (err: any) {
+      console.error('Failed to save promotion:', err);
+      setPromoError(err?.message || 'Could not update promotion banner in Supabase.');
+    } finally {
+      setSavingPromo(false);
+    }
+  };
+
+  const handleLockDashboard = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore signOut errors
+    }
+    navigate('/admin/login', { replace: true });
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await Promise.all([refreshProducts(), loadAuxData()]);
     setRefreshing(false);
   };
 
@@ -164,10 +178,11 @@ export default function AdminDashboard() {
     const variationsStock = (p.variations || []).reduce((sum, v) => sum + (v.stock_quantity || 0), 0);
     return acc + variationsStock;
   }, 0);
+  const syncedImageCount = dbDiag?.counts.images ?? products.reduce((acc, p) => acc + (p.images?.length || 0), 0);
 
   const getCategoryName = (catId?: string) => {
     if (!catId) return 'Unassigned';
-    const match = categories.find(c => c.id === catId);
+    const match = categories.find(c => c.id === catId || c.slug === catId);
     return match ? match.name : catId;
   };
 
@@ -219,7 +234,7 @@ export default function AdminDashboard() {
             type="button"
             onClick={handleLockDashboard}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-stone-800 hover:bg-stone-900 text-amber-300 hover:text-amber-200 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors shadow-2xs cursor-pointer border border-stone-700"
-            title="Lock admin portal and require password on next entry"
+            title="Sign out of Supabase Auth session"
           >
             <Lock size={13} className="text-amber-400" />
             <span>Lock Portal</span>
@@ -235,7 +250,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 2. PROFESSIONAL CLOUD DATABASE STATUS INDICATOR */}
+      {/* 2. CLOUD DATABASE STATUS INDICATOR */}
       <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-sm shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
@@ -247,11 +262,11 @@ export default function AdminDashboard() {
                 Supabase Cloud Database Connected
               </span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-200 text-emerald-900">
-                Active Sync
+                Realtime Active
               </span>
             </div>
             <p className="text-xs text-stone-600 mt-0.5">
-              Live catalogue synchronized: {products.length} garments, {categories.length} categories, 54 editorial photoshoot photographs.
+              Live catalogue synchronized: {products.length} garments, {categories.length} categories, {syncedImageCount} database gallery images.
             </p>
           </div>
         </div>
@@ -262,7 +277,6 @@ export default function AdminDashboard() {
             onClick={handleRefresh}
             disabled={refreshing}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-            title="Refresh catalogue records"
           >
             <RefreshCw size={13} className={refreshing ? 'animate-spin text-emerald-700' : ''} />
             <span>{refreshing ? 'Syncing...' : 'Sync Live Status'}</span>
@@ -273,7 +287,6 @@ export default function AdminDashboard() {
       {/* 3. MAIN DASHBOARD STATISTICS */}
       <div>
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {/* Total Products */}
           <div className="bg-white p-5 border border-stone-200 rounded-sm shadow-2xs hover:border-stone-300 transition-colors">
             <div className="flex items-center justify-between text-stone-500 mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-600">Total Garments</span>
@@ -287,7 +300,6 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          {/* Published Live */}
           <div className="bg-white p-5 border border-stone-200 rounded-sm shadow-2xs hover:border-stone-300 transition-colors">
             <div className="flex items-center justify-between text-stone-500 mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-600">Published Live</span>
@@ -301,7 +313,6 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          {/* New Arrivals */}
           <div className="bg-white p-5 border border-stone-200 rounded-sm shadow-2xs hover:border-stone-300 transition-colors">
             <div className="flex items-center justify-between text-stone-500 mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-600">New Arrivals</span>
@@ -315,7 +326,6 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          {/* Categories */}
           <div className="bg-white p-5 border border-stone-200 rounded-sm shadow-2xs hover:border-stone-300 transition-colors">
             <div className="flex items-center justify-between text-stone-500 mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-600">Categories</span>
@@ -329,7 +339,6 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          {/* Total Stock Units */}
           <div className="bg-white p-5 border border-stone-200 rounded-sm shadow-2xs hover:border-stone-300 transition-colors col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between text-stone-500 mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-600">Stock Units</span>
@@ -349,7 +358,6 @@ export default function AdminDashboard() {
       <div className="bg-white p-6 border border-stone-200 rounded-sm shadow-2xs space-y-4">
         <h2 className="text-base font-serif text-stone-900 font-medium">Quick Management Shortcuts</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Action 1: Add New Product */}
           <Link
             to="/admin/products/add"
             className="p-4 bg-stone-900 text-white rounded-sm hover:bg-stone-800 transition-all flex flex-col justify-between group shadow-xs"
@@ -369,7 +377,6 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
-          {/* Action 2: View All Products */}
           <Link
             to="/admin/products"
             className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 hover:bg-stone-100/60 transition-all flex flex-col justify-between group"
@@ -389,7 +396,6 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
-          {/* Action 3: Categories */}
           <Link
             to="/admin/categories"
             className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 hover:bg-stone-100/60 transition-all flex flex-col justify-between group"
@@ -400,7 +406,7 @@ export default function AdminDashboard() {
               </div>
               <h3 className="font-semibold text-sm text-stone-900 mb-1">Manage Categories</h3>
               <p className="text-[11px] text-stone-600 font-light leading-relaxed">
-                Organize store sections, cover photographs, and menu navigation.
+                Organize store sections, cover photographs, and visibility.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-stone-800 font-semibold mt-4">
@@ -409,7 +415,6 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
-          {/* Action 4: Media & Storage Manager */}
           <Link
             to="/admin/media"
             className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-sm hover:border-emerald-400 hover:bg-emerald-100/60 transition-all flex flex-col justify-between group"
@@ -420,7 +425,7 @@ export default function AdminDashboard() {
               </div>
               <h3 className="font-semibold text-sm text-stone-900 mb-1">Media Storage</h3>
               <p className="text-[11px] text-stone-600 font-light leading-relaxed">
-                Inspect 88+ CDN images, optimize storage, and copy URLs.
+                Upload new photographs, copy URLs, and check connected garments.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-semibold mt-4">
@@ -429,7 +434,6 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
-          {/* Action 5: Return to Store */}
           <Link
             to="/"
             target="_blank"
@@ -471,9 +475,13 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider self-start sm:self-auto ${
-            promoActive ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-stone-200 text-stone-600'
-          }`}>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider self-start sm:self-auto ${
+              promoActive
+                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                : 'bg-stone-200 text-stone-600'
+            }`}
+          >
             <span className={`w-2 h-2 rounded-full ${promoActive ? 'bg-emerald-600 animate-pulse' : 'bg-stone-400'}`} />
             {promoActive ? 'Live on Storefront' : 'Hidden from Customers'}
           </span>
@@ -508,6 +516,13 @@ export default function AdminDashboard() {
 
         {/* Banner Edit Form */}
         <form onSubmit={handleSavePromo} className="p-5 space-y-4">
+          {promoError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs rounded-sm flex items-start gap-2">
+              <AlertCircle size={15} className="text-red-600 flex-shrink-0 mt-0.5" />
+              <span>{promoError}</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
@@ -516,7 +531,7 @@ export default function AdminDashboard() {
               <input
                 type="text"
                 value={promoBadge}
-                onChange={(e) => setPromoBadge(e.target.value)}
+                onChange={e => setPromoBadge(e.target.value)}
                 placeholder="e.g. 10% OFF PROMO"
                 className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-stone-500 focus:bg-white"
                 required
@@ -530,8 +545,8 @@ export default function AdminDashboard() {
               <input
                 type="text"
                 value={promoMessage}
-                onChange={(e) => setPromoMessage(e.target.value)}
-                placeholder="e.g. 10% Promotional Discount on All Luxury Abayas & Khimars"
+                onChange={e => setPromoMessage(e.target.value)}
+                placeholder="e.g. 10% Promotional Discount on Selected Luxury Abayas"
                 className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-stone-500 focus:bg-white"
                 required
               />
@@ -545,7 +560,7 @@ export default function AdminDashboard() {
             <input
               type="text"
               value={promoSubtext}
-              onChange={(e) => setPromoSubtext(e.target.value)}
+              onChange={e => setPromoSubtext(e.target.value)}
               placeholder="e.g. Excludes Caps & Accessories • Nationwide Delivery Across Nigeria"
               className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-sm focus:border-stone-500 focus:bg-white"
             />
@@ -556,7 +571,7 @@ export default function AdminDashboard() {
               <input
                 type="checkbox"
                 checked={promoActive}
-                onChange={(e) => setPromoActive(e.target.checked)}
+                onChange={e => setPromoActive(e.target.checked)}
                 className="w-4 h-4 text-emerald-800 rounded border-stone-300 focus:ring-emerald-500"
               />
               <span>Enable and display this announcement bar on live storefront</span>
@@ -581,7 +596,7 @@ export default function AdminDashboard() {
         </form>
       </div>
 
-      {/* Mobile Ease-of-Use Banner for Queen Lateefah */}
+      {/* Quick Edit Notice */}
       <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-sm text-xs text-emerald-950 flex items-start gap-3 shadow-2xs">
         <div className="w-8 h-8 rounded-full bg-emerald-200 text-emerald-950 flex items-center justify-center font-bold flex-shrink-0 text-sm">
           👑
@@ -589,12 +604,13 @@ export default function AdminDashboard() {
         <div>
           <p className="font-semibold text-sm">Owner Quick Edit Notice:</p>
           <p className="text-stone-700 mt-0.5 leading-relaxed">
-            Every garment below features a prominent <strong className="text-emerald-900">"Edit Price &amp; Images"</strong> button. You can update your pricing, add new photos, or manage sizes instantly from your phone without needing desktop mode.
+            Every garment below features <strong className="text-emerald-900">"Edit"</strong> (price) and{' '}
+            <strong className="text-emerald-900">"Full Edit"</strong> controls. Any saved updates synchronize across devices via Supabase Realtime.
           </p>
         </div>
       </div>
 
-      {/* 5. RECENT GARMENTS (COMPACT EDITORIAL OVERVIEW) */}
+      {/* 6. RECENT GARMENTS */}
       <div className="bg-white border border-stone-200 rounded-sm shadow-2xs overflow-hidden">
         <div className="p-5 border-b border-stone-200 flex items-center justify-between">
           <div>
@@ -640,7 +656,7 @@ export default function AdminDashboard() {
                   </td>
                 </tr>
               ) : (
-                products.slice(0, 6).map((product) => {
+                products.slice(0, 6).map(product => {
                   const stock = (product.variations || []).reduce((sum, v) => sum + (v.stock_quantity || 0), 0);
                   const imageSrc = product.main_image_url || product.images?.[0]?.image_url;
 
@@ -686,6 +702,8 @@ export default function AdminDashboard() {
                             onClick={() => {
                               setQuickPriceProduct(product);
                               setNewPriceInput(product.base_price?.toString() || '');
+                              setQuickPriceError('');
+                              setQuickPriceSuccess(false);
                             }}
                             className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                             title="Quick Edit Price"
@@ -696,15 +714,19 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className="font-semibold text-stone-800">{stock}</span>
+                        <span className={`font-semibold ${stock === 0 ? 'text-red-600' : 'text-stone-800'}`}>
+                          {stock}
+                        </span>
                         <span className="text-[10px] text-stone-400 block">units</span>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className={`inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded ${
-                          product.is_published 
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                            : 'bg-stone-100 text-stone-600'
-                        }`}>
+                        <span
+                          className={`inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded ${
+                            product.is_published
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : 'bg-stone-100 text-stone-600'
+                          }`}
+                        >
                           {product.is_published ? 'Published' : 'Draft'}
                         </span>
                       </td>
@@ -726,13 +748,13 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Quick Price Edit Modal for Instant Storefront Updates */}
+      {/* Quick Price Edit Modal */}
       {quickPriceProduct && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setQuickPriceProduct(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-sm p-6 max-w-sm w-full shadow-2xl space-y-4"
             onClick={e => e.stopPropagation()}
           >
@@ -741,7 +763,7 @@ export default function AdminDashboard() {
                 <Tag size={16} className="text-emerald-800" />
                 <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setQuickPriceProduct(null)}
                 className="text-stone-400 hover:text-stone-600 cursor-pointer"
               >
@@ -751,8 +773,17 @@ export default function AdminDashboard() {
 
             <div>
               <p className="text-xs font-semibold text-stone-900">{quickPriceProduct.name}</p>
-              <p className="text-[11px] text-stone-500 mt-0.5">Category: {getCategoryName(quickPriceProduct.category_id)}</p>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                Category: {getCategoryName(quickPriceProduct.category_id)}
+              </p>
             </div>
+
+            {quickPriceError && (
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
+                <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <span>{quickPriceError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSaveQuickPrice} className="space-y-4">
               <div>
@@ -769,16 +800,17 @@ export default function AdminDashboard() {
                     value={newPriceInput}
                     onChange={e => setNewPriceInput(e.target.value)}
                     className="w-full pl-8 pr-3 py-2 text-sm font-semibold border border-stone-300 rounded focus:outline-none focus:border-stone-900"
-                    placeholder="e.g. 70000"
+                    placeholder="e.g. 229500"
                     autoFocus
                   />
                 </div>
 
-                {/* Quick Tap Price Chips */}
                 <div className="mt-2">
-                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Tap Price:</p>
+                  <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">
+                    Quick Tap Price:
+                  </p>
                   <div className="flex flex-wrap gap-1">
-                    {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                    {['1500', '15000', '35000', '68000', '85000', '130000', '229500'].map(pVal => (
                       <button
                         key={pVal}
                         type="button"
@@ -789,7 +821,7 @@ export default function AdminDashboard() {
                             : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
                         }`}
                       >
-                        ₦{parseInt(pVal).toLocaleString()}
+                        ₦{parseInt(pVal, 10).toLocaleString()}
                       </button>
                     ))}
                   </div>

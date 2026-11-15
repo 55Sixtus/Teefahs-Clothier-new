@@ -2,9 +2,25 @@ import { supabase } from './supabase';
 import { Product, Category, ProductVariation } from '../types/product';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../data/initialCatalogue';
 
-// Local storage keys for caching and optimistic updates
-const LOCAL_PRODUCTS_KEY = 'teefahs_products_v12_covers';
-const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v12_covers';
+const LOCAL_PRODUCTS_KEY = 'teefahs_products_v13_authoritative';
+const LOCAL_CATEGORIES_KEY = 'teefahs_categories_v13_authoritative';
+const RECENTLY_DELETED_KEY = 'teefahs_recently_deleted_v13';
+const LEGACY_STORAGE_KEYS = [
+  'teefahs_products_v12_covers',
+  'teefahs_categories_v12_covers',
+  'teefahs_recently_deleted_products_v1',
+];
+
+// Clean up stale legacy cache keys once so old phantom items never resurface
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  LEGACY_STORAGE_KEYS.forEach((k) => {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      // ignore
+    }
+  });
+}
 
 export interface DatabaseDiagnostics {
   status: 'fully_synchronized' | 'partially_populated' | 'connected_empty' | 'permission_denied' | 'connection_error';
@@ -20,11 +36,138 @@ export interface DatabaseDiagnostics {
   dataSource: 'supabase' | 'catalogue_fallback';
 }
 
+export const generateValidUuid = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+export const isValidUuid = (id?: string): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
+
+const notifyCatalogueUpdated = (detail: Record<string, any> = {}) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail }));
+  }
+};
+
+const setLocalStoredProducts = (products: Product[]) => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_PRODUCTS_KEY, JSON.stringify(products));
+  } catch (e) {
+    console.error('Error saving product cache:', e);
+  }
+};
+
+const getLocalStoredProducts = (): Product[] => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return INITIAL_PRODUCTS;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_PRODUCTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading product cache:', e);
+  }
+  return INITIAL_PRODUCTS;
+};
+
+const setLocalStoredCategories = (categories: Category[]) => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_CATEGORIES_KEY, JSON.stringify(categories));
+  } catch (e) {
+    console.error('Error saving category cache:', e);
+  }
+};
+
+const getLocalStoredCategories = (): Category[] => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return INITIAL_CATEGORIES;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_CATEGORIES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading category cache:', e);
+  }
+  return INITIAL_CATEGORIES;
+};
+
+export const getRecentlyDeletedProducts = (): Product[] => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(RECENTLY_DELETED_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading deleted cache:', e);
+  }
+  return [];
+};
+
+export const setRecentlyDeletedProducts = (products: Product[]) => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(RECENTLY_DELETED_KEY, JSON.stringify(products));
+  } catch (e) {
+    console.error('Error saving deleted cache:', e);
+  }
+};
+
+const mapSupabaseProduct = (p: any): Product => {
+  const sortedImages = Array.isArray(p.product_images)
+    ? [...p.product_images].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    : [];
+  const variations = Array.isArray(p.product_variations) ? p.product_variations : [];
+  const basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : 0;
+  const salePrice = p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : undefined;
+
+  return {
+    ...p,
+    base_price: basePrice,
+    sale_price: salePrice,
+    name: p.name || '',
+    slug: p.slug || '',
+    description: p.description || '',
+    short_description: p.short_description || '',
+    main_image_url: p.main_image_url || sortedImages[0]?.image_url || '',
+    currency: p.currency || 'NGN',
+    is_published: Boolean(p.is_published),
+    is_featured: Boolean(p.is_featured),
+    is_new_arrival: Boolean(p.is_new_arrival),
+    is_archived: Boolean(p.is_archived),
+    deleted_at: p.deleted_at || null,
+    deleted_by: p.deleted_by || undefined,
+    variations,
+    images: sortedImages,
+    additionalImages: sortedImages
+      .map((img: any) => (typeof img === 'string' ? img : img.image_url))
+      .filter((url: string) => Boolean(url) && url !== p.main_image_url),
+  };
+};
+
 export const getDatabaseDiagnostics = async (): Promise<DatabaseDiagnostics> => {
   try {
     const [catRes, prodRes, imgRes, varRes] = await Promise.all([
       supabase.from('categories').select('*', { count: 'exact', head: true }),
-      supabase.from('products').select('*', { count: 'exact', head: true }),
+      supabase.from('products').select('*', { count: 'exact', head: true }).or('is_archived.is.null,is_archived.eq.false'),
       supabase.from('product_images').select('*', { count: 'exact', head: true }),
       supabase.from('product_variations').select('*', { count: 'exact', head: true }),
     ]);
@@ -32,8 +175,8 @@ export const getDatabaseDiagnostics = async (): Promise<DatabaseDiagnostics> => 
     const hasError = catRes.error || prodRes.error || imgRes.error || varRes.error;
     if (hasError) {
       const err = catRes.error || prodRes.error || imgRes.error || varRes.error;
-      const isPermissionDenied = 
-        err?.code === '42501' || 
+      const isPermissionDenied =
+        err?.code === '42501' ||
         err?.message?.toLowerCase().includes('permission denied') ||
         err?.message?.toLowerCase().includes('row-level security');
 
@@ -65,16 +208,12 @@ export const getDatabaseDiagnostics = async (): Promise<DatabaseDiagnostics> => 
       }
     }
 
-    // Determine status
-    let status: DatabaseDiagnostics['status'];
     const isPopulated = prodCount > 0 && catCount > 0;
-
-    if (prodCount >= 11 && catCount >= 8 && imgCount >= 54 && varCount >= 27) {
+    let status: DatabaseDiagnostics['status'] = 'connected_empty';
+    if (isPopulated && imgCount > 0 && varCount > 0) {
       status = 'fully_synchronized';
-    } else if (prodCount > 0 || catCount > 0 || imgCount > 0 || varCount > 0) {
+    } else if (prodCount > 0 || catCount > 0) {
       status = 'partially_populated';
-    } else {
-      status = 'connected_empty';
     }
 
     return {
@@ -100,562 +239,346 @@ export const getDatabaseDiagnostics = async (): Promise<DatabaseDiagnostics> => 
   }
 };
 
-const getLocalStoredProducts = (): Product[] => {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return INITIAL_PRODUCTS;
-  }
-  try {
-    const raw = localStorage.getItem(LOCAL_PRODUCTS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].main_image_url) {
-        // Merge in any newly catalogued products (e.g. dedicated Occasion Wear pieces 17-24)
-        const existingIds = new Set(parsed.map((p: any) => p.id));
-        const existingSlugs = new Set(parsed.map((p: any) => p.slug).filter(Boolean));
-        let changed = false;
-
-        const updated = parsed.map((p: any) => {
-          // Update generic Photoshoot placeholder names to distinct boutique titles without touching price
-          const photoshootTitles: Record<string, { name: string; slug: string }> = {
-            '00000000-0000-0000-0000-000000000025': { name: 'Zahra Embroidered Neckline Crepe Abaya', slug: 'zahra-embroidered-neckline-crepe-abaya' },
-            '00000000-0000-0000-0000-000000000026': { name: 'Amina Sage Minimalist Pleated Abaya', slug: 'amina-sage-minimalist-pleated-abaya' },
-            '00000000-0000-0000-0000-000000000027': { name: 'Safiyyah Festive White & Red Embroidered Abaya', slug: 'safiyyah-festive-white-red-embroidered-abaya' },
-            '00000000-0000-0000-0000-000000000034': { name: 'Hajar Classic Tailored Taupe Abaya', slug: 'hajar-classic-tailored-taupe-abaya' },
-            '00000000-0000-0000-0000-000000000028': { name: 'Maryam Plum Utility Modest Coord Set', slug: 'maryam-plum-utility-modest-coord-set' },
-            '00000000-0000-0000-0000-000000000035': { name: 'Sultana Golden Brocade Celebration Gown', slug: 'sultana-golden-brocade-celebration-gown' },
-            '00000000-0000-0000-0000-000000000029': { name: 'Nawal Minimalist Taupe Button Abaya', slug: 'nawal-minimalist-taupe-button-abaya' },
-            '00000000-0000-0000-0000-000000000036': { name: 'Aisha Royal Purple Elegant Coord Set', slug: 'aisha-royal-purple-elegant-coord-set' },
-            '00000000-0000-0000-0000-000000000030': { name: 'Farah Slate Blue Floral Embroidered Abaya', slug: 'farah-slate-blue-floral-embroidered-abaya' },
-            '00000000-0000-0000-0000-000000000031': { name: 'Zeenat Mint Green Hand-Embellished Occasion Gown', slug: 'zeenat-mint-green-hand-embellished-occasion-gown' },
-            '00000000-0000-0000-0000-000000000037': { name: 'Yasmin Midnight Blue Floral Kaftan', slug: 'yasmin-midnight-blue-floral-kaftan' },
-            '00000000-0000-0000-0000-000000000038': { name: 'Malika Jet Black Beaded Signature Abaya', slug: 'malika-jet-black-beaded-signature-abaya' },
-            '00000000-0000-0000-0000-000000000032': { name: 'Rukayyah Blush Ruffled Layered Abaya', slug: 'rukayyah-blush-ruffled-layered-abaya' },
-            '00000000-0000-0000-0000-000000000033': { name: 'Jamilah Seafoam Beaded Occasion Robe', slug: 'jamilah-seafoam-beaded-occasion-robe' },
-            '00000000-0000-0000-0000-000000000039': { name: 'Khadija Artisanal Embroidered Denim Dress', slug: 'khadija-artisanal-embroidered-denim-dress' },
-            '00000000-0000-0000-0000-000000000040': { name: 'Aaliyah Dusty Mauve Ruffled Batwing Abaya', slug: 'aaliyah-dusty-mauve-ruffled-batwing-abaya' },
-          };
-
-          if (photoshootTitles[p.id] && p.name.includes('Editorial Photoshoot')) {
-            changed = true;
-            p.name = photoshootTitles[p.id].name;
-            p.slug = photoshootTitles[p.id].slug;
-            p.additionalImages = [];
-          }
-
-          if (p.additionalImages === undefined) {
-            changed = true;
-            p.additionalImages = (p.images && p.images.length > 1)
-              ? p.images.slice(1).map((img: any) => typeof img === 'string' ? img : img.image_url).filter(Boolean)
-              : [];
-          }
-          return p;
-        });
-
-        // Add any missing catalogued products from INITIAL_PRODUCTS
-        const missing = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id) && !existingSlugs.has(p.slug));
-        if (missing.length > 0) {
-          updated.push(...missing);
-          changed = true;
-        }
-
-        if (changed) {
-          setLocalStoredProducts(updated);
-        }
-        return updated;
-      }
-    }
-  } catch (e) {
-    console.error('Error reading local products:', e);
-  }
-  setLocalStoredProducts(INITIAL_PRODUCTS);
-  return INITIAL_PRODUCTS;
-};
-
-const setLocalStoredProducts = (products: Product[]) => {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(LOCAL_PRODUCTS_KEY, JSON.stringify(products));
-  } catch (e) {
-    console.error('Error saving local products:', e);
-  }
-};
-
-const getLocalStoredCategories = (): Category[] => {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return INITIAL_CATEGORIES;
-  }
-  try {
-    const raw = localStorage.getItem(LOCAL_CATEGORIES_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].image_url) {
-        return parsed.map((c: Category) => {
-          if (c.slug === 'hijabs') {
-            return { ...c, image_url: '/assets/aistudio/image_60c3b658.png' };
-          }
-          if (c.slug === 'khimars') {
-            return { ...c, image_url: '/assets/aistudio/image_f09b866e.png' };
-          }
-          if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
-            return { ...c, image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg' };
-          }
-          return c;
-        });
-      }
-    }
-  } catch (e) {
-    console.error('Error reading local categories:', e);
-  }
-  return INITIAL_CATEGORIES;
-};
-
-const setLocalStoredCategories = (categories: Category[]) => {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(LOCAL_CATEGORIES_KEY, JSON.stringify(categories));
-  } catch (e) {
-    console.error('Error saving local categories:', e);
-  }
-};
-
-// Helper to generate valid RFC 4122 v4 hexadecimal UUIDs
-export const generateValidUuid = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
-
-const isValidUuid = (id?: string): boolean => {
-  if (!id) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-};
-
-// Storage key for soft-deleted / archived products
-const RECENTLY_DELETED_KEY = 'teefahs_recently_deleted_products_v1';
-
-export const getRecentlyDeletedProducts = (): Product[] => {
-  try {
-    const raw = localStorage.getItem(RECENTLY_DELETED_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (e) {
-    console.error('Error reading recently deleted products:', e);
-  }
-  return [];
-};
-
-export const setRecentlyDeletedProducts = (products: Product[]) => {
-  try {
-    localStorage.setItem(RECENTLY_DELETED_KEY, JSON.stringify(products));
-  } catch (e) {
-    console.error('Error saving recently deleted products:', e);
-  }
-};
-
-// Products API
+// Products API (Authoritative Supabase reads; invalidate stale cache on DB success)
 export const getPublishedProducts = async (): Promise<Product[]> => {
-  const local = getLocalStoredProducts();
-
-  try {
-    const [{ data, error }, { data: catData }] = await Promise.all([
-      supabase
-        .from('products')
-        .select('*, product_variations(*), product_images(*)')
-        .eq('is_published', true),
-      supabase.from('categories').select('id, slug, name'),
-    ]);
-
-    if (!error && data && data.length > 0) {
-      const dbIds = new Set(data.map((p: any) => p.id));
-      const dbSlugs = new Set(data.map((p: any) => p.slug).filter(Boolean));
-      const liveCats = (catData && catData.length > 0) ? catData : INITIAL_CATEGORIES;
-      const hijabsCat = liveCats.find(c => c.slug === 'hijabs');
-      const veilsCat = liveCats.find(c => c.slug === 'veils');
-
-      const mapped = data
-        .filter((p: any) => !p.is_archived && !p.deleted_at && p.slug !== 'veil')
-        .map((p: any) => {
-          const localMatch = local.find(lp => lp.id === p.id || (lp.slug && lp.slug === p.slug));
-
-          // Normalization: Amani Chiffon Veil & Hijab Set belongs in Hijabs
-          let categoryId = p.category_id || localMatch?.category_id;
-          if (p.slug === 'amani-breathable-chiffon-veil-hijab-set' && hijabsCat) {
-            categoryId = hijabsCat.id;
-          }
-
-          const basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
-
-          return {
-            ...p,
-            category_id: categoryId,
-            base_price: basePrice,
-            sale_price: p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : localMatch?.sale_price,
-            name: p.name || localMatch?.name || '',
-            description: p.description || localMatch?.description || '',
-            short_description: p.short_description || localMatch?.short_description || '',
-            main_image_url: p.main_image_url || localMatch?.main_image_url || '',
-            is_published: p.is_published !== undefined ? p.is_published : (localMatch?.is_published ?? true),
-            is_featured: p.is_featured !== undefined ? p.is_featured : (localMatch?.is_featured ?? false),
-            is_new_arrival: p.is_new_arrival !== undefined ? p.is_new_arrival : (localMatch?.is_new_arrival ?? false),
-            variations: (p.product_variations && p.product_variations.length > 0) ? p.product_variations : (localMatch?.variations || []),
-            images: (p.product_images && p.product_images.length > 0) ? p.product_images : (localMatch?.images || []),
-            additionalImages: p.additionalImages || localMatch?.additionalImages || (
-              p.product_images && p.product_images.length > 0
-                ? p.product_images.map((img: any) => typeof img === 'string' ? img : img.image_url).filter(Boolean)
-                : (localMatch?.images && localMatch.images.length > 1
-                  ? localMatch.images.slice(1).map(i => i.image_url)
-                  : [])
-            ),
-          };
-        });
-
-      // Include catalogue products not yet seeded into Supabase
-      const localOnly = local
-        .filter(p => !dbIds.has(p.id) && !dbSlugs.has(p.slug) && p.is_published && !p.is_archived && !p.deleted_at)
-        .map(p => {
-          if (p.slug === 'luxe-jersey-veil' && veilsCat) {
-            return { ...p, category_id: veilsCat.id };
-          }
-          if ((p.slug.includes('hijab') || p.slug.includes('white')) && hijabsCat) {
-            return { ...p, category_id: hijabsCat.id };
-          }
-          return p;
-        });
-
-      const combined = [...mapped, ...localOnly];
-      setLocalStoredProducts(combined);
-      return combined as Product[];
-    }
-  } catch (e) {
-    console.warn('Supabase query error, using catalogue cache:', e);
-  }
-
-  // Fallback to active catalogued products excluding archived
-  return local.filter(p => p.is_published && !p.is_archived && !p.deleted_at);
-};
-
-export const getAllProducts = async (): Promise<Product[]> => {
-  const local = getLocalStoredProducts();
-
-  try {
-    const [{ data, error }, { data: catData }] = await Promise.all([
-      supabase
-        .from('products')
-        .select('*, product_variations(*), product_images(*)'),
-      supabase.from('categories').select('id, slug, name'),
-    ]);
-
-    if (!error && data && data.length > 0) {
-      const dbIds = new Set(data.map((p: any) => p.id));
-      const dbSlugs = new Set(data.map((p: any) => p.slug).filter(Boolean));
-      const liveCats = (catData && catData.length > 0) ? catData : INITIAL_CATEGORIES;
-      const hijabsCat = liveCats.find(c => c.slug === 'hijabs');
-      const veilsCat = liveCats.find(c => c.slug === 'veils');
-
-      const mapped = data
-        .filter((p: any) => !p.is_archived && !p.deleted_at && p.slug !== 'veil')
-        .map((p: any) => {
-          const localMatch = local.find(lp => lp.id === p.id || (lp.slug && lp.slug === p.slug));
-
-          let categoryId = p.category_id || localMatch?.category_id;
-          if (p.slug === 'amani-breathable-chiffon-veil-hijab-set' && hijabsCat) {
-            categoryId = hijabsCat.id;
-          }
-
-          const basePrice = p.base_price !== null && p.base_price !== undefined ? Number(p.base_price) : (localMatch?.base_price ?? 0);
-
-          return {
-            ...p,
-            category_id: categoryId,
-            base_price: basePrice,
-            sale_price: p.sale_price !== null && p.sale_price !== undefined ? Number(p.sale_price) : localMatch?.sale_price,
-            name: p.name || localMatch?.name || '',
-            description: p.description || localMatch?.description || '',
-            short_description: p.short_description || localMatch?.short_description || '',
-            main_image_url: p.main_image_url || localMatch?.main_image_url || '',
-            is_published: p.is_published !== undefined ? p.is_published : (localMatch?.is_published ?? true),
-            is_featured: p.is_featured !== undefined ? p.is_featured : (localMatch?.is_featured ?? false),
-            is_new_arrival: p.is_new_arrival !== undefined ? p.is_new_arrival : (localMatch?.is_new_arrival ?? false),
-            variations: (p.product_variations && p.product_variations.length > 0) ? p.product_variations : (localMatch?.variations || []),
-            images: (p.product_images && p.product_images.length > 0) ? p.product_images : (localMatch?.images || []),
-            additionalImages: p.additionalImages || localMatch?.additionalImages || (
-              p.product_images && p.product_images.length > 0
-                ? p.product_images.map((img: any) => typeof img === 'string' ? img : img.image_url).filter(Boolean)
-                : (localMatch?.images && localMatch.images.length > 1
-                  ? localMatch.images.slice(1).map(i => i.image_url)
-                  : [])
-            ),
-          };
-        });
-
-      const localOnly = local
-        .filter(p => !dbIds.has(p.id) && !dbSlugs.has(p.slug) && !p.is_archived && !p.deleted_at)
-        .map(p => {
-          if (p.slug === 'luxe-jersey-veil' && veilsCat) {
-            return { ...p, category_id: veilsCat.id };
-          }
-          if ((p.slug.includes('hijab') || p.slug.includes('white')) && hijabsCat) {
-            return { ...p, category_id: hijabsCat.id };
-          }
-          return p;
-        });
-
-      const combined = [...mapped, ...localOnly];
-      setLocalStoredProducts(combined);
-      return combined as Product[];
-    }
-  } catch (e) {
-    console.warn('Supabase getAllProducts query error, using catalogue cache:', e);
-  }
-
-  return local.filter(p => !p.is_archived && !p.deleted_at);
-};
-
-export const getProductById = async (id: string): Promise<Product | null> => {
   try {
     const { data, error } = await supabase
       .from('products')
       .select('*, product_variations(*), product_images(*)')
-      .eq('id', id)
-      .single();
+      .eq('is_published', true)
+      .or('is_archived.is.null,is_archived.eq.false')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      return {
-        ...data,
-        variations: data.product_variations || [],
-        images: data.product_images || [],
-      } as Product;
+    if (error) throw error;
+
+    const mapped = (data || [])
+      .filter((p: any) => !p.is_archived && !p.deleted_at)
+      .map(mapSupabaseProduct);
+
+    // Replace cache with authoritative published DB list (merge carefully only if needed; keep clean)
+    setLocalStoredProducts(mapped);
+    return mapped;
+  } catch (e) {
+    console.warn('Supabase getPublishedProducts failed, falling back to local cache:', e);
+    return getLocalStoredProducts().filter(p => p.is_published && !p.is_archived && !p.deleted_at);
+  }
+};
+
+export const getAllProducts = async (): Promise<Product[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, product_variations(*), product_images(*)')
+      .or('is_archived.is.null,is_archived.eq.false')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const mapped = (data || [])
+      .filter((p: any) => !p.is_archived && !p.deleted_at)
+      .map(mapSupabaseProduct);
+
+    setLocalStoredProducts(mapped);
+    return mapped;
+  } catch (e) {
+    console.warn('Supabase getAllProducts failed, falling back to local cache:', e);
+    return getLocalStoredProducts().filter(p => !p.is_archived && !p.deleted_at);
+  }
+};
+
+export const getArchivedProducts = async (): Promise<Product[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, product_variations(*), product_images(*)')
+      .or('is_archived.eq.true,deleted_at.not.is.null')
+      .order('deleted_at', { ascending: false });
+
+    if (error) throw error;
+
+    const mapped = (data || []).map(mapSupabaseProduct);
+    setRecentlyDeletedProducts(mapped);
+    return mapped;
+  } catch (e) {
+    console.warn('Supabase getArchivedProducts failed, using local deleted cache:', e);
+    return getRecentlyDeletedProducts();
+  }
+};
+
+export const getProductById = async (idOrSlug: string): Promise<Product | null> => {
+  if (!idOrSlug) return null;
+
+  try {
+    const column = isValidUuid(idOrSlug) ? 'id' : 'slug';
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, product_variations(*), product_images(*)')
+      .eq(column, idOrSlug)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) {
+      return mapSupabaseProduct(data);
     }
+    return null;
   } catch (e) {
     console.warn('Supabase getProductById error, checking cache:', e);
+    const cached = getLocalStoredProducts();
+    return cached.find(p => p.id === idOrSlug || p.slug === idOrSlug) || null;
   }
-
-  const cached = getLocalStoredProducts();
-  return cached.find(p => p.id === id) || null;
 };
 
 export const saveProduct = async (product: Partial<Product>): Promise<Product> => {
-  const current = getLocalStoredProducts();
-  let savedProduct: Product;
-  const isEditing = !!product.id && current.some(p => p.id === product.id);
-
-  if (isEditing && product.id) {
-    // 1. Update existing product in state
-    const existing = current.find(p => p.id === product.id)!;
-    savedProduct = {
-      ...existing,
-      ...product,
-      additionalImages: product.additionalImages ?? existing.additionalImages ?? [],
-      variations: product.variations ?? existing.variations ?? [],
-      images: product.images ?? existing.images ?? [],
-    } as Product;
-
-    const updated = current.map(p => p.id === product.id ? savedProduct : p);
-    setLocalStoredProducts(updated);
-
-    // 2. Sync to Supabase
-    try {
-      const dbPayload = {
-        name: savedProduct.name,
-        slug: savedProduct.slug || savedProduct.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        short_description: savedProduct.short_description || savedProduct.description?.slice(0, 160) || '',
-        description: savedProduct.description || '',
-        category_id: savedProduct.category_id,
-        main_image_url: savedProduct.main_image_url,
-        base_price: savedProduct.base_price,
-        sale_price: savedProduct.sale_price !== undefined ? savedProduct.sale_price : null,
-        currency: savedProduct.currency || 'NGN',
-        is_published: savedProduct.is_published ?? true,
-        is_featured: savedProduct.is_featured ?? false,
-        is_new_arrival: savedProduct.is_new_arrival ?? false,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: prodErr } = await supabase.from('products').update(dbPayload).eq('id', product.id);
-      if (prodErr) {
-        console.warn('Supabase product update error:', prodErr.message);
-      }
-
-      // Sync product images to Supabase if provided
-      if (savedProduct.images && Array.isArray(savedProduct.images)) {
-        try {
-          const formattedImages = savedProduct.images.map((img: any, idx: number) => ({
-            id: isValidUuid(img.id) ? img.id : generateValidUuid(),
-            product_id: product.id,
-            image_url: typeof img === 'string' ? img : img.image_url,
-            alt_text: (typeof img === 'object' && img.alt_text) ? img.alt_text : `${savedProduct.name} photograph ${idx + 1}`,
-            display_order: idx,
-          }));
-
-          // Re-sync images for this product
-          await supabase.from('product_images').delete().eq('product_id', product.id);
-          await supabase.from('product_images').insert(formattedImages);
-        } catch (imgErr) {
-          console.warn('Could not sync product images to Supabase:', imgErr);
-        }
-      }
-
-      // Sync variations to Supabase if provided
-      if (savedProduct.variations && Array.isArray(savedProduct.variations)) {
-        try {
-          const formattedVars = savedProduct.variations.map((v: any, idx: number) => ({
-            id: isValidUuid(v.id) ? v.id : generateValidUuid(),
-            product_id: product.id,
-            sku: v.sku || `TC-${(savedProduct.slug || 'ITEM').toUpperCase().slice(0, 6)}-${idx + 1}`,
-            size: v.size || 'One Size',
-            colour: v.colour || 'Standard',
-            stock_quantity: Math.max(0, Number(v.stock_quantity) || 0),
-            price_adjustment: Number(v.price_adjustment) || 0,
-            is_active: v.is_active ?? true,
-          }));
-
-          await supabase.from('product_variations').upsert(formattedVars);
-        } catch (varErr) {
-          console.warn('Could not sync product variations to Supabase:', varErr);
-        }
-      }
-    } catch (e) {
-      console.warn('Could not sync update to Supabase:', e);
-    }
-  } else {
-    // 3. Insert new product
-    const newId = (product.id && isValidUuid(product.id)) ? product.id : generateValidUuid();
-    savedProduct = {
-      ...product,
-      id: newId,
-      slug: product.slug || (product.name ? product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : newId),
-      currency: product.currency || 'NGN',
-      is_published: product.is_published ?? true,
-      is_featured: product.is_featured ?? false,
-      is_new_arrival: product.is_new_arrival ?? false,
-      additionalImages: product.additionalImages || [],
-      variations: product.variations || [],
-      images: product.images || [],
-    } as Product;
-
-    setLocalStoredProducts([savedProduct, ...current]);
-
-    // Try Supabase sync
-    try {
-      const dbPayload = {
-        id: savedProduct.id,
-        name: savedProduct.name,
-        slug: savedProduct.slug,
-        short_description: savedProduct.short_description || savedProduct.description?.slice(0, 160) || '',
-        description: savedProduct.description || '',
-        category_id: savedProduct.category_id,
-        main_image_url: savedProduct.main_image_url,
-        base_price: savedProduct.base_price,
-        sale_price: savedProduct.sale_price !== undefined ? savedProduct.sale_price : null,
-        currency: savedProduct.currency,
-        is_published: savedProduct.is_published,
-        is_featured: savedProduct.is_featured,
-        is_new_arrival: savedProduct.is_new_arrival,
-      };
-
-      const { error: insErr } = await supabase.from('products').insert(dbPayload);
-      if (insErr) {
-        console.warn('Supabase insert error:', insErr.message);
-      }
-
-      // Insert images
-      if (savedProduct.images && savedProduct.images.length > 0) {
-        const formattedImages = savedProduct.images.map((img: any, idx: number) => ({
-          id: isValidUuid(img.id) ? img.id : generateValidUuid(),
-          product_id: savedProduct.id,
-          image_url: typeof img === 'string' ? img : img.image_url,
-          alt_text: (typeof img === 'object' && img.alt_text) ? img.alt_text : `${savedProduct.name} photograph ${idx + 1}`,
-          display_order: idx,
-        }));
-        await supabase.from('product_images').insert(formattedImages);
-      }
-
-      // Insert variations
-      if (savedProduct.variations && savedProduct.variations.length > 0) {
-        const formattedVars = savedProduct.variations.map((v: any, idx: number) => ({
-          id: isValidUuid(v.id) ? v.id : generateValidUuid(),
-          product_id: savedProduct.id,
-          sku: v.sku || `TC-${(savedProduct.slug || 'ITEM').toUpperCase().slice(0, 6)}-${idx + 1}`,
-          size: v.size || 'One Size',
-          colour: v.colour || 'Standard',
-          stock_quantity: Math.max(0, Number(v.stock_quantity) || 0),
-          price_adjustment: Number(v.price_adjustment) || 0,
-          is_active: v.is_active ?? true,
-        }));
-        await supabase.from('product_variations').insert(formattedVars);
-      }
-    } catch (e) {
-      console.warn('Could not sync insert to Supabase:', e);
-    }
+  const cleanName = (product.name || '').trim();
+  if (!cleanName) {
+    throw new Error('Product name is required.');
   }
 
-  // Instant notification for storefront and admin synchronization
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: savedProduct.id } }));
-  }
+  const baseSlug = (product.slug || cleanName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || generateValidUuid();
 
-  return savedProduct;
-};
+  const numericPrice = Math.max(0, Number(product.base_price) || 0);
+  const numericSalePrice =
+    product.sale_price !== undefined && product.sale_price !== null && String(product.sale_price) !== ''
+      ? Math.max(0, Number(product.sale_price))
+      : null;
 
-// Fast Price Updater that syncs across Supabase and local cache with automatic change events
-export const updateProductPrice = async (productId: string, newPrice: number): Promise<Product> => {
-  const current = getLocalStoredProducts();
-  const prod = current.find(p => p.id === productId || (p.slug && p.slug === productId));
-  if (!prod) {
-    throw new Error('Garment not found in boutique catalogue');
-  }
-
-  const numericPrice = Math.max(0, Number(newPrice) || 0);
   const nowIso = new Date().toISOString();
 
-  // 1. Sync directly to Supabase first if product has a valid UUID
-  if (isValidUuid(prod.id)) {
-    const { error } = await supabase
-      .from('products')
-      .update({
-        base_price: numericPrice,
-        updated_at: nowIso,
-      })
-      .eq('id', prod.id);
+  // Verify whether this product already exists in Supabase
+  let existsInDb = false;
+  const candidateId = product.id && isValidUuid(product.id) ? product.id : generateValidUuid();
 
-    if (error) {
-      console.error('Supabase price update error:', error);
-      throw new Error(`Database error: ${error.message || 'Could not update price in database'}`);
+  if (product.id && isValidUuid(product.id)) {
+    const { data: existingRow, error: lookupErr } = await supabase
+      .from('products')
+      .select('id')
+      .eq('id', product.id)
+      .maybeSingle();
+
+    if (lookupErr) {
+      throw new Error(`Database lookup failed: ${lookupErr.message}`);
+    }
+    existsInDb = Boolean(existingRow?.id);
+  }
+
+  // Ensure slug uniqueness when inserting a brand-new product
+  let finalSlug = baseSlug;
+  if (!existsInDb) {
+    const { data: slugCollision } = await supabase
+      .from('products')
+      .select('id')
+      .eq('slug', finalSlug)
+      .maybeSingle();
+    if (slugCollision) {
+      finalSlug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
     }
   }
 
-  // 2. Database confirmed: Update local cache
-  const updatedProduct: Product = {
-    ...prod,
+  const dbPayload = {
+    name: cleanName,
+    slug: finalSlug,
+    short_description: (product.short_description || product.description?.slice(0, 160) || '').trim(),
+    description: (product.description || '').trim(),
+    category_id: product.category_id || null,
+    main_image_url: product.main_image_url || '',
     base_price: numericPrice,
+    sale_price: numericSalePrice,
+    currency: product.currency || 'NGN',
+    is_published: product.is_published ?? true,
+    is_featured: product.is_featured ?? false,
+    is_new_arrival: product.is_new_arrival ?? false,
     updated_at: nowIso,
   };
 
-  const updatedList = current.map(p => (p.id === prod.id || p.slug === prod.slug) ? updatedProduct : p);
-  setLocalStoredProducts(updatedList);
+  if (existsInDb) {
+    const { error: prodErr } = await supabase
+      .from('products')
+      .update(dbPayload)
+      .eq('id', candidateId);
 
-  // 3. Dispatch local window event for immediate same-session refresh
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { 
-      detail: { productId: prod.id, price: numericPrice } 
-    }));
+    if (prodErr) {
+      throw new Error(`Could not update garment: ${prodErr.message}`);
+    }
+  } else {
+    const { error: insErr } = await supabase.from('products').insert({
+      id: candidateId,
+      ...dbPayload,
+      is_archived: false,
+      deleted_at: null,
+      created_at: nowIso,
+    });
+
+    if (insErr) {
+      throw new Error(`Could not create garment: ${insErr.message}`);
+    }
   }
 
-  return updatedProduct;
+  // Re-sync product_images cleanly in Supabase
+  if (product.images && Array.isArray(product.images)) {
+    const { error: delImgErr } = await supabase.from('product_images').delete().eq('product_id', candidateId);
+    if (delImgErr) {
+      throw new Error(`Could not update product gallery images: ${delImgErr.message}`);
+    }
+
+    const uniqueImages = product.images
+      .map((img: any) => ({
+        url: typeof img === 'string' ? img : img?.image_url,
+        alt: typeof img === 'object' ? img?.alt_text : undefined,
+        id: typeof img === 'object' && isValidUuid(img?.id) ? img.id : generateValidUuid(),
+      }))
+      .filter((img) => Boolean(img.url));
+
+    if (uniqueImages.length > 0) {
+      const formattedImages = uniqueImages.map((img, idx) => ({
+        id: img.id,
+        product_id: candidateId,
+        image_url: img.url,
+        alt_text: img.alt || `${cleanName} photograph ${idx + 1}`,
+        display_order: idx,
+      }));
+
+      const { error: insImgErr } = await supabase.from('product_images').insert(formattedImages);
+      if (insImgErr) {
+        throw new Error(`Could not save gallery photographs: ${insImgErr.message}`);
+      }
+    }
+  }
+
+  // Re-sync product_variations cleanly (delete removed variations, upsert current ones)
+  if (product.variations && Array.isArray(product.variations)) {
+    const { data: dbVars, error: fetchVarErr } = await supabase
+      .from('product_variations')
+      .select('id')
+      .eq('product_id', candidateId);
+
+    if (fetchVarErr) {
+      throw new Error(`Could not verify existing variations: ${fetchVarErr.message}`);
+    }
+
+    const formattedVars = product.variations.map((v: any, idx: number) => ({
+      id: isValidUuid(v.id) ? v.id : generateValidUuid(),
+      product_id: candidateId,
+      sku: v.sku || `TC-${finalSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)}-${idx + 1}`,
+      size: v.size || 'One Size',
+      colour: v.colour || 'Standard',
+      stock_quantity: Math.max(0, Number(v.stock_quantity) || 0),
+      price_adjustment: Number(v.price_adjustment) || 0,
+      is_active: v.is_active ?? true,
+    }));
+
+    const submittedIds = new Set(formattedVars.map(v => v.id));
+    const removedIds = (dbVars || []).map((row: any) => row.id).filter((vid: string) => !submittedIds.has(vid));
+
+    if (removedIds.length > 0) {
+      const { error: delVarErr } = await supabase
+        .from('product_variations')
+        .delete()
+        .in('id', removedIds);
+
+      if (delVarErr) {
+        throw new Error(`Could not remove deleted variations: ${delVarErr.message}`);
+      }
+    }
+
+    if (formattedVars.length > 0) {
+      const { error: upsertVarErr } = await supabase
+        .from('product_variations')
+        .upsert(formattedVars, { onConflict: 'id' });
+
+      if (upsertVarErr) {
+        throw new Error(`Could not save sizes/colours/stock: ${upsertVarErr.message}`);
+      }
+    }
+  }
+
+  const freshProduct = await getProductById(candidateId);
+  const current = getLocalStoredProducts();
+  const savedProduct =
+    freshProduct ||
+    ({
+      ...product,
+      id: candidateId,
+      ...dbPayload,
+      variations: product.variations || [],
+      images: product.images || [],
+    } as Product);
+
+  const updatedCache = current.some(p => p.id === candidateId)
+    ? current.map(p => (p.id === candidateId ? savedProduct : p))
+    : [savedProduct, ...current];
+  setLocalStoredProducts(updatedCache);
+
+  notifyCatalogueUpdated({ productId: savedProduct.id });
+  return savedProduct;
+};
+
+export const updateProductPrice = async (productId: string, newPrice: number): Promise<Product> => {
+  const numericPrice = Math.max(0, Number(newPrice));
+  if (isNaN(numericPrice)) {
+    throw new Error('Please provide a valid numeric price.');
+  }
+
+  const nowIso = new Date().toISOString();
+  const column = isValidUuid(productId) ? 'id' : 'slug';
+
+  const { data: updatedRow, error } = await supabase
+    .from('products')
+    .update({
+      base_price: numericPrice,
+      updated_at: nowIso,
+    })
+    .eq(column, productId)
+    .select('*, product_variations(*), product_images(*)')
+    .single();
+
+  if (error) {
+    throw new Error(`Database error: ${error.message || 'Could not update price in database'}`);
+  }
+
+  const mapped = mapSupabaseProduct(updatedRow);
+  const current = getLocalStoredProducts();
+  const nextCache = current.some(p => p.id === mapped.id)
+    ? current.map(p => (p.id === mapped.id ? mapped : p))
+    : [mapped, ...current];
+  setLocalStoredProducts(nextCache);
+
+  notifyCatalogueUpdated({ productId: mapped.id, price: numericPrice });
+  return mapped;
+};
+
+export const updateProductStatus = async (
+  productId: string,
+  fields: Partial<Pick<Product, 'is_published' | 'is_featured' | 'is_new_arrival'>>
+): Promise<Product> => {
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('products')
+    .update({ ...fields, updated_at: nowIso })
+    .eq('id', productId)
+    .select('*, product_variations(*), product_images(*)')
+    .single();
+
+  if (error) {
+    throw new Error(`Could not update product status: ${error.message}`);
+  }
+
+  const mapped = mapSupabaseProduct(data);
+  const current = getLocalStoredProducts();
+  setLocalStoredProducts(current.map(p => (p.id === mapped.id ? mapped : p)));
+  notifyCatalogueUpdated({ productId: mapped.id });
+  return mapped;
 };
 
 // Promotions Management API
 export const getActivePromotion = async () => {
   const defaultPromo = {
     title: 'Special Season Offer',
-    message: 'Enjoy 10% OFF automatically applied on all luxury abayas & modest dresses!',
+    message: 'Enjoy seasonal bespoke craft across luxury abayas & modest dresses.',
     badge_text: 'Special Season Offer',
     subtext: 'Luxurious Modest Couture • Express Delivery Across Nigeria',
     link_url: '/shop',
@@ -684,9 +607,9 @@ export const getActivePromotion = async () => {
 export const savePromotion = async (promo: any) => {
   const payload = {
     title: promo.title || 'Special Season Offer',
-    message: promo.message || 'Enjoy 10% OFF automatically applied on all luxury abayas & modest dresses!',
-    badge_text: promo.badge_text || 'Special Season Offer',
-    subtext: promo.subtext || 'Luxurious Modest Couture • Express Delivery Across Nigeria',
+    message: promo.message || '',
+    badge_text: promo.badge_text || 'PROMO ALERT',
+    subtext: promo.subtext || '',
     link_url: promo.link_url || '/shop',
     is_active: promo.is_active ?? true,
     updated_at: new Date().toISOString(),
@@ -706,6 +629,29 @@ export const savePromotion = async (promo: any) => {
     }
     return data;
   } else {
+    // Check if any promotion row exists to update instead of duplicating rows
+    const { data: existingPromo } = await supabase
+      .from('promotions')
+      .select('id')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPromo?.id) {
+      const { data, error } = await supabase
+        .from('promotions')
+        .update(payload)
+        .eq('id', existingPromo.id)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('teefahs_promo_updated', { detail: data }));
+      }
+      return data;
+    }
+
     const { data, error } = await supabase
       .from('promotions')
       .insert({
@@ -723,115 +669,94 @@ export const savePromotion = async (promo: any) => {
   }
 };
 
-// Soft-Delete / Archive product with undo support
-export const archiveProduct = async (id: string, deletedBy = 'Queen Lateefah'): Promise<Product | null> => {
-  const current = getLocalStoredProducts();
-  const target = current.find(p => p.id === id);
-  if (!target) return null;
-
+// Soft-Delete / Archive product in Supabase
+export const archiveProduct = async (id: string, deletedBy = 'Queen Lateefah'): Promise<Product> => {
   const deletedAt = new Date().toISOString();
-  const archivedProduct: Product = {
-    ...target,
-    is_archived: true,
-    is_published: false,
-    deleted_at: deletedAt,
-    deleted_by: deletedBy,
-  };
 
-  // Remove from active catalogue
-  const remaining = current.filter(p => p.id !== id);
-  setLocalStoredProducts(remaining);
-
-  // Add to Recently Deleted registry
-  const recentlyDeleted = getRecentlyDeletedProducts().filter(p => p.id !== id);
-  setRecentlyDeletedProducts([archivedProduct, ...recentlyDeleted]);
-
-  // Sync to Supabase: unpublish immediately so storefront hides it
-  try {
-    await supabase.from('products').update({
+  const { data, error } = await supabase
+    .from('products')
+    .update({
       is_published: false,
+      is_archived: true,
+      deleted_at: deletedAt,
+      deleted_by: deletedBy,
       updated_at: deletedAt,
-    }).eq('id', id);
-  } catch (e) {
-    console.warn('Could not sync archive state to Supabase:', e);
+    })
+    .eq('id', id)
+    .select('*, product_variations(*), product_images(*)')
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to delete garment in database: ${error.message}`);
   }
 
-  // Instant notification for storefront and admin synchronization
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id, archived: true } }));
-  }
+  const archivedProduct = mapSupabaseProduct(data);
 
+  setLocalStoredProducts(getLocalStoredProducts().filter(p => p.id !== id));
+  const deletedList = getRecentlyDeletedProducts().filter(p => p.id !== id);
+  setRecentlyDeletedProducts([archivedProduct, ...deletedList]);
+
+  notifyCatalogueUpdated({ productId: id, archived: true });
   return archivedProduct;
 };
 
-// Restore product from Recently Deleted
-export const restoreProduct = async (id: string): Promise<Product | null> => {
-  const recentlyDeleted = getRecentlyDeletedProducts();
-  const target = recentlyDeleted.find(p => p.id === id);
-  if (!target) return null;
+// Restore product from Recently Deleted in Supabase
+export const restoreProduct = async (id: string): Promise<Product> => {
+  const nowIso = new Date().toISOString();
 
-  const restoredProduct: Product = {
-    ...target,
-    is_archived: false,
-    deleted_at: null,
-    is_published: true, // Re-publish upon restore
-    updated_at: new Date().toISOString(),
-  };
+  const { data, error } = await supabase
+    .from('products')
+    .update({
+      is_archived: false,
+      deleted_at: null,
+      deleted_by: null,
+      is_published: true,
+      updated_at: nowIso,
+    })
+    .eq('id', id)
+    .select('*, product_variations(*), product_images(*)')
+    .single();
 
-  // Remove from recently deleted
-  setRecentlyDeletedProducts(recentlyDeleted.filter(p => p.id !== id));
+  if (error) {
+    throw new Error(`Failed to restore garment in database: ${error.message}`);
+  }
 
-  // Add back to active catalogue
+  const restoredProduct = mapSupabaseProduct(data);
+
+  setRecentlyDeletedProducts(getRecentlyDeletedProducts().filter(p => p.id !== id));
   const current = getLocalStoredProducts().filter(p => p.id !== id);
   setLocalStoredProducts([restoredProduct, ...current]);
 
-  // Sync back to Supabase: set is_published to true
-  try {
-    await supabase.from('products').update({
-      is_published: true,
-      updated_at: new Date().toISOString(),
-    }).eq('id', id);
-  } catch (e) {
-    console.warn('Could not sync restore state to Supabase:', e);
-  }
-
-  // Instant notification for storefront and admin synchronization
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id, restored: true } }));
-  }
-
+  notifyCatalogueUpdated({ productId: id, restored: true });
   return restoredProduct;
 };
 
-// Permanent Hard Deletion (requires explicit confirmation)
+// Permanent Hard Deletion from Supabase
 export const permanentlyDeleteProduct = async (id: string): Promise<void> => {
-  // Remove from recently deleted
-  const recentlyDeleted = getRecentlyDeletedProducts();
-  setRecentlyDeletedProducts(recentlyDeleted.filter(p => p.id !== id));
-
-  // Remove from active catalogue if still present
-  const current = getLocalStoredProducts();
-  setLocalStoredProducts(current.filter(p => p.id !== id));
-
-  // Remove from Supabase
-  try {
-    await supabase.from('product_variations').delete().eq('product_id', id);
-    await supabase.from('product_images').delete().eq('product_id', id);
-    await supabase.from('products').delete().eq('id', id);
-  } catch (e) {
-    console.warn('Could not permanently delete from Supabase:', e);
+  const { error: varErr } = await supabase.from('product_variations').delete().eq('product_id', id);
+  if (varErr) {
+    throw new Error(`Could not delete product variations: ${varErr.message}`);
   }
 
-  // Instant notification for storefront and admin synchronization
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: id, deleted: true } }));
+  const { error: imgErr } = await supabase.from('product_images').delete().eq('product_id', id);
+  if (imgErr) {
+    throw new Error(`Could not delete product images: ${imgErr.message}`);
   }
+
+  const { error: prodErr } = await supabase.from('products').delete().eq('id', id);
+  if (prodErr) {
+    throw new Error(`Could not permanently delete garment: ${prodErr.message}`);
+  }
+
+  setRecentlyDeletedProducts(getRecentlyDeletedProducts().filter(p => p.id !== id));
+  setLocalStoredProducts(getLocalStoredProducts().filter(p => p.id !== id));
+
+  notifyCatalogueUpdated({ productId: id, deleted: true });
 };
 
-// Safe default: deleteProduct performs soft-deletion
 export const deleteProduct = archiveProduct;
 
-// Categories API
+// Categories API (No hardcoded image overrides)
 export const getActiveCategories = async (): Promise<Category[]> => {
   try {
     const { data, error } = await supabase
@@ -840,43 +765,15 @@ export const getActiveCategories = async (): Promise<Category[]> => {
       .eq('is_active', true)
       .order('display_order');
 
-    if (!error && data && data.length > 0) {
-      const normalized = (data as Category[]).map(c => {
-        if (c.slug === 'hijabs') {
-          return {
-            ...c,
-            name: 'Hijabs',
-            slug: 'hijabs',
-            image_url: '/assets/aistudio/image_60c3b658.png',
-          };
-        }
-        if (c.slug === 'khimars') {
-          return {
-            ...c,
-            name: 'Khimars',
-            slug: 'khimars',
-            image_url: '/assets/aistudio/image_f09b866e.png',
-          };
-        }
-        if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
-          return {
-            ...c,
-            name: 'Veils',
-            slug: 'veils',
-            image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
-          };
-        }
-        return c;
-      });
-      setLocalStoredCategories(normalized);
-      return normalized;
-    }
-  } catch (e) {
-    console.warn('Supabase categories error, using catalogue cache:', e);
-  }
+    if (error) throw error;
 
-  const cached = getLocalStoredCategories();
-  return cached.filter(c => c.is_active);
+    const list = (data || []) as Category[];
+    setLocalStoredCategories(list);
+    return list;
+  } catch (e) {
+    console.warn('Supabase categories error, using cache:', e);
+    return getLocalStoredCategories().filter(c => c.is_active);
+  }
 };
 
 export const getAllCategories = async (): Promise<Category[]> => {
@@ -886,149 +783,138 @@ export const getAllCategories = async (): Promise<Category[]> => {
       .select('*')
       .order('display_order');
 
-    if (!error && data && data.length > 0) {
-      const normalized = (data as Category[]).map(c => {
-        if (c.slug === 'hijabs') {
-          return {
-            ...c,
-            name: 'Hijabs',
-            slug: 'hijabs',
-            image_url: '/assets/aistudio/image_60c3b658.png',
-          };
-        }
-        if (c.slug === 'khimars') {
-          return {
-            ...c,
-            name: 'Khimars',
-            slug: 'khimars',
-            image_url: '/assets/aistudio/image_f09b866e.png',
-          };
-        }
-        if (c.slug === 'veils' || c.slug === 'niqabs-veils') {
-          return {
-            ...c,
-            name: 'Veils',
-            slug: 'veils',
-            image_url: 'https://i.ibb.co/q2Lr31M/Whats-App-Image-2026-11-01-at-9-53-08-PM-1.jpg',
-          };
-        }
-        return c;
-      });
-      setLocalStoredCategories(normalized);
-      return normalized;
-    }
+    if (error) throw error;
+
+    const list = (data || []) as Category[];
+    setLocalStoredCategories(list);
+    return list;
   } catch (e) {
     console.warn('Supabase getAllCategories error, using cache:', e);
+    return getLocalStoredCategories();
   }
-
-  return getLocalStoredCategories();
 };
 
 export const saveCategory = async (category: Partial<Category>): Promise<Category> => {
-  const current = getLocalStoredCategories();
-  let savedCategory: Category;
+  const cleanName = (category.name || '').trim();
+  if (!cleanName) throw new Error('Category name is required.');
 
-  if (category.id) {
-    savedCategory = {
-      ...current.find(c => c.id === category.id)!,
-      ...category,
-    } as Category;
-    setLocalStoredCategories(current.map(c => c.id === category.id ? savedCategory : c));
+  const payload = {
+    name: cleanName,
+    slug:
+      (category.slug || cleanName)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || generateValidUuid(),
+    description: category.description || '',
+    image_url: category.image_url || '',
+    display_order: Number(category.display_order) || 1,
+    is_active: category.is_active ?? true,
+    updated_at: new Date().toISOString(),
+  };
 
-    try {
-      await supabase.from('categories').update(category).eq('id', category.id);
-    } catch (e) {
-      console.warn('Supabase category update error:', e);
+  let savedRow: Category;
+
+  if (category.id && isValidUuid(category.id)) {
+    const { data, error } = await supabase
+      .from('categories')
+      .update(payload)
+      .eq('id', category.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Could not update category: ${error.message}`);
     }
+    savedRow = data as Category;
   } else {
-    const newId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') 
-      ? crypto.randomUUID() 
-      : '00000000-0000-4000-8000-' + Math.floor(Math.random() * 0xffffffffffff).toString(16).padStart(12, '0');
-    savedCategory = {
-      ...category,
-      id: newId,
-      slug: category.slug || (category.name ? category.name.toLowerCase().replace(/ /g, '-') : newId),
-      display_order: category.display_order ?? current.length + 1,
-      is_active: category.is_active ?? true,
-    } as Category;
-    setLocalStoredCategories([...current, savedCategory]);
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        id: generateValidUuid(),
+        ...payload,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    try {
-      await supabase.from('categories').insert({
-        name: savedCategory.name,
-        slug: savedCategory.slug,
-        description: savedCategory.description,
-        image_url: savedCategory.image_url,
-        display_order: savedCategory.display_order,
-        is_active: savedCategory.is_active,
-      });
-    } catch (e) {
-      console.warn('Supabase category insert error:', e);
+    if (error) {
+      throw new Error(`Could not create category: ${error.message}`);
     }
+    savedRow = data as Category;
   }
 
-  return savedCategory;
+  const current = getLocalStoredCategories();
+  const next = current.some(c => c.id === savedRow.id)
+    ? current.map(c => (c.id === savedRow.id ? savedRow : c))
+    : [...current, savedRow];
+  setLocalStoredCategories(next);
+
+  notifyCatalogueUpdated({ categoryId: savedRow.id });
+  return savedRow;
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('categories').delete().eq('id', id);
+  if (error) {
+    throw new Error(`Could not delete category: ${error.message}`);
+  }
+  setLocalStoredCategories(getLocalStoredCategories().filter(c => c.id !== id));
+  notifyCatalogueUpdated({ categoryId: id, categoryDeleted: true });
 };
 
 // Inventory & Variations API
 export const updateVariationStock = async (variationId: string, quantity: number) => {
-  // Update in local cache
-  const products = getLocalStoredProducts();
-  let updatedVar: any = null;
-  const updatedProds = products.map(p => {
-    if (p.variations) {
-      const match = p.variations.find(v => v.id === variationId);
-      if (match) {
-        match.stock_quantity = quantity;
-        updatedVar = match;
-      }
-    }
-    return p;
-  });
-  setLocalStoredProducts(updatedProds);
+  const cleanQty = Math.max(0, Math.round(Number(quantity) || 0));
 
-  try {
-    const { data } = await supabase
-      .from('product_variations')
-      .update({ stock_quantity: quantity })
-      .eq('id', variationId)
-      .select();
-    if (data && data[0]) return data[0];
-  } catch (e) {
-    console.warn('Supabase variation update error:', e);
+  const { data, error } = await supabase
+    .from('product_variations')
+    .update({ stock_quantity: cleanQty, updated_at: new Date().toISOString() })
+    .eq('id', variationId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Could not update stock in database: ${error.message}`);
   }
 
-  return updatedVar || { id: variationId, stock_quantity: quantity };
+  const products = getLocalStoredProducts();
+  const updatedProds = products.map(p => ({
+    ...p,
+    variations: (p.variations || []).map(v =>
+      v.id === variationId ? { ...v, stock_quantity: cleanQty } : v
+    ),
+  }));
+  setLocalStoredProducts(updatedProds);
+
+  notifyCatalogueUpdated({ variationId, stockQuantity: cleanQty });
+  return data;
 };
 
 export const upsertProductVariations = async (variations: ProductVariation[]) => {
-  try {
-    await supabase.from('product_variations').upsert(variations);
-  } catch (e) {
-    console.warn('Supabase variations upsert error:', e);
+  const { error } = await supabase.from('product_variations').upsert(variations, { onConflict: 'id' });
+  if (error) {
+    throw new Error(`Could not save variations: ${error.message}`);
   }
+  notifyCatalogueUpdated({ variationsUpdated: true });
 };
 
-// Image Upload API (Supports mobile camera images up to 30MB with automatic client-side compression)
+// Image Upload API — uploads compressed JPEG to Supabase Storage and fails loudly on storage/auth errors
 export const uploadProductImage = async (file: File): Promise<string> => {
-  // Validate file type
   if (!file.type.startsWith('image/')) {
     throw new Error('Please select an image file (PNG, JPG, WebP, HEIC).');
   }
 
-  // Support mobile camera images up to 30MB
   if (file.size > 30 * 1024 * 1024) {
     throw new Error('Image size must be less than 30MB.');
   }
 
-  // Pre-compress image using HTML5 Canvas to keep uploads ultra fast & light (under 400KB)
-  const compressedDataUrl: string = await new Promise((resolve) => {
+  const compressedBlob: Blob = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => resolve(URL.createObjectURL(file));
+    reader.onerror = () => reject(new Error('Could not read the selected image file.'));
     reader.onload = (e) => {
       const rawDataUrl = e.target?.result as string;
       const img = new Image();
-      img.onerror = () => resolve(rawDataUrl);
+      img.onerror = () => reject(new Error('Selected file could not be decoded as an image.'));
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
@@ -1037,29 +923,32 @@ export const uploadProductImage = async (file: File): Promise<string> => {
           let width = img.width;
           let height = img.height;
 
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height = Math.round((height * MAX_WIDTH) / width);
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width = Math.round((width * MAX_HEIGHT) / height);
-              height = MAX_HEIGHT;
-            }
+          if (width > height && width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          } else if (height >= width && height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
           }
 
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
-          } else {
-            resolve(rawDataUrl);
+          if (!ctx) {
+            resolve(file);
+            return;
           }
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) resolve(blob);
+              else resolve(file);
+            },
+            'image/jpeg',
+            0.85
+          );
         } catch {
-          resolve(rawDataUrl);
+          resolve(file);
         }
       };
       img.src = rawDataUrl;
@@ -1067,33 +956,25 @@ export const uploadProductImage = async (file: File): Promise<string> => {
     reader.readAsDataURL(file);
   });
 
-  // Convert compressed data URL to Blob for Supabase storage upload
-  try {
-    const byteString = atob(compressedDataUrl.split(',')[1]);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const compressedBlob = new Blob([ab], { type: 'image/jpeg' });
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
+  const filePath = `products/${fileName}`;
 
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
-    const filePath = `products/${fileName}`;
+  const { error: uploadError } = await supabase.storage
+    .from('product-images')
+    .upload(filePath, compressedBlob, {
+      contentType: compressedBlob.type || 'image/jpeg',
+      cacheControl: '3600',
+      upsert: true,
+    });
 
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, compressedBlob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: true });
-
-    if (!uploadError) {
-      const { data } = supabase.storage.from('product-images').getPublicUrl(filePath);
-      if (data?.publicUrl) {
-        return data.publicUrl;
-      }
-    }
-  } catch (err) {
-    console.warn('Supabase storage upload note, using optimized data URL:', err);
+  if (uploadError) {
+    throw new Error(`Storage upload failed: ${uploadError.message}. Please ensure you are signed in as admin.`);
   }
 
-  // Return the compressed data URL which is fully functional across browsers and mobile
-  return compressedDataUrl;
+  const { data } = supabase.storage.from('product-images').getPublicUrl(filePath);
+  if (!data?.publicUrl) {
+    throw new Error('Could not retrieve public URL for uploaded image.');
+  }
+
+  return data.publicUrl;
 };

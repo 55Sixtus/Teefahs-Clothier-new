@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, X, ArrowRight, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SUPPLIED_PHOTOS } from '../data/assets';
-import { getAllProducts } from '../lib/api';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 import { Product } from '../types/product';
 import ProductModal from './ProductModal';
 import { useCart } from '../context/CartContext';
@@ -24,28 +24,11 @@ interface GallerySectionProps {
 
 export default function GallerySection({ isStandalone = false, limit }: GallerySectionProps) {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { products, categories: productCategories } = useRealtimeProducts({ includeUnpublished: false });
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeItem, setActiveItem] = useState<GalleryItem | null>(null);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [quickAdded, setQuickAdded] = useState(false);
-
-  useEffect(() => {
-    loadProducts();
-
-    const handleUpdate = () => loadProducts();
-    window.addEventListener('teefahs_catalogue_updated', handleUpdate);
-    return () => window.removeEventListener('teefahs_catalogue_updated', handleUpdate);
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      const live = await getAllProducts();
-      setProducts(live);
-    } catch (e) {
-      console.error('Failed to load products for gallery:', e);
-    }
-  };
 
   // Build gallery items linked directly to live products in database
   const galleryItems: GalleryItem[] = useMemo(() => {
@@ -185,10 +168,17 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
   }, [activeItem, currentIndex, filteredItems]);
 
   const handleShopThisLook = (product: Product) => {
+    const variations = product.variations || [];
+    const totalStock = variations.reduce(
+      (sum, v) => sum + Math.max(0, Number(v.stock_quantity) || 0),
+      0
+    );
+    if (variations.length > 0 && totalStock <= 0) return;
+    const inStockVar = variations.find(v => (v.stock_quantity || 0) > 0) || variations[0];
     addToCart({
       product,
-      selectedSize: product.variations?.[0]?.size || 'Standard',
-      selectedColour: product.variations?.[0]?.colour || 'Original',
+      selectedSize: inStockVar?.size || 'To Confirm',
+      selectedColour: inStockVar?.colour || 'As Pictured',
       quantity: 1,
     });
     setQuickAdded(true);
@@ -279,7 +269,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                     {item.title}
                   </h4>
                   {item.product && (() => {
-                    const pricing = calculateProductPricing(item.product);
+                    const pricing = calculateProductPricing(item.product, productCategories);
                     return (
                       <div className="flex items-baseline gap-1.5 mt-1">
                         <span className="text-xs text-amber-300 font-bold">
@@ -302,12 +292,12 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
 
               {/* Static Price Badge on Corner */}
               {item.product && (() => {
-                const pricing = calculateProductPricing(item.product);
+                const pricing = calculateProductPricing(item.product, productCategories);
                 return (
                   <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-2 py-0.5 bg-stone-900/85 backdrop-blur-xs text-white text-[11px] font-semibold rounded-xs shadow-sm">
                     <span>{pricing.formattedSellingPrice}</span>
                     {pricing.hasDiscount && (
-                      <span className="text-[9px] font-bold text-amber-300">10% OFF</span>
+                      <span className="text-[9px] font-bold text-amber-300">{pricing.discountPercentage}% OFF</span>
                     )}
                   </div>
                 );
@@ -323,7 +313,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                 <div className="flex items-center justify-between mt-0.5">
                   <div className="flex items-baseline gap-1.5">
                     {item.product ? (() => {
-                      const pricing = calculateProductPricing(item.product);
+                      const pricing = calculateProductPricing(item.product, productCategories);
                       return (
                         <>
                           <span className="text-xs font-bold text-stone-900">
@@ -420,7 +410,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                     </p>
 
                     {(() => {
-                      const pricing = calculateProductPricing(activeItem.product);
+                      const pricing = calculateProductPricing(activeItem.product, productCategories);
                       return (
                         <div className="p-3 bg-stone-50 border border-stone-200 rounded-xs flex items-center justify-between">
                           <div>
@@ -440,7 +430,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
                           </div>
                           {pricing.hasDiscount && (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-xs font-bold rounded-xs uppercase tracking-wider">
-                              10% OFF
+                              {pricing.discountPercentage}% OFF
                             </span>
                           )}
                         </div>
@@ -472,27 +462,46 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
 
               {/* Action Buttons */}
               <div className="pt-6 border-t border-stone-200 mt-6 space-y-3">
-                {activeItem.product ? (
-                  <>
-                    <button
-                      onClick={() => handleShopThisLook(activeItem.product!)}
-                      className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors shadow-sm cursor-pointer"
-                    >
-                      <ShoppingBag size={14} />
-                      <span>{quickAdded ? 'Added to Bag!' : 'Shop This Look'}</span>
-                    </button>
+                {activeItem.product ? (() => {
+                  const vars = activeItem.product.variations || [];
+                  const totalStock = vars.reduce(
+                    (sum, v) => sum + Math.max(0, Number(v.stock_quantity) || 0),
+                    0
+                  );
+                  const outOfStock = vars.length > 0 && totalStock <= 0;
+                  return (
+                    <>
+                      <button
+                        disabled={outOfStock}
+                        onClick={() => handleShopThisLook(activeItem.product!)}
+                        className={`w-full py-3 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors shadow-sm ${
+                          outOfStock
+                            ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                            : 'bg-stone-900 hover:bg-stone-800 text-white cursor-pointer'
+                        }`}
+                      >
+                        <ShoppingBag size={14} />
+                        <span>
+                          {outOfStock
+                            ? 'Out of Stock'
+                            : quickAdded
+                            ? 'Added to Bag!'
+                            : 'Shop This Look'}
+                        </span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        setSelectedProductForModal(activeItem.product!);
-                        setActiveItem(null);
-                      }}
-                      className="w-full py-2.5 border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors cursor-pointer"
-                    >
-                      <span>View Garment Details</span>
-                    </button>
-                  </>
-                ) : (
+                      <button
+                        onClick={() => {
+                          setSelectedProductForModal(activeItem.product!);
+                          setActiveItem(null);
+                        }}
+                        className="w-full py-2.5 border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors cursor-pointer"
+                      >
+                        <span>View Garment Details</span>
+                      </button>
+                    </>
+                  );
+                })() : (
                   <Link
                     to="/shop"
                     className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2 rounded-xs transition-colors"
@@ -511,6 +520,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
       {selectedProductForModal && (
         <ProductModal
           product={selectedProductForModal}
+          categories={productCategories}
           isOpen={!!selectedProductForModal}
           onClose={() => setSelectedProductForModal(null)}
         />

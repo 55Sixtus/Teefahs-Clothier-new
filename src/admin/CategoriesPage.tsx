@@ -1,15 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Check, X, Image as ImageIcon, FolderTree, AlertCircle } from 'lucide-react';
-import { getAllCategories, saveCategory, getAllProducts, uploadProductImage } from '../lib/api';
+import { useState, useMemo } from 'react';
+import { Plus, Edit2, Check, X, Image as ImageIcon, AlertCircle, Trash2, CheckCircle2 } from 'lucide-react';
+import { saveCategory, deleteCategory, uploadProductImage } from '../lib/api';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 import { Category } from '../types/product';
 import { ASSETS } from '../data/assets';
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+  const { products, categories, loading, error: realtimeError, refreshProducts } = useRealtimeProducts({
+    includeUnpublished: true,
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Page-level alerts
+  const [pageError, setPageError] = useState('');
+  const [pageSuccess, setPageSuccess] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<Category | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Form fields
   const [name, setName] = useState('');
@@ -22,30 +31,15 @@ export default function CategoriesPage() {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [cats, prods] = await Promise.all([getAllCategories(), getAllProducts()]);
-      setCategories(cats);
-
-      // Compute counts
-      const counts: Record<string, number> = {};
-      for (const p of prods) {
-        if (p.category_id) {
-          counts[p.category_id] = (counts[p.category_id] || 0) + 1;
-        }
+  const productCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of products) {
+      if (p.category_id) {
+        counts[p.category_id] = (counts[p.category_id] || 0) + 1;
       }
-      setProductCounts(counts);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
     }
-  };
+    return counts;
+  }, [products]);
 
   const openAddModal = () => {
     setEditingId(null);
@@ -75,6 +69,7 @@ export default function CategoriesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setMsg(null);
     try {
       const url = await uploadProductImage(file);
       setImageUrl(url);
@@ -82,6 +77,7 @@ export default function CategoriesPage() {
       setMsg({ type: 'error', text: err.message || 'Image upload failed.' });
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -91,6 +87,7 @@ export default function CategoriesPage() {
 
     setSaving(true);
     setMsg(null);
+    setPageError('');
     try {
       await saveCategory({
         id: editingId || undefined,
@@ -103,10 +100,12 @@ export default function CategoriesPage() {
       });
 
       setMsg({ type: 'success', text: `Category "${name}" successfully saved.` });
-      await loadData();
+      setPageSuccess(`Category "${name}" saved cleanly.`);
+      await refreshProducts();
       setTimeout(() => {
         setIsEditing(false);
-      }, 1000);
+      }, 750);
+      setTimeout(() => setPageSuccess(''), 3000);
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'Failed to save category.' });
     } finally {
@@ -114,8 +113,47 @@ export default function CategoriesPage() {
     }
   };
 
+  const handleToggleActive = async (cat: Category) => {
+    setTogglingId(cat.id);
+    setPageError('');
+    try {
+      await saveCategory({
+        ...cat,
+        is_active: !cat.is_active,
+      });
+      setPageSuccess(`Category "${cat.name}" is now ${!cat.is_active ? 'Active' : 'Inactive'}.`);
+      await refreshProducts();
+      setTimeout(() => setPageSuccess(''), 3000);
+    } catch (err: any) {
+      setPageError(err?.message || 'Could not update category status.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    const target = pendingDelete;
+    setDeletingId(target.id);
+    setPageError('');
+    try {
+      await deleteCategory(target.id);
+      setPageSuccess(`Category "${target.name}" deleted from Supabase.`);
+      await refreshProducts();
+      setTimeout(() => setPageSuccess(''), 3000);
+    } catch (err: any) {
+      setPageError(
+        err?.message ||
+          `Could not delete "${target.name}". Make sure no products are currently assigned to it.`
+      );
+    } finally {
+      setDeletingId(null);
+      setPendingDelete(null);
+    }
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-16">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-stone-200 gap-4">
         <div>
@@ -129,16 +167,43 @@ export default function CategoriesPage() {
         </div>
         <button
           onClick={openAddModal}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors shadow-xs"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors shadow-xs cursor-pointer"
         >
           <Plus size={15} />
           <span>Add New Category</span>
         </button>
       </div>
 
+      {/* Feedback Banners */}
+      {(pageError || realtimeError) && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-800 text-xs rounded-sm flex items-start justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <span className="font-medium">{pageError || realtimeError}</span>
+          </div>
+          {pageError && (
+            <button onClick={() => setPageError('')} className="text-red-500 hover:text-red-800 cursor-pointer">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {pageSuccess && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-sm flex items-start justify-between gap-2.5">
+          <div className="flex items-start gap-2.5">
+            <CheckCircle2 size={16} className="text-emerald-700 flex-shrink-0 mt-0.5" />
+            <span className="font-medium">{pageSuccess}</span>
+          </div>
+          <button onClick={() => setPageSuccess('')} className="text-emerald-600 hover:text-emerald-900 cursor-pointer">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Categories Table */}
-      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="bg-white border border-stone-200 rounded-sm shadow-xs overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left border-collapse">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 text-[10px] uppercase tracking-wider">
               <th className="py-3 px-4 font-semibold w-16">Cover</th>
@@ -152,58 +217,93 @@ export default function CategoriesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 text-xs">
-            {categories.map(c => (
-              <tr key={c.id} className="hover:bg-stone-50/60 transition-colors">
-                <td className="py-3 px-4">
-                  {c.image_url ? (
-                    <img
-                      src={c.image_url}
-                      alt={c.name}
-                      className="w-10 h-14 object-cover object-top rounded-xs border border-stone-200"
-                    />
-                  ) : (
-                    <div className="w-10 h-14 bg-stone-100 flex items-center justify-center rounded-xs text-stone-400">
-                      <ImageIcon size={16} />
-                    </div>
-                  )}
-                </td>
-                <td className="py-3 px-4">
-                  <span className="font-semibold text-stone-900 block">{c.name}</span>
-                </td>
-                <td className="py-3 px-4 text-stone-500 font-mono text-[11px] hidden md:table-cell">
-                  {c.slug}
-                </td>
-                <td className="py-3 px-4 text-stone-600 line-clamp-2 max-w-xs hidden lg:table-cell font-light">
-                  {c.description || '—'}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span className="px-2 py-0.5 bg-stone-100 text-stone-800 rounded font-semibold text-[11px]">
-                    {productCounts[c.id] || 0}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-center text-stone-500 font-medium">
-                  {c.display_order ?? 1}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                      c.is_active ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-stone-100 text-stone-600'
-                    }`}
-                  >
-                    {c.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <button
-                    onClick={() => openEditModal(c)}
-                    className="inline-flex items-center gap-1 text-xs text-stone-600 hover:text-stone-900 font-medium px-2 py-1 border border-stone-200 rounded hover:border-stone-400 transition-colors"
-                  >
-                    <Edit2 size={12} />
-                    <span>Edit</span>
-                  </button>
+            {loading ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-stone-400">
+                  <div className="inline-block animate-spin w-6 h-6 border-2 border-stone-900 border-t-transparent rounded-full mb-2" />
+                  <p className="text-xs uppercase tracking-wider">Loading Categories...</p>
                 </td>
               </tr>
-            ))}
+            ) : categories.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-stone-500 font-light">
+                  No categories found. Click "Add New Category" to create one.
+                </td>
+              </tr>
+            ) : (
+              categories.map(c => (
+                <tr key={c.id} className="hover:bg-stone-50/60 transition-colors">
+                  <td className="py-3 px-4">
+                    {c.image_url ? (
+                      <img
+                        src={c.image_url}
+                        alt={c.name}
+                        className="w-10 h-14 object-cover object-top rounded-xs border border-stone-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-14 bg-stone-100 flex items-center justify-center rounded-xs text-stone-400">
+                        <ImageIcon size={16} />
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="font-semibold text-stone-900 block">{c.name}</span>
+                  </td>
+                  <td className="py-3 px-4 text-stone-500 font-mono text-[11px] hidden md:table-cell">
+                    {c.slug}
+                  </td>
+                  <td className="py-3 px-4 text-stone-600 line-clamp-2 max-w-xs hidden lg:table-cell font-light">
+                    {c.description || '—'}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="px-2 py-0.5 bg-stone-100 text-stone-800 rounded font-semibold text-[11px]">
+                      {productCounts[c.id] || 0}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center text-stone-500 font-medium">
+                    {c.display_order ?? 1}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <button
+                      type="button"
+                      disabled={togglingId === c.id}
+                      onClick={() => handleToggleActive(c)}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
+                        c.is_active
+                          ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : 'bg-stone-100 hover:bg-stone-200 text-stone-600 border border-stone-200'
+                      }`}
+                      title={c.is_active ? 'Click to hide category from storefront' : 'Click to make category active'}
+                    >
+                      {togglingId === c.id ? 'Updating...' : c.is_active ? 'Active' : 'Inactive'}
+                    </button>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="inline-flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => openEditModal(c)}
+                        className="inline-flex items-center gap-1 text-xs text-stone-600 hover:text-stone-900 font-medium px-2 py-1 border border-stone-200 rounded hover:border-stone-400 transition-colors cursor-pointer"
+                      >
+                        <Edit2 size={12} />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => setPendingDelete(c)}
+                        disabled={(productCounts[c.id] || 0) > 0}
+                        className="p-1.5 text-stone-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        title={
+                          (productCounts[c.id] || 0) > 0
+                            ? 'Reassign or delete products in this category before deleting it'
+                            : 'Delete empty category'
+                        }
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -218,7 +318,7 @@ export default function CategoriesPage() {
               </h2>
               <button
                 onClick={() => setIsEditing(false)}
-                className="text-stone-400 hover:text-stone-700"
+                className="text-stone-400 hover:text-stone-700 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -287,14 +387,14 @@ export default function CategoriesPage() {
                 </label>
                 <div className="flex gap-2">
                   <input
-                    type="url"
+                    type="text"
                     value={imageUrl}
                     onChange={e => setImageUrl(e.target.value)}
                     className="flex-1 p-2 bg-stone-50 border border-stone-300 rounded-sm text-stone-900 text-xs"
-                    placeholder="https://..."
+                    placeholder="https://... or /assets/..."
                   />
                   <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[11px] font-semibold uppercase tracking-wider border border-stone-300 rounded-sm cursor-pointer transition-colors flex items-center gap-1">
-                    <span>Upload</span>
+                    <span>{uploading ? 'Uploading...' : 'Upload'}</span>
                     <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                   </label>
                 </div>
@@ -315,7 +415,7 @@ export default function CategoriesPage() {
                     type="number"
                     min="1"
                     value={displayOrder}
-                    onChange={e => setDisplayOrder(parseInt(e.target.value) || 1)}
+                    onChange={e => setDisplayOrder(parseInt(e.target.value, 10) || 1)}
                     className="w-full p-2 bg-stone-50 border border-stone-300 rounded-sm text-stone-900"
                   />
                 </div>
@@ -336,19 +436,48 @@ export default function CategoriesPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 border border-stone-300 text-stone-700 uppercase font-semibold tracking-wider hover:bg-stone-50 rounded-sm"
+                  className="px-4 py-2 border border-stone-300 text-stone-700 uppercase font-semibold tracking-wider hover:bg-stone-50 rounded-sm cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-2 bg-stone-900 text-white uppercase font-semibold tracking-wider hover:bg-stone-800 rounded-sm disabled:opacity-50"
+                  className="px-6 py-2 bg-stone-900 text-white uppercase font-semibold tracking-wider hover:bg-stone-800 rounded-sm disabled:opacity-50 cursor-pointer"
                 >
                   {saving ? 'Saving...' : 'Save Category'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Category Confirmation Modal */}
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm border border-stone-200 shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <h3 className="font-serif text-lg text-stone-900 text-center">Delete Category?</h3>
+            <p className="text-xs text-stone-600 text-center leading-relaxed">
+              Delete <strong>"{pendingDelete.name}"</strong> permanently from Supabase? This category currently has no products assigned.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="flex-1 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-stone-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deletingId !== null}
+                className="flex-1 py-2.5 bg-red-600 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-red-700 cursor-pointer"
+              >
+                {deletingId ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

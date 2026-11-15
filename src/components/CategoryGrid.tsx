@@ -1,25 +1,22 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { getActiveCategories, getPublishedProducts } from '../lib/api';
-import { Category, Product } from '../types/product';
+import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 
 export default function CategoryGrid({ limit }: { limit?: number }) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([getActiveCategories(), getPublishedProducts()])
-      .then(([cats, prods]) => {
-        setCategories(cats);
-        setProducts(prods);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { categories, products, loading } = useRealtimeProducts({ includeUnpublished: false });
 
   const displayedCategories = limit ? categories.slice(0, limit) : categories;
+
+  if (loading && displayedCategories.length === 0) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
+        {[...Array(limit || 4)].map((_, i) => (
+          <div key={i} className="aspect-[3/4] bg-stone-200 dark:bg-stone-800 rounded-sm" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -32,7 +29,7 @@ export default function CategoryGrid({ limit }: { limit?: number }) {
           <Link
             key={category.id}
             to={`/shop?category=${category.slug || category.id}`}
-            className="group relative aspect-[3/4] overflow-hidden bg-stone-900 border border-stone-200 rounded-sm shadow-xs hover:shadow-xl transition-all duration-500 flex flex-col justify-end p-6"
+            className="group relative aspect-[3/4] overflow-hidden bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-sm shadow-xs hover:shadow-xl transition-all duration-500 flex flex-col justify-end p-6"
           >
             {/* Background Image */}
             <img

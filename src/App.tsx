@@ -25,6 +25,7 @@ import CollectionsPage from './components/CollectionsPage';
 import OurStoryPage from './components/OurStoryPage';
 import ContactPage from './components/ContactPage';
 import GalleryPage from './components/GalleryPage';
+import ProductDetailPage from './components/ProductDetailPage';
 import GallerySection from './components/GallerySection';
 import PromoBanner from './components/PromoBanner';
 import SEO from './components/SEO';
@@ -57,7 +58,7 @@ function HomePage() {
             to="/collections"
             className="text-xs uppercase tracking-wider font-semibold text-stone-700 dark:text-stone-300 hover:text-emerald-900 dark:hover:text-amber-300 transition-colors"
           >
-            All 8 Collections &rarr;
+            All Collections &rarr;
           </Link>
         </div>
         <CategoryGrid limit={4} />
@@ -176,6 +177,7 @@ export default function App() {
             {/* Public Storefront Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:slugOrId" element={<ProductDetailPage />} />
             <Route path="/new-arrivals" element={<NewArrivalsPage />} />
             <Route path="/collections" element={<CollectionsPage />} />
             <Route path="/gallery" element={<GalleryPage />} />

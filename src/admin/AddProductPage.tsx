@@ -1,52 +1,71 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Upload, 
-  Plus, 
-  X, 
-  Check, 
-  AlertCircle, 
-  Image as ImageIcon, 
-  Star, 
-  Sparkle,
-  Layers,
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Upload,
+  Plus,
+  X,
+  Check,
+  AlertCircle,
+  Image as ImageIcon,
+  Star,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Camera,
   CheckCircle2,
   ExternalLink,
-  ShoppingBag
+  RefreshCw,
 } from 'lucide-react';
-import { saveProduct, getActiveCategories, uploadProductImage, generateValidUuid } from '../lib/api';
+import { saveProduct, getAllCategories, uploadProductImage, generateValidUuid } from '../lib/api';
 import { Category } from '../types/product';
 import { ASSETS } from '../data/assets';
 
 const PRESET_SIZES = ['52', '54', '56', '58', '60', 'Free Size', 'S', 'M', 'L', 'XL'];
 const PRESET_COLOURS = [
-  'Midnight Black', 
-  'Navy Blue', 
-  'Olive Green', 
-  'Dusty Rose', 
-  'Chocolate Brown', 
-  'Crisp White', 
-  'Sage Green', 
-  'Champagne Gold'
+  'Midnight Black',
+  'Navy Blue',
+  'Olive Green',
+  'Dusty Rose',
+  'Chocolate Brown',
+  'Crisp White',
+  'Sage Green',
+  'Champagne Gold',
 ];
 
+interface VariationDraft {
+  id: string;
+  sku: string;
+  size: string;
+  colour: string;
+  stock_quantity: number;
+}
+
+const makeVarKey = (size: string, colour: string) => `${size}:::${colour}`;
+
 export default function AddProductPage() {
-  const navigate = useNavigate();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [replaceTargetIdx, setReplaceTargetIdx] = useState<number | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string; price: number; imageUrl?: string; slug?: string } | null>(null);
+  const [createdProduct, setCreatedProduct] = useState<{
+    id: string;
+    name: string;
+    price: number;
+    imageUrl?: string;
+    slug?: string;
+  } | null>(null);
 
   // 1. Core Simple Product Details
   const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -58,12 +77,13 @@ export default function AddProductPage() {
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // 3. Sizing & Colours
+  // 3. Sizing, Colours & Per-Variation Stock
   const [selectedSizes, setSelectedSizes] = useState<string[]>(['54', '56']);
   const [customSizeInput, setCustomSizeInput] = useState('');
   const [selectedColours, setSelectedColours] = useState<string[]>(['Midnight Black']);
   const [customColourInput, setCustomColourInput] = useState('');
-  const [stockAvailable, setStockAvailable] = useState<number>(10);
+  const [bulkStockInput, setBulkStockInput] = useState<string>('10');
+  const [variationMap, setVariationMap] = useState<Record<string, VariationDraft>>({});
 
   // 4. Publishing
   const [isPublished, setIsPublished] = useState(true);
@@ -71,13 +91,56 @@ export default function AddProductPage() {
   const [isFeatured, setIsFeatured] = useState(false);
 
   useEffect(() => {
-    getActiveCategories().then(cats => {
-      setCategories(cats);
-      if (cats.length > 0) setCategoryId(cats[0].id);
-    });
+    getAllCategories()
+      .then(cats => {
+        setCategories(cats);
+        if (cats.length > 0) setCategoryId(cats[0].id);
+      })
+      .catch(err => {
+        setErrorMsg(err?.message || 'Could not load categories.');
+      });
   }, []);
 
-  // Handle file uploads (click or drag-and-drop)
+  // Auto-sync slug unless owner edited slug manually
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      setSlug(
+        name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+      );
+    }
+  }, [name, slugManuallyEdited]);
+
+  // Keep variationMap synchronized with selectedSizes × selectedColours
+  useEffect(() => {
+    const activeSizes = selectedSizes.length > 0 ? selectedSizes : ['Standard'];
+    const activeColours = selectedColours.length > 0 ? selectedColours : ['Original'];
+    const defaultQty = Math.max(0, parseInt(bulkStockInput, 10) || 0);
+
+    setVariationMap(prev => {
+      const next: Record<string, VariationDraft> = {};
+      for (const sz of activeSizes) {
+        for (const clr of activeColours) {
+          const key = makeVarKey(sz, clr);
+          if (prev[key]) {
+            next[key] = prev[key];
+          } else {
+            next[key] = {
+              id: generateValidUuid(),
+              sku: `TC-${(slug || name || 'ITEM').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)}-${sz.toUpperCase().replace(/[^A-Z0-9]/g, '')}`,
+              size: sz,
+              colour: clr,
+              stock_quantity: defaultQty,
+            };
+          }
+        }
+      }
+      return next;
+    });
+  }, [selectedSizes, selectedColours]);
+
   const processFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
     setUploading(true);
@@ -105,6 +168,26 @@ export default function AddProductPage() {
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       processFiles(e.target.files);
+      e.target.value = '';
+    }
+  };
+
+  const handleReplacePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const idx = replaceTargetIdx;
+    e.target.value = '';
+    setReplaceTargetIdx(null);
+
+    if (!file || idx === null) return;
+    setUploading(true);
+    setErrorMsg('');
+    try {
+      const uploadedUrl = await uploadProductImage(file);
+      setPhotos(prev => prev.map((url, i) => (i === idx ? uploadedUrl : url)));
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Could not replace photograph.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -128,13 +211,34 @@ export default function AddProductPage() {
 
   const removePhoto = (index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
-    if (mainPhotoIndex >= index && mainPhotoIndex > 0) {
+    if (mainPhotoIndex === index) {
+      setMainPhotoIndex(0);
+    } else if (mainPhotoIndex > index) {
       setMainPhotoIndex(mainPhotoIndex - 1);
     }
   };
 
+  const movePhoto = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= photos.length) return;
+
+    setPhotos(prev => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[targetIndex];
+      copy[targetIndex] = temp;
+      return copy;
+    });
+
+    if (mainPhotoIndex === index) {
+      setMainPhotoIndex(targetIndex);
+    } else if (mainPhotoIndex === targetIndex) {
+      setMainPhotoIndex(index);
+    }
+  };
+
   const toggleSize = (size: string) => {
-    setSelectedSizes(prev => 
+    setSelectedSizes(prev =>
       prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
     );
   };
@@ -148,7 +252,7 @@ export default function AddProductPage() {
   };
 
   const toggleColour = (col: string) => {
-    setSelectedColours(prev => 
+    setSelectedColours(prev =>
       prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
     );
   };
@@ -161,6 +265,43 @@ export default function AddProductPage() {
     }
   };
 
+  const updateVariationStock = (key: string, qty: number) => {
+    const valid = Math.max(0, Math.round(qty) || 0);
+    setVariationMap(prev => {
+      const target = prev[key];
+      if (!target) return prev;
+      return {
+        ...prev,
+        [key]: { ...target, stock_quantity: valid },
+      };
+    });
+  };
+
+  const updateVariationSku = (key: string, nextSku: string) => {
+    setVariationMap(prev => {
+      const target = prev[key];
+      if (!target) return prev;
+      return {
+        ...prev,
+        [key]: { ...target, sku: nextSku },
+      };
+    });
+  };
+
+  const applyBulkStockToAll = () => {
+    const qty = Math.max(0, parseInt(bulkStockInput, 10) || 0);
+    setVariationMap(prev => {
+      const next: Record<string, VariationDraft> = {};
+      for (const [key, v] of Object.entries(prev)) {
+        next[key] = { ...v, stock_quantity: qty };
+      }
+      return next;
+    });
+  };
+
+  const variationList = Object.values(variationMap);
+  const totalUnitsInStock = variationList.reduce((sum, v) => sum + (v.stock_quantity || 0), 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -172,12 +313,19 @@ export default function AddProductPage() {
     const cleanedPrice = price.toString().replace(/,/g, '').trim();
     const parsedPrice = parseFloat(cleanedPrice);
     if (!cleanedPrice || isNaN(parsedPrice) || parsedPrice <= 0) {
-      setErrorMsg('Please enter a valid selling price in Naira (₦), e.g. 700 or 1500.');
+      setErrorMsg('Please enter a valid selling price in Naira (₦), e.g. 1500 or 229500.');
+      return;
+    }
+
+    const cleanedSale = salePrice.toString().replace(/,/g, '').trim();
+    const parsedSalePrice = cleanedSale ? parseFloat(cleanedSale) : undefined;
+    if (cleanedSale && (isNaN(parsedSalePrice!) || parsedSalePrice! < 0)) {
+      setErrorMsg('Please enter a valid optional original strike-through price.');
       return;
     }
 
     if (photos.length === 0) {
-      setErrorMsg('Please upload at least one product photo or pick one from the photoshoot collection.');
+      setErrorMsg('Please upload at least one product photo or pick one from the studio collection.');
       return;
     }
 
@@ -185,67 +333,49 @@ export default function AddProductPage() {
     setErrorMsg('');
 
     try {
-      // Auto generate slug
-      const generatedSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+      const finalSlug =
+        (slug.trim() || name)
+          .toLowerCase()
+          .replace(/[^a-z0-9-]+/g, '-')
+          .replace(/(^-|-$)/g, '') || generateValidUuid();
 
       const primaryImage = photos[mainPhotoIndex] || photos[0];
       const additionalImages = photos.filter((_, idx) => idx !== mainPhotoIndex);
 
-      // Construct variations automatically from chosen sizes and colours using valid UUIDs
-      const variations: Array<{
-        id: string;
-        product_id: string;
-        size: string;
-        colour: string;
-        price_adjustment: number;
-        stock_quantity: number;
-        is_active: boolean;
-      }> = [];
-
-      const activeSizes = selectedSizes.length > 0 ? selectedSizes : ['Standard'];
-      const activeColours = selectedColours.length > 0 ? selectedColours : ['Original'];
-
-      for (const sz of activeSizes) {
-        for (const clr of activeColours) {
-          variations.push({
-            id: generateValidUuid(),
-            product_id: '',
-            size: sz,
-            colour: clr,
-            price_adjustment: 0,
-            stock_quantity: Math.max(1, Math.round(stockAvailable / (activeSizes.length * activeColours.length))),
-            is_active: true,
-          });
-        }
-      }
+      const variations = variationList.map((v, idx) => ({
+        id: v.id || generateValidUuid(),
+        product_id: '',
+        sku:
+          v.sku.trim() ||
+          `TC-${finalSlug.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)}-${idx + 1}`,
+        size: v.size,
+        colour: v.colour,
+        price_adjustment: 0,
+        stock_quantity: Math.max(0, Math.round(Number(v.stock_quantity) || 0)),
+        is_active: true,
+      }));
 
       const saved = await saveProduct({
         name: name.trim(),
-        slug: generatedSlug,
+        slug: finalSlug,
         short_description: description.trim().slice(0, 160),
         description: description.trim(),
         category_id: categoryId,
         base_price: parsedPrice,
-        sale_price: salePrice ? parseFloat(salePrice) : undefined,
+        sale_price: parsedSalePrice,
         currency: 'NGN',
         main_image_url: primaryImage,
         additionalImages,
-        images: additionalImages.map((url) => ({
+        images: [primaryImage, ...additionalImages].map((url, idx) => ({
           id: generateValidUuid(),
           image_url: url,
+          alt_text: `${name.trim()} photograph ${idx + 1}`,
         })),
         is_published: isPublished,
         is_featured: isFeatured,
         is_new_arrival: isNewArrival,
         variations,
       });
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('teefahs_catalogue_updated', { detail: { productId: saved.id } }));
-      }
 
       setCreatedProduct({
         id: saved.id,
@@ -264,6 +394,15 @@ export default function AddProductPage() {
 
   return (
     <div className="space-y-6 max-w-3xl pb-16">
+      {/* Hidden input for replacing a single photo slot */}
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleReplacePhoto}
+        className="hidden"
+      />
+
       {/* Back button */}
       <div className="flex items-center justify-between">
         <Link
@@ -272,10 +411,7 @@ export default function AddProductPage() {
         >
           <ArrowLeft size={14} /> Back to Products
         </Link>
-        <Link
-          to="/"
-          className="text-xs text-emerald-800 hover:text-emerald-950 font-medium"
-        >
+        <Link to="/" className="text-xs text-emerald-800 hover:text-emerald-950 font-medium">
           Visit Storefront &rarr;
         </Link>
       </div>
@@ -284,7 +420,7 @@ export default function AddProductPage() {
       <div className="border-b border-stone-200 pb-4">
         <h1 className="text-3xl font-serif text-stone-900">Add New Garment</h1>
         <p className="text-xs text-stone-500 mt-1">
-          Fill in the simple fields below to list a new piece in your boutique. Technical settings are handled automatically.
+          Fill in the fields below to create and save a new garment directly to Supabase.
         </p>
       </div>
 
@@ -303,18 +439,36 @@ export default function AddProductPage() {
             1. Basic Information
           </h2>
 
-          <div>
-            <label className="block text-xs font-semibold text-stone-800 mb-1">
-              Product Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g. Zahra Luxury French Khimar & Skirt Set"
-              className="w-full p-3 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-stone-800 mb-1">
+                Product Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. Zahra Luxury French Khimar & Skirt Set"
+                className="w-full p-3 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-800 mb-1">
+                URL Slug (Optional)
+              </label>
+              <input
+                type="text"
+                value={slug}
+                onChange={e => {
+                  setSlugManuallyEdited(true);
+                  setSlug(e.target.value);
+                }}
+                placeholder="auto-generated-from-name"
+                className="w-full p-3 text-xs font-mono bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 transition-colors"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -332,16 +486,17 @@ export default function AddProductPage() {
                   required
                   value={price}
                   onChange={e => setPrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder="e.g. 70000 or 150000"
+                  placeholder="e.g. 1500 or 229500"
                   className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 font-mono font-semibold"
                 />
               </div>
 
-              {/* Quick Tap Price Chips */}
               <div className="mt-2">
-                <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">Quick Select Price:</p>
+                <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold mb-1">
+                  Quick Select Price:
+                </p>
                 <div className="flex flex-wrap gap-1">
-                  {['58000', '68000', '70000', '75000', '85000', '90000', '105000', '130000', '150000'].map(pVal => (
+                  {['1500', '15000', '35000', '68000', '85000', '130000', '229500'].map(pVal => (
                     <button
                       key={pVal}
                       type="button"
@@ -352,7 +507,7 @@ export default function AddProductPage() {
                           : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200'
                       }`}
                     >
-                      ₦{parseInt(pVal).toLocaleString()}
+                      ₦{parseInt(pVal, 10).toLocaleString()}
                     </button>
                   ))}
                 </div>
@@ -372,12 +527,12 @@ export default function AddProductPage() {
                   inputMode="decimal"
                   value={salePrice}
                   onChange={e => setSalePrice(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder="e.g. 100000"
+                  placeholder="e.g. 255000"
                   className="w-full pl-8 pr-3 py-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:bg-white focus:outline-none focus:border-stone-900 font-mono"
                 />
               </div>
               <p className="text-[11px] text-stone-500 mt-1">
-                Leave empty if no discount. For dresses & abayas, the 10% discount badge is computed automatically.
+                Leave empty if no strike-through original price is needed. If higher than selling price, non-accessory garments display the discount savings automatically.
               </p>
             </div>
           </div>
@@ -386,7 +541,6 @@ export default function AddProductPage() {
             <label className="block text-xs font-semibold text-stone-800 mb-1.5">
               Choose Category *
             </label>
-            {/* Visual Quick Select Category Pills */}
             <div className="flex flex-wrap gap-1.5 mb-2">
               {categories.map(cat => {
                 const isSelected = categoryId === cat.id;
@@ -415,7 +569,7 @@ export default function AddProductPage() {
             >
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name}
+                  {cat.name}{cat.is_active ? '' : ' (Hidden)'}
                 </option>
               ))}
             </select>
@@ -443,7 +597,7 @@ export default function AddProductPage() {
                 2. Upload Product Photo *
               </h2>
               <p className="text-[11px] text-stone-500 font-light mt-0.5">
-                Snap a new photo with your smartphone camera, upload from your photo gallery, or pick from the official photoshoot.
+                Snap a new photo with your smartphone camera, upload from your photo gallery, or pick from the official studio photographs.
               </p>
             </div>
             {photos.length > 0 && (
@@ -497,7 +651,7 @@ export default function AddProductPage() {
               className="p-3 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-sm flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
             >
               <ImageIcon size={16} className="text-emerald-800" />
-              <span>54 Studio Photos</span>
+              <span>{ASSETS.productImages.length} Studio Photos</span>
             </button>
           </div>
 
@@ -518,7 +672,7 @@ export default function AddProductPage() {
               Drag and drop garment images here
             </p>
             <p className="text-[11px] text-stone-500 mt-0.5">
-              High resolution phone photos are automatically optimized before uploading.
+              High resolution phone photos are automatically optimized and uploaded to Supabase Storage.
             </p>
           </div>
 
@@ -529,16 +683,18 @@ export default function AddProductPage() {
             </div>
           )}
 
-          {/* Quick Select from 54 supplied photoshoot photos */}
+          {/* Quick Select from Official Studio Photographs */}
           <div className="pt-2">
             <button
               type="button"
               onClick={() => setShowGalleryPicker(!showGalleryPicker)}
-              className="text-xs text-emerald-800 hover:text-emerald-950 font-semibold inline-flex items-center gap-1.5"
+              className="text-xs text-emerald-800 hover:text-emerald-950 font-semibold inline-flex items-center gap-1.5 cursor-pointer"
             >
               <ImageIcon size={14} />
               <span>
-                {showGalleryPicker ? 'Hide photoshoot collection' : `Choose from 54 official photoshoot photographs`}
+                {showGalleryPicker
+                  ? 'Hide studio collection'
+                  : `Choose from ${ASSETS.productImages.length} official studio photographs`}
               </span>
               {showGalleryPicker ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
@@ -563,8 +719,10 @@ export default function AddProductPage() {
                             setPhotos(prev => [...prev, imgUrl]);
                           }
                         }}
-                        className={`aspect-[3/4] relative rounded-xs overflow-hidden border-2 transition-all group ${
-                          isSelected ? 'border-emerald-700 ring-2 ring-emerald-400' : 'border-stone-200 hover:border-stone-400 opacity-80 hover:opacity-100'
+                        className={`aspect-[3/4] relative rounded-xs overflow-hidden border-2 transition-all group cursor-pointer ${
+                          isSelected
+                            ? 'border-emerald-700 ring-2 ring-emerald-400'
+                            : 'border-stone-200 hover:border-stone-400 opacity-80 hover:opacity-100'
                         }`}
                       >
                         <img src={imgUrl} alt={`Asset ${i + 1}`} className="w-full h-full object-cover object-top" />
@@ -581,7 +739,7 @@ export default function AddProductPage() {
             )}
           </div>
 
-          {/* Photo Previews with "Main Photo" Selector & Remove */}
+          {/* Photo Previews with Main Photo, Replace, Reorder, & Remove */}
           {photos.length > 0 && (
             <div className="pt-3 border-t border-stone-100">
               <label className="block text-xs font-semibold text-stone-800 mb-2">
@@ -592,12 +750,12 @@ export default function AddProductPage() {
                   const isMain = idx === mainPhotoIndex;
                   return (
                     <div
-                      key={idx}
-                      className={`relative bg-stone-100 border rounded-sm overflow-hidden p-1.5 transition-all ${
+                      key={`${url}-${idx}`}
+                      className={`relative bg-stone-100 border rounded-sm overflow-hidden p-1.5 transition-all space-y-1.5 ${
                         isMain ? 'border-emerald-700 ring-2 ring-emerald-300' : 'border-stone-200'
                       }`}
                     >
-                      <div className="aspect-[3/4] overflow-hidden rounded-xs bg-stone-200 relative mb-1.5">
+                      <div className="aspect-[3/4] overflow-hidden rounded-xs bg-stone-200 relative">
                         <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover object-top" />
                         {isMain && (
                           <span className="absolute top-1.5 left-1.5 bg-emerald-800 text-white text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-xs shadow-xs">
@@ -611,7 +769,7 @@ export default function AddProductPage() {
                           <button
                             type="button"
                             onClick={() => setMainPhotoIndex(idx)}
-                            className="text-stone-700 hover:text-emerald-800 font-semibold"
+                            className="text-stone-700 hover:text-emerald-800 font-semibold cursor-pointer"
                           >
                             Set as Main
                           </button>
@@ -624,11 +782,47 @@ export default function AddProductPage() {
                         <button
                           type="button"
                           onClick={() => removePhoto(idx)}
-                          className="text-red-600 hover:text-red-800 p-0.5"
+                          className="text-red-600 hover:text-red-800 p-0.5 cursor-pointer"
                           title="Remove photo"
                         >
                           <X size={14} />
                         </button>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-stone-200/70">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplaceTargetIdx(idx);
+                            replaceInputRef.current?.click();
+                          }}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 hover:text-emerald-900 bg-white border border-stone-300 px-1.5 py-0.5 rounded-xs cursor-pointer"
+                          title="Replace this photograph"
+                        >
+                          <RefreshCw size={10} />
+                          <span>Replace</span>
+                        </button>
+
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => movePhoto(idx, -1)}
+                            className="p-0.5 text-stone-600 hover:text-stone-900 disabled:opacity-30 cursor-pointer"
+                            title="Move left"
+                          >
+                            <ChevronLeft size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === photos.length - 1}
+                            onClick={() => movePhoto(idx, 1)}
+                            className="p-0.5 text-stone-600 hover:text-stone-900 disabled:opacity-30 cursor-pointer"
+                            title="Move right"
+                          >
+                            <ChevronRight size={13} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -638,11 +832,16 @@ export default function AddProductPage() {
           )}
         </div>
 
-        {/* Section 3: Sizing, Colours & Stock */}
+        {/* Section 3: Sizing, Colours & Per-Variation Stock */}
         <div className="bg-white p-6 border border-stone-200 rounded-sm shadow-2xs space-y-5">
-          <h2 className="text-sm font-semibold text-stone-900 uppercase tracking-wider pb-2 border-b border-stone-100">
-            3. Available Sizes &amp; Colours
-          </h2>
+          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+            <h2 className="text-sm font-semibold text-stone-900 uppercase tracking-wider">
+              3. Sizes, Colours &amp; Stock Control
+            </h2>
+            <span className="text-xs font-mono font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded">
+              Total Stock: {totalUnitsInStock} {totalUnitsInStock === 1 ? 'unit' : 'units'}
+            </span>
+          </div>
 
           {/* Sizes */}
           <div>
@@ -650,14 +849,14 @@ export default function AddProductPage() {
               Available Sizes (Tap to select or unselect):
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {PRESET_SIZES.map(sz => {
+              {Array.from(new Set([...PRESET_SIZES, ...selectedSizes])).map(sz => {
                 const isSelected = selectedSizes.includes(sz);
                 return (
                   <button
                     key={sz}
                     type="button"
                     onClick={() => toggleSize(sz)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-sm border transition-all ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-sm border transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-stone-900 text-white border-stone-900'
                         : 'bg-stone-50 text-stone-700 border-stone-200 hover:border-stone-400'
@@ -669,20 +868,24 @@ export default function AddProductPage() {
               })}
             </div>
 
-            {/* Custom Size Adder */}
             <div className="flex items-center gap-2 max-w-xs mt-2">
               <input
                 type="text"
                 value={customSizeInput}
                 onChange={e => setCustomSizeInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomSize(); } }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomSize();
+                  }
+                }}
                 placeholder="Add other size (e.g. 50, Plus Size)"
                 className="p-1.5 text-xs bg-stone-50 border border-stone-300 rounded-sm flex-1 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={addCustomSize}
-                className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium border border-stone-300 rounded-sm"
+                className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium border border-stone-300 rounded-sm cursor-pointer"
               >
                 + Add
               </button>
@@ -695,14 +898,14 @@ export default function AddProductPage() {
               Available Colours (Tap to select or unselect):
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
-              {PRESET_COLOURS.map(col => {
+              {Array.from(new Set([...PRESET_COLOURS, ...selectedColours])).map(col => {
                 const isSelected = selectedColours.includes(col);
                 return (
                   <button
                     key={col}
                     type="button"
                     onClick={() => toggleColour(col)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-sm border transition-all ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-sm border transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-emerald-900 text-white border-emerald-900'
                         : 'bg-stone-50 text-stone-700 border-stone-200 hover:border-stone-400'
@@ -714,41 +917,101 @@ export default function AddProductPage() {
               })}
             </div>
 
-            {/* Custom Colour Adder */}
             <div className="flex items-center gap-2 max-w-xs mt-2">
               <input
                 type="text"
                 value={customColourInput}
                 onChange={e => setCustomColourInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomColour(); } }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomColour();
+                  }
+                }}
                 placeholder="Add other colour (e.g. Lavender, Plum)"
                 className="p-1.5 text-xs bg-stone-50 border border-stone-300 rounded-sm flex-1 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={addCustomColour}
-                className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium border border-stone-300 rounded-sm"
+                className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium border border-stone-300 rounded-sm cursor-pointer"
               >
                 + Add
               </button>
             </div>
           </div>
 
-          {/* Stock Available */}
-          <div className="pt-2 border-t border-stone-100 max-w-xs">
-            <label className="block text-xs font-semibold text-stone-800 mb-1">
-              Stock Available (Units)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={stockAvailable}
-              onChange={e => setStockAvailable(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-full p-2.5 text-sm bg-stone-50 border border-stone-300 rounded-sm focus:outline-none focus:border-stone-900"
-            />
-            <p className="text-[11px] text-stone-500 mt-1">
-              Total quantity in stock ready for shipping.
-            </p>
+          {/* Per-Variation Stock Matrix */}
+          <div className="pt-3 border-t border-stone-100 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-stone-800 mb-1">
+                  Per-Variation Stock ({variationList.length}{' '}
+                  {variationList.length === 1 ? 'combination' : 'combinations'})
+                </label>
+                <p className="text-[11px] text-stone-500">
+                  Set stock quantities individually per size and colour (0 is allowed for out-of-stock variants).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  value={bulkStockInput}
+                  onChange={e => setBulkStockInput(e.target.value)}
+                  className="w-20 p-1.5 text-xs font-mono text-center bg-stone-50 border border-stone-300 rounded-sm focus:outline-none"
+                  aria-label="Bulk stock quantity"
+                />
+                <button
+                  type="button"
+                  onClick={applyBulkStockToAll}
+                  className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[11px] font-semibold border border-stone-300 rounded-sm cursor-pointer whitespace-nowrap"
+                >
+                  Apply Stock to All
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto border border-stone-200 rounded-sm">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 text-[10px] uppercase tracking-wider">
+                    <th className="py-2 px-3 font-semibold">Size</th>
+                    <th className="py-2 px-3 font-semibold">Colour</th>
+                    <th className="py-2 px-3 font-semibold">SKU</th>
+                    <th className="py-2 px-3 font-semibold text-right">Stock Units</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {variationList.map(v => {
+                    const key = makeVarKey(v.size, v.colour);
+                    return (
+                      <tr key={key} className="hover:bg-stone-50/70">
+                        <td className="py-2 px-3 font-semibold text-stone-900">{v.size}</td>
+                        <td className="py-2 px-3 text-stone-700">{v.colour}</td>
+                        <td className="py-2 px-3">
+                          <input
+                            type="text"
+                            value={v.sku}
+                            onChange={e => updateVariationSku(key, e.target.value)}
+                            className="w-full min-w-[120px] p-1 text-[11px] font-mono bg-stone-50 border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                          />
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          <input
+                            type="number"
+                            min="0"
+                            value={v.stock_quantity}
+                            onChange={e => updateVariationStock(key, parseInt(e.target.value, 10))}
+                            className="w-20 p-1 text-center font-mono font-semibold text-xs bg-stone-50 border border-stone-300 rounded focus:outline-none focus:border-stone-900"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -830,7 +1093,7 @@ export default function AddProductPage() {
         </div>
       </form>
 
-      {/* Success Celebration Modal for Queen Lateefah */}
+      {/* Success Modal */}
       {createdProduct && (
         <div className="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-sm max-w-md w-full p-6 text-center space-y-5 shadow-2xl border border-stone-200">
@@ -840,15 +1103,14 @@ export default function AddProductPage() {
 
             <div>
               <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Published & Live on Storefront
+                Saved to Supabase
               </span>
-              <h2 className="text-xl font-serif text-stone-900 mt-2">Garment Successfully Uploaded!</h2>
+              <h2 className="text-xl font-serif text-stone-900 mt-2">Garment Successfully Saved!</h2>
               <p className="text-xs text-stone-600 mt-1">
-                Your new design has been saved to the boutique database and is live on the public storefront.
+                Your new piece has been persisted in Supabase and synced across the catalogue.
               </p>
             </div>
 
-            {/* Product Summary Card */}
             <div className="flex items-center gap-3.5 p-3.5 bg-stone-50 border border-stone-200 rounded text-left">
               {createdProduct.imageUrl ? (
                 <img
@@ -866,11 +1128,10 @@ export default function AddProductPage() {
                 <p className="text-sm font-mono font-bold text-emerald-900 mt-0.5">
                   ₦{createdProduct.price.toLocaleString()}
                 </p>
-                <span className="text-[10px] text-stone-500 block mt-1">Ready for Customer Orders & WhatsApp</span>
+                <span className="text-[10px] text-stone-500 block mt-1">Ready for Customer Orders &amp; WhatsApp</span>
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="space-y-2 pt-2">
               <Link
                 to={`/product/${createdProduct.slug || createdProduct.id}`}
@@ -887,6 +1148,8 @@ export default function AddProductPage() {
                 onClick={() => {
                   setCreatedProduct(null);
                   setName('');
+                  setSlug('');
+                  setSlugManuallyEdited(false);
                   setPrice('');
                   setSalePrice('');
                   setDescription('');

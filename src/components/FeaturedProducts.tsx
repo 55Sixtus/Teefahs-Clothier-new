@@ -14,7 +14,7 @@ export default function FeaturedProducts({
   filter?: (p: Product) => boolean;
   viewAllLink?: string;
 }) {
-  const { products: allProducts, loading } = useRealtimeProducts({ includeUnpublished: false });
+  const { products: allProducts, categories, loading } = useRealtimeProducts({ includeUnpublished: false });
 
   const products = useMemo(() => {
     const result = filter ? allProducts.filter(filter) : allProducts.filter(p => p.is_featured);
@@ -51,7 +51,7 @@ export default function FeaturedProducts({
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
           {products.map(product => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} categories={categories} />
           ))}
         </div>
       )}

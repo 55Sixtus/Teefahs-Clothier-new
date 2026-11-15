@@ -66,9 +66,31 @@ CREATE TABLE store_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS Policies (Example for public access)
+-- Promotions
+CREATE TABLE IF NOT EXISTS promotions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  badge_text TEXT DEFAULT 'PROMO ALERT',
+  subtext TEXT,
+  link_url TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Policies
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public can read published products" ON products FOR SELECT USING (is_published = true);
+CREATE POLICY "Public read published products" ON products
+  FOR SELECT TO anon, authenticated
+  USING (is_published = true AND COALESCE(is_archived, false) = false AND deleted_at IS NULL);
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public can read active categories" ON categories FOR SELECT USING (is_active = true);
+CREATE POLICY "Public read active categories" ON categories
+  FOR SELECT TO anon, authenticated
+  USING (is_active = true);
+
+ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_variations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;

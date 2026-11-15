@@ -1,58 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  PlusCircle, 
-  FolderTree, 
-  Boxes, 
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  PlusCircle,
+  FolderTree,
+  Boxes,
   Image as ImageIcon,
-  ExternalLink, 
-  LogOut, 
-  Menu, 
+  ExternalLink,
+  LogOut,
+  Menu,
   X,
   Shield,
   Home,
   ArrowLeft,
-  Lock,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ASSETS } from '../data/assets';
+import { isAuthorizedAdminUser } from './AdminLogin';
 
 export default function AdminLayout() {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Validate session token and active expiration
-  const isAuthorizedFlag = localStorage.getItem('teefahs_admin_authorized') === 'true';
-  const sessionToken = localStorage.getItem('teefahs_admin_session_token');
-  const expiresAtStr = localStorage.getItem('teefahs_admin_expires_at');
-  const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : 0;
-  const isSessionValid = isAuthorizedFlag && !!sessionToken && Date.now() < expiresAt;
-
-  const rawStoredEmail = localStorage.getItem('teefahs_admin_email');
-  const adminEmail = (rawStoredEmail && !rawStoredEmail.toLowerCase().includes('greatezirim'))
-    ? rawStoredEmail 
-    : (user?.email || 'queenlateefalive@yahoo.com');
-  const rawRole = localStorage.getItem('teefahs_admin_role') || 'Store Owner';
-  const adminRole = rawRole.toLowerCase().includes('temporal') ? 'Store Owner' : rawRole;
-  
-  // Dashboard is strictly locked: requires a valid, unexpired authenticated session
-  const isAuthenticated = isSessionValid;
+  const isAuthenticated = Boolean(session?.access_token && user && isAuthorizedAdminUser(user));
+  const adminEmail = user?.email || 'queenlateefalive@yahoo.com';
+  const adminRole = adminEmail.toLowerCase() === 'queenlateefalive@yahoo.com' ? 'Store Owner' : 'Administrator';
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      // Clear expired or invalid credentials
-      localStorage.removeItem('teefahs_admin_authorized');
-      localStorage.removeItem('teefahs_admin_session_token');
-      localStorage.removeItem('teefahs_admin_expires_at');
-      localStorage.removeItem('teefahs_admin_email');
-      localStorage.removeItem('teefahs_admin_role');
-      navigate('/admin/login');
+      navigate('/admin/login', { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
 
@@ -61,29 +42,23 @@ export default function AdminLayout() {
       <div className="min-h-screen bg-stone-900 flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs uppercase tracking-widest text-stone-400">Verifying Admin Access...</span>
+          <span className="text-xs uppercase tracking-widest text-stone-400">Verifying Admin Session...</span>
         </div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return null; // Will redirect via useEffect to /admin/login
+    return null;
   }
 
   const handleLogout = async () => {
-    localStorage.removeItem('teefahs_admin_authorized');
-    localStorage.removeItem('teefahs_admin_session_token');
-    localStorage.removeItem('teefahs_admin_expires_at');
-    localStorage.removeItem('teefahs_admin_email');
-    localStorage.removeItem('teefahs_admin_role');
-    localStorage.removeItem('teefahs_admin_login_at');
     try {
       await supabase.auth.signOut();
-    } catch (e) {
-      // ignore
+    } catch {
+      // ignore signOut errors and navigate to login
     }
-    navigate('/admin/login');
+    navigate('/admin/login', { replace: true });
   };
 
   const navItems = [
@@ -134,13 +109,12 @@ export default function AdminLayout() {
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div>
-          {/* Brand header */}
           <div className="pb-5 mb-5 border-b border-stone-800">
             <Link to="/" className="inline-block mb-3" title="Return to Storefront Home">
-              <img 
-                src={ASSETS.logo} 
-                alt="Teefahs Clothier" 
-                className="h-7 w-auto invert brightness-200 object-contain" 
+              <img
+                src={ASSETS.logo}
+                alt="Teefahs Clothier"
+                className="h-7 w-auto invert brightness-200 object-contain"
                 onError={(e) => {
                   const target = e.currentTarget;
                   if (!target.src.endsWith('/logo.png')) {
@@ -155,7 +129,6 @@ export default function AdminLayout() {
             </div>
           </div>
 
-          {/* Quick Return to Storefront Home Button */}
           <div className="mb-4">
             <Link
               to="/"
@@ -170,7 +143,6 @@ export default function AdminLayout() {
             </Link>
           </div>
 
-          {/* Nav links */}
           <nav className="space-y-1.5">
             {navItems.map(item => {
               const Icon = item.icon;
@@ -194,9 +166,7 @@ export default function AdminLayout() {
           </nav>
         </div>
 
-        {/* Footer actions */}
         <div className="pt-6 border-t border-stone-800 space-y-2.5">
-          {/* Active Admin Profile badge */}
           <div className="px-3 py-2 bg-stone-900/90 rounded border border-stone-800 flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full bg-emerald-950 border border-emerald-700/60 flex items-center justify-center text-emerald-400 font-bold text-[10px] uppercase flex-shrink-0">
               {adminEmail.slice(0, 2)}
@@ -225,7 +195,7 @@ export default function AdminLayout() {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-red-400 hover:bg-red-950/40 hover:text-red-300 rounded-sm transition-colors text-left"
+            className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-red-400 hover:bg-red-950/40 hover:text-red-300 rounded-sm transition-colors text-left cursor-pointer"
           >
             <LogOut size={14} />
             <span>Sign Out</span>
@@ -233,7 +203,6 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-10 overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
           <Outlet />

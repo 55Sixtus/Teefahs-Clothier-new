@@ -15,14 +15,14 @@ import {
   RotateCcw,
   AlertCircle
 } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { useCart, getProductStockInfo } from '../context/CartContext';
 import { getActiveWhatsAppChatNumber } from '../config/shopConfig';
 import { SUPPLIED_PHOTOS } from '../data/assets';
 import { trackBeginCheckout, trackWhatsAppConversion } from '../utils/analytics';
 import { calculateProductPricing } from '../utils/pricing';
 
 export default function CartDrawer() {
-  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { cart, categories, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const navigate = useNavigate();
 
   const [customerName, setCustomerName] = useState(() => {
@@ -101,12 +101,12 @@ export default function CartDrawer() {
   const totalItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const originalSubtotal = cart.reduce((sum, item) => {
-    const pricing = calculateProductPricing(item.product);
+    const pricing = calculateProductPricing(item.product, categories);
     return sum + (pricing.originalPrice * item.quantity);
   }, 0);
 
   const subtotal = cart.reduce((sum, item) => {
-    const pricing = calculateProductPricing(item.product);
+    const pricing = calculateProductPricing(item.product, categories);
     return sum + (pricing.sellingPrice * item.quantity);
   }, 0);
 
@@ -120,18 +120,18 @@ export default function CartDrawer() {
       '*ORDER SUMMARY*',
       '----------------------------------------',
       ...cart.map((item, idx) => {
-        const pricing = calculateProductPricing(item.product);
+        const pricing = calculateProductPricing(item.product, categories);
         const unit = pricing.sellingPrice;
         const lineTotal = unit * item.quantity;
         const discountNote = pricing.hasDiscount 
-          ? ` (10% OFF from ₦${pricing.originalPrice.toLocaleString()})` 
+          ? ` (${pricing.discountPercentage}% OFF from ₦${pricing.originalPrice.toLocaleString()})` 
           : '';
         return `${idx + 1}. *${item.product.name}*\n   - Size: ${item.selectedSize || 'Standard'}\n   - Colour: ${item.selectedColour || 'Original'}\n   - Qty: ${item.quantity} × ₦${unit.toLocaleString()}${discountNote} = ₦${lineTotal.toLocaleString()}`;
       }),
       '----------------------------------------',
       ...(totalSavings > 0 ? [
         `*Original Subtotal: ₦${originalSubtotal.toLocaleString()}*`,
-        `*10% Promotional Savings: -₦${totalSavings.toLocaleString()}*`,
+        `*Promotional Savings: -₦${totalSavings.toLocaleString()}*`,
       ] : []),
       `*ORDER TOTAL (${totalItemCount} ${totalItemCount === 1 ? 'item' : 'items'}): ₦${subtotal.toLocaleString()}*`,
       '',
@@ -225,12 +225,10 @@ export default function CartDrawer() {
               {/* PRODUCT LIST */}
               <div className="space-y-4 pb-4">
                 {cart.map((item, index) => {
-                  const matchingVar = item.product.variations?.find(
-                    v => (!v.size || v.size === item.selectedSize) && (!v.colour || v.colour === item.selectedColour)
-                  );
-                  const maxStock = matchingVar?.stock_quantity ?? 50;
-                  const isMax = item.quantity >= maxStock;
-                  const pricing = calculateProductPricing(item.product);
+                  const stockInfo = getProductStockInfo(item.product, item.selectedSize, item.selectedColour);
+                  const maxStock = stockInfo.maxStock;
+                  const isMax = maxStock <= 0 || item.quantity >= maxStock;
+                  const pricing = calculateProductPricing(item.product, categories);
                   const unitPrice = pricing.sellingPrice;
                   const lineTotal = unitPrice * item.quantity;
                   const itemImg = item.product.main_image_url || item.product.images?.[0]?.image_url || SUPPLIED_PHOTOS[0];
@@ -285,7 +283,7 @@ export default function CartDrawer() {
                             )}
                             {pricing.hasDiscount && (
                               <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded-xs uppercase tracking-wider">
-                                10% OFF
+                                {pricing.discountPercentage}% OFF
                               </span>
                             )}
                           </div>
@@ -331,7 +329,7 @@ export default function CartDrawer() {
                           </div>
                         </div>
 
-                        {isMax && (
+                        {stockInfo.hasVariations && isMax && (
                           <p className="text-[10px] text-amber-700 mt-1 font-medium">
                             Max available inventory selected ({maxStock} units).
                           </p>
@@ -417,7 +415,7 @@ export default function CartDrawer() {
                 </div>
                 <div className="flex justify-between items-center text-amber-800 dark:text-amber-400 font-semibold">
                   <span className="flex items-center gap-1">
-                    <span className="px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[10px] rounded uppercase font-bold">10% OFF</span>
+                    <span className="px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[10px] rounded uppercase font-bold">SALE</span>
                     <span>Promotional Discount</span>
                   </span>
                   <span>-₦{totalSavings.toLocaleString()}</span>
@@ -457,7 +455,7 @@ export default function CartDrawer() {
                   cart.map(item => ({
                     id: item.product.id,
                     name: item.product.name,
-                    price: item.product.base_price || 0,
+                    price: calculateProductPricing(item.product, categories).sellingPrice,
                     quantity: item.quantity,
                   })),
                   subtotal
