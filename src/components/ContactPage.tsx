@@ -70,7 +70,7 @@ export default function ContactPage() {
                   <a
                     href={SHOP_CONFIG.whatsappChatUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-4 p-4 bg-white border border-stone-200 rounded-sm hover:border-[#25D366] hover:shadow-md transition-all group"
                   >
                     <div className="w-12 h-12 bg-emerald-50 text-[#25D366] rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-[#25D366] group-hover:text-white transition-colors">
@@ -116,7 +116,7 @@ export default function ContactPage() {
                     <a
                       href={SHOP_CONFIG.instagramUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 bg-white border border-stone-200 rounded-sm hover:border-pink-500 hover:shadow-xs transition-all group"
                     >
                       <div className="w-9 h-9 bg-pink-50 text-pink-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-pink-600 group-hover:text-white transition-colors">
@@ -131,7 +131,7 @@ export default function ContactPage() {
                     <a
                       href={SHOP_CONFIG.officialWebsite}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 bg-white border border-stone-200 rounded-sm hover:border-stone-800 hover:shadow-xs transition-all group"
                       title="Visit official website: www.teefahsclothier.com"
                     >
@@ -185,7 +185,7 @@ export default function ContactPage() {
                     <a
                       href={preparedWaUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="px-6 py-3.5 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-2 rounded-xs shadow-sm transition-colors"
                     >
                       <MessageCircle size={16} />
@@ -291,7 +291,7 @@ export default function ContactPage() {
               <a
                 href={SHOP_CONFIG.mapsDirectionsUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-emerald-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors shadow-xs whitespace-nowrap self-start sm:self-auto"
                 title="Open Google Maps Directions"
               >

@@ -35,26 +35,13 @@ export const SHOP_CONFIG = {
 };
 
 /**
- * Returns the active WhatsApp checkout destination digits.
- * Defaults to the verified 2348028991921.
+ * Returns the authoritative WhatsApp checkout destination digits.
+ * Enforces verified business constant to prevent client-side localStorage tampering.
  */
 export const getActiveWhatsAppChatNumber = (): string => {
-  try {
-    const custom = localStorage.getItem('teefahs_whatsapp_checkout_number');
-    if (custom && custom.trim().length >= 10) {
-      return custom.trim().replace(/[^0-9]/g, '');
-    }
-  } catch (e) {
-    console.warn('Error reading custom whatsapp number:', e);
-  }
   return SHOP_CONFIG.whatsappNumber;
 };
 
-export const setActiveWhatsAppChatNumber = (number: string): void => {
-  try {
-    const cleaned = number.replace(/[^0-9]/g, '');
-    localStorage.setItem('teefahs_whatsapp_checkout_number', cleaned);
-  } catch (e) {
-    console.error('Error saving whatsapp checkout number:', e);
-  }
+export const setActiveWhatsAppChatNumber = (_number: string): void => {
+  // Intentionally disabled: destination number is locked to verified SHOP_CONFIG.whatsappNumber
 };

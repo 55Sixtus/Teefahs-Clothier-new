@@ -25,9 +25,11 @@ import {
   updateProductStatus,
 } from '../lib/api';
 import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
+import { useAuth } from '../context/AuthContext';
 import { Product } from '../types/product';
 
 export default function ProductsPage() {
+  const { user } = useAuth();
   const location = useLocation();
   const { products, categories, loading, error: realtimeError, refreshProducts } = useRealtimeProducts({
     includeUnpublished: true,
@@ -161,7 +163,7 @@ export default function ProductsPage() {
     setArchivingId(target.id);
     setErrorMsg('');
     try {
-      await archiveProduct(target.id, 'Queen Lateefah');
+      await archiveProduct(target.id, user?.email || 'Authenticated Admin');
       setUndoToast({ id: target.id, name: target.name });
       await Promise.all([refreshProducts(), loadDeleted()]);
     } catch (e: any) {
@@ -467,7 +469,7 @@ export default function ProductsPage() {
                         {p.deleted_at ? new Date(p.deleted_at).toLocaleString() : 'Recently'}
                       </td>
                       <td className="py-3 px-4 text-center text-stone-500 text-[11px]">
-                        {p.deleted_by || 'Queen Lateefah'}
+                        {p.deleted_by || 'Administrator'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex items-center gap-2 justify-end">

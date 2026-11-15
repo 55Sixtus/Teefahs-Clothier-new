@@ -1,76 +1,151 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, ArrowLeft, AlertCircle, CheckCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ASSETS } from '../data/assets';
+import { useAuth, verifyServerAdminAccess } from '../context/AuthContext';
+import { logAdminAuditEvent } from '../lib/api';
+import SEO from '../components/SEO';
 
-export const AUTHORIZED_ADMIN_EMAILS = ['queenlateefalive@yahoo.com', 'greatezirim8@gmail.com'];
+const THROTTLE_STORAGE_KEY = 'teefahs_admin_auth_throttle';
+const MAX_FREE_ATTEMPTS = 5;
+const BASE_LOCK_SECONDS = 30;
+const MAX_LOCK_SECONDS = 300;
 
-export function isAuthorizedAdminUser(user: any): boolean {
-  if (!user) return false;
-  const email = (user.email || '').trim().toLowerCase();
-  const appRole = String(user.app_metadata?.role || '').toLowerCase();
-  const userRole = String(user.user_metadata?.role || '').toLowerCase();
-  return (
-    AUTHORIZED_ADMIN_EMAILS.includes(email) ||
-    appRole === 'admin' ||
-    userRole === 'admin'
-  );
+interface ThrottleState {
+  failures: number;
+  lockedUntil: number;
+}
+
+function readThrottleState(): ThrottleState {
+  try {
+    const raw = sessionStorage.getItem(THROTTLE_STORAGE_KEY);
+    if (!raw) return { failures: 0, lockedUntil: 0 };
+    const parsed = JSON.parse(raw);
+    return {
+      failures: Number.isFinite(parsed?.failures) ? Math.max(0, parsed.failures) : 0,
+      lockedUntil: Number.isFinite(parsed?.lockedUntil) ? Math.max(0, parsed.lockedUntil) : 0,
+    };
+  } catch {
+    return { failures: 0, lockedUntil: 0 };
+  }
+}
+
+function writeThrottleState(state: ThrottleState): void {
+  try {
+    sessionStorage.setItem(THROTTLE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+function clearThrottleState(): void {
+  try {
+    sessionStorage.removeItem(THROTTLE_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function isStrongPassword(pw: string): boolean {
+  if (pw.length < 10) return false;
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasLower = /[a-z]/.test(pw);
+  const hasDigitOrSymbol = /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw);
+  return hasUpper && hasLower && hasDigitOrSymbol;
 }
 
 export default function AdminLogin() {
+  const { user, session, isAdmin, loading: authLoading, refreshAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
+  const recoveryModeRef = useRef(false);
   const [newPassword, setNewPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lockSecondsRemaining, setLockSecondsRemaining] = useState(0);
   const navigate = useNavigate();
 
+  const updateRecoveryMode = (val: boolean) => {
+    recoveryModeRef.current = val;
+    setRecoveryMode(val);
+  };
+
+  // Sync throttle lock countdown timer
   useEffect(() => {
-    // Detect password-recovery redirect from Supabase Auth email link
+    const syncTimer = () => {
+      const state = readThrottleState();
+      const remaining = Math.max(0, Math.ceil((state.lockedUntil - Date.now()) / 1000));
+      setLockSecondsRemaining(remaining);
+    };
+
+    syncTimer();
+    const interval = setInterval(syncTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Detect password-recovery redirect from Supabase Auth email link
+  useEffect(() => {
     if (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) {
-      setRecoveryMode(true);
+      updateRecoveryMode(true);
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && isAuthorizedAdminUser(session.user) && !window.location.hash.includes('type=recovery')) {
-        navigate('/admin', { replace: true });
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        setRecoveryMode(true);
-      } else if (event === 'SIGNED_IN' && session?.user && isAuthorizedAdminUser(session.user) && !recoveryMode) {
-        navigate('/admin', { replace: true });
+        updateRecoveryMode(true);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, recoveryMode]);
+  }, []);
+
+  // Redirect already verified admins straight to dashboard (unless resetting password)
+  useEffect(() => {
+    if (authLoading) return;
+    const isRecoveryHash = typeof window !== 'undefined' && window.location.hash.includes('type=recovery');
+    if (session?.access_token && user && isAdmin && !recoveryModeRef.current && !isRecoveryHash) {
+      navigate('/admin', { replace: true });
+    }
+  }, [authLoading, session, user, isAdmin, navigate]);
+
+  const recordAuthFailure = () => {
+    const current = readThrottleState();
+    const nextFailures = current.failures + 1;
+    let lockedUntil = 0;
+    if (nextFailures >= MAX_FREE_ATTEMPTS) {
+      const exponent = nextFailures - MAX_FREE_ATTEMPTS;
+      const lockSeconds = Math.min(MAX_LOCK_SECONDS, BASE_LOCK_SECONDS * Math.pow(2, exponent));
+      lockedUntil = Date.now() + lockSeconds * 1000;
+      setLockSecondsRemaining(lockSeconds);
+    }
+    writeThrottleState({ failures: nextFailures, lockedUntil });
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
+    const throttle = readThrottleState();
+    if (throttle.lockedUntil > Date.now()) {
+      const secs = Math.ceil((throttle.lockedUntil - Date.now()) / 1000);
+      setLockSecondsRemaining(secs);
+      setErrorMsg(`Too many failed sign-in attempts. Please wait ${secs} seconds before trying again.`);
+      return;
+    }
+
     const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail) {
-      setErrorMsg('Please enter your administrator email address.');
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setErrorMsg('Please enter a valid administrator email address.');
       return;
     }
 
     if (!password) {
       setErrorMsg('Password is required.');
-      return;
-    }
-
-    if (!AUTHORIZED_ADMIN_EMAILS.includes(cleanEmail)) {
-      setErrorMsg('Access denied. This email is not authorized for administrative access.');
       return;
     }
 
@@ -81,21 +156,39 @@ export default function AdminLogin() {
         password,
       });
 
-      if (error) {
-        setErrorMsg(error.message || 'Invalid email or password.');
+      if (error || !data.session?.user) {
+        recordAuthFailure();
+        setErrorMsg('Invalid email or password, or account not authorized.');
         return;
       }
 
-      if (!data.session?.user || !isAuthorizedAdminUser(data.session.user)) {
-        await supabase.auth.signOut();
-        setErrorMsg('Your account is not verified for store administration.');
+      const { data: verifiedData, error: userErr } = await supabase.auth.getUser();
+      const verifiedUser = verifiedData?.user;
+      if (userErr || !verifiedUser) {
+        await supabase.auth.signOut().catch(() => {});
+        recordAuthFailure();
+        setErrorMsg('Unable to verify administrator session. Please try again.');
         return;
       }
+
+      const adminOk = await verifyServerAdminAccess(verifiedUser);
+      if (!adminOk) {
+        await supabase.auth.signOut().catch(() => {});
+        recordAuthFailure();
+        setErrorMsg('Access denied. This account does not have verified administrator privileges.');
+        return;
+      }
+
+      clearThrottleState();
+      setLockSecondsRemaining(0);
+      await refreshAuth();
+      await logAdminAuditEvent('admin_login', 'auth', verifiedUser.id, { email: cleanEmail });
 
       setSuccessMsg('Authenticated with Supabase. Opening dashboard...');
       navigate('/admin', { replace: true });
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'An error occurred during authentication.');
+    } catch {
+      recordAuthFailure();
+      setErrorMsg('An error occurred during authentication. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -107,23 +200,22 @@ export default function AdminLogin() {
     setSuccessMsg('');
 
     const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail || !AUTHORIZED_ADMIN_EMAILS.includes(cleanEmail)) {
-      setErrorMsg('Please enter your authorized administrator email address.');
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setErrorMsg('Please enter a valid email address.');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+      await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: `${window.location.origin}/admin/login`,
       });
-      if (error) {
-        setErrorMsg(error.message);
-      } else {
-        setSuccessMsg(`Password reset link sent to ${cleanEmail}. Check your inbox and open the link to set a new password.`);
-      }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Could not request password reset.');
+      // Always show a generic response to prevent account/email enumeration
+      setSuccessMsg(
+        'If that email corresponds to an authorized administrator account, a password reset link has been dispatched.'
+      );
+    } catch {
+      setErrorMsg('Could not submit password reset request. Please try again shortly.');
     } finally {
       setLoading(false);
     }
@@ -134,8 +226,10 @@ export default function AdminLogin() {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (newPassword.length < 8) {
-      setErrorMsg('New password must be at least 8 characters long.');
+    if (!isStrongPassword(newPassword)) {
+      setErrorMsg(
+        'Password must be at least 10 characters and include uppercase, lowercase, and a number or symbol.'
+      );
       return;
     }
 
@@ -143,14 +237,21 @@ export default function AdminLogin() {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
-        setErrorMsg(error.message);
+        setErrorMsg(error.message || 'Failed to update password.');
+        return;
+      }
+      const adminOk = await refreshAuth();
+      if (!adminOk) {
+        await supabase.auth.signOut().catch(() => {});
+        updateRecoveryMode(false);
+        setErrorMsg('Password updated, but this account lacks verified admin privileges.');
         return;
       }
       setSuccessMsg('Password updated! Redirecting to dashboard...');
-      setRecoveryMode(false);
+      updateRecoveryMode(false);
       setTimeout(() => navigate('/admin', { replace: true }), 800);
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to update password.');
+    } catch {
+      setErrorMsg('Failed to update password.');
     } finally {
       setLoading(false);
     }
@@ -158,6 +259,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-stone-950 flex flex-col justify-center py-12 px-6 sm:px-8 relative overflow-hidden">
+      <SEO title="Admin Sign In" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-b from-emerald-950/40 via-amber-950/20 to-transparent blur-3xl pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
@@ -183,9 +285,9 @@ export default function AdminLogin() {
         </h2>
         <p className="mt-2 text-xs text-stone-400 font-light">
           {recoveryMode
-            ? 'Enter your new administrator password below.'
+            ? 'Enter a strong new administrator password (10+ characters, upper/lower, number or symbol).'
             : resetMode
-              ? 'We will send a secure Supabase reset link to your authorized admin email.'
+              ? 'We will send a secure Supabase reset link to your registered administrator email.'
               : 'Sign in with your Supabase administrator account to manage inventory, pricing, and products.'}
         </p>
       </div>
@@ -215,10 +317,11 @@ export default function AdminLogin() {
                 <input
                   type="password"
                   required
-                  minLength={8}
+                  minLength={10}
+                  autoComplete="new-password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder="At least 10 chars (A-z, 0-9 or symbol)"
                   className="w-full px-3.5 py-3 text-sm bg-white border border-stone-400 rounded-sm focus:outline-none focus:border-stone-900 font-semibold text-stone-900"
                 />
               </div>
@@ -241,6 +344,7 @@ export default function AdminLogin() {
                   <input
                     type="email"
                     required
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your administrator email"
@@ -278,6 +382,7 @@ export default function AdminLogin() {
                   <input
                     type="email"
                     required
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your administrator email"
@@ -308,6 +413,7 @@ export default function AdminLogin() {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your Supabase password"
@@ -326,11 +432,17 @@ export default function AdminLogin() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || lockSecondsRemaining > 0}
                 className="w-full py-3 bg-stone-900 text-white text-xs font-semibold uppercase tracking-widest hover:bg-emerald-950 hover:border-emerald-700 transition-all rounded-sm flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
               >
                 <KeyRound size={15} className="text-amber-400" />
-                <span>{loading ? 'Signing In...' : 'Sign In & Access Dashboard'}</span>
+                <span>
+                  {lockSecondsRemaining > 0
+                    ? `Sign-In Locked (${lockSecondsRemaining}s)`
+                    : loading
+                      ? 'Verifying Credentials...'
+                      : 'Sign In & Access Dashboard'}
+                </span>
               </button>
             </form>
           )}

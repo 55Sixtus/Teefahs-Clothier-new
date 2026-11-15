@@ -28,6 +28,7 @@ import {
 } from '../lib/api';
 import { Category } from '../types/product';
 import { ASSETS } from '../data/assets';
+import { useAuth } from '../context/AuthContext';
 
 const PRESET_SIZES = ['52', '54', '56', '58', '60', 'Free Size', 'S', 'M', 'L', 'XL'];
 const PRESET_COLOURS = [
@@ -54,6 +55,7 @@ interface VariationDraft {
 const makeVarKey = (size: string, colour: string) => `${size}:::${colour}`;
 
 export default function EditProductPage() {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const replaceInputRef = useRef<HTMLInputElement>(null);
@@ -508,7 +510,7 @@ export default function EditProductPage() {
     setErrorMsg('');
 
     try {
-      await archiveProduct(id, 'Queen Lateefah');
+      await archiveProduct(id, user?.email || 'Authenticated Admin');
       navigate('/admin/products', {
         state: {
           archivedProductName: name,
@@ -536,7 +538,7 @@ export default function EditProductPage() {
       <input
         ref={replaceInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         onChange={handleReplacePhoto}
         className="hidden"
       />
@@ -745,7 +747,7 @@ export default function EditProductPage() {
             <input
               type="file"
               id="edit-file-upload"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               onChange={handleFileInput}
               className="hidden"

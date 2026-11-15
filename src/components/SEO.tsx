@@ -75,11 +75,21 @@ export default function SEO({
     const ogTypeTag = document.querySelector('meta[property="og:type"]');
     if (ogTypeTag) ogTypeTag.setAttribute('content', ogType);
 
-    // Track SPA Pageview in Google Analytics
-    try {
-      trackPageView(finalTitle, location.pathname + location.search);
-    } catch (e) {
-      // analytics optional
+    // Set robots directive dynamically so /admin routes are never indexed
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    const robotsContent = isAdminRoute
+      ? 'noindex, nofollow, noarchive'
+      : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+    const metaRobots = document.querySelector('meta[name="robots"]');
+    if (metaRobots) metaRobots.setAttribute('content', robotsContent);
+
+    // Track SPA Pageview in Google Analytics (public storefront only)
+    if (!isAdminRoute) {
+      try {
+        trackPageView(finalTitle, location.pathname + location.search);
+      } catch {
+        // analytics optional
+      }
     }
   }, [title, description, canonical, keywords, ogType, location.pathname, location.search]);
 

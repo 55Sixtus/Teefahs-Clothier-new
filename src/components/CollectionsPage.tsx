@@ -55,7 +55,7 @@ export default function CollectionsPage() {
             <a
               href={SHOP_CONFIG.whatsappChatUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-block px-8 py-3 bg-[#25D366] hover:bg-[#128C7E] text-white text-xs font-semibold uppercase tracking-widest transition-colors rounded-xs shadow-xs"
             >
               Consult On WhatsApp

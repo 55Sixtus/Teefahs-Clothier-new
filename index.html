@@ -21,29 +21,8 @@
     <meta name="google-site-verification" content="b0fepoZUciC_WKMna-NQCLzHPpwPxLCibhrGNtMm1gU" />
     <meta name="google-site-verification" content="google616a7805306b17ab" />
 
-    <!-- Google tag (gtag.js) - Google Analytics & Google Ads Ad Performance -->
+    <!-- Google tag (gtag.js) - Initialized securely in src/utils/analytics.ts -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEEFAHS2026"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      // Google Analytics Measurement ID
-      var activeGaId = localStorage.getItem('teefahs_ga_measurement_id') || 'G-TEEFAHS2026';
-      gtag('config', activeGaId, {
-        page_path: window.location.pathname,
-        send_page_view: true
-      });
-    </script>
-
-    <!-- Google Tag Manager Container Snippet -->
-    <script>
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-TEEFAHS');
-    </script>
 
     <!-- Search Engine Robots Directives -->
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />

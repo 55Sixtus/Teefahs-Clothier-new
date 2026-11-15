@@ -33,7 +33,7 @@ export default function Footer() {
             <a
               href={SHOP_CONFIG.whatsappChatUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-emerald-900/60 text-emerald-300 flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-colors"
               title={`WhatsApp: ${SHOP_CONFIG.whatsappDisplay}`}
               aria-label="Chat on WhatsApp"
@@ -43,7 +43,7 @@ export default function Footer() {
             <a
               href={SHOP_CONFIG.instagramUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-pink-950/60 text-pink-300 flex items-center justify-center hover:bg-pink-600 hover:text-white transition-colors"
               title="Instagram Profile"
               aria-label="Instagram Profile"
@@ -61,7 +61,7 @@ export default function Footer() {
             <a
               href={SHOP_CONFIG.officialWebsite}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-stone-800 text-stone-300 flex items-center justify-center hover:bg-stone-700 hover:text-white transition-colors"
               title={`Official Store Website: ${SHOP_CONFIG.officialWebsiteDisplay}`}
               aria-label={`Official Store Website: ${SHOP_CONFIG.officialWebsiteDisplay}`}
@@ -101,7 +101,7 @@ export default function Footer() {
               <a
                 href={SHOP_CONFIG.whatsappChatUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="hover:text-emerald-300 transition-colors"
               >
                 {SHOP_CONFIG.whatsappDisplay}

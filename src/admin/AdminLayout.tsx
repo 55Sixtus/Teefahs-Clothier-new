@@ -19,17 +19,17 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ASSETS } from '../data/assets';
-import { isAuthorizedAdminUser } from './AdminLogin';
+import SEO from '../components/SEO';
 
 export default function AdminLayout() {
-  const { user, session, loading } = useAuth();
+  const { user, session, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const isAuthenticated = Boolean(session?.access_token && user && isAuthorizedAdminUser(user));
-  const adminEmail = user?.email || 'queenlateefalive@yahoo.com';
-  const adminRole = adminEmail.toLowerCase() === 'queenlateefalive@yahoo.com' ? 'Store Owner' : 'Administrator';
+  const isAuthenticated = Boolean(session?.access_token && user && isAdmin);
+  const adminEmail = user?.email || 'Authenticated Admin';
+  const adminRole = 'Administrator';
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -78,6 +78,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col md:flex-row">
+      <SEO title="Admin Portal" />
       {/* Mobile Top Navigation */}
       <div className="md:hidden bg-stone-900 text-white p-4 flex items-center justify-between border-b border-stone-800 sticky top-0 z-30">
         <div className="flex items-center gap-2">
@@ -185,6 +186,7 @@ export default function AdminLayout() {
           <Link
             to="/"
             target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center justify-between px-3.5 py-2 text-xs text-stone-400 hover:text-stone-200 hover:bg-stone-900 rounded-sm transition-colors"
           >
             <span className="flex items-center gap-2">

@@ -104,6 +104,10 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_price DECIMAL(10, 2);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'NGN';
 
+ALTER TABLE products ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS deleted_by TEXT DEFAULT NULL;
+
 -- 3. UNIQUE INDEXES FOR NON-DESTRUCTIVE UPSERTS
 CREATE UNIQUE INDEX IF NOT EXISTS product_variations_product_size_colour_idx 
 ON product_variations (product_id, size, colour);
@@ -129,24 +133,45 @@ VALUES
   ('greatezirim8@gmail.com', 'admin', true)
 ON CONFLICT (email) DO UPDATE SET is_active = true, role = 'admin';
 
--- Secure admin verification function (SECURITY DEFINER allows reading admin_users table)
+-- Secure admin verification function (SECURITY DEFINER allows reading admin_users & auth.users)
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
+DECLARE
+  caller_uid UUID;
+  caller_email TEXT;
+  email_confirmed BOOLEAN;
+  is_banned BOOLEAN;
 BEGIN
-  -- 1. Check verified store owner & admin emails in JWT
-  IF LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN ('queenlateefalive@yahoo.com', 'greatezirim8@gmail.com') THEN
+  IF auth.role() <> 'authenticated' THEN
+    RETURN FALSE;
+  END IF;
+
+  caller_uid := auth.uid();
+  IF caller_uid IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT
+    u.email,
+    (u.email_confirmed_at IS NOT NULL),
+    (u.banned_until IS NOT NULL AND u.banned_until > NOW())
+  INTO caller_email, email_confirmed, is_banned
+  FROM auth.users u
+  WHERE u.id = caller_uid;
+
+  IF NOT FOUND OR NOT COALESCE(email_confirmed, FALSE) OR COALESCE(is_banned, FALSE) THEN
+    RETURN FALSE;
+  END IF;
+
+  -- 1. Check JWT app_metadata role (server-controlled)
+  IF LOWER(COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' THEN
     RETURN TRUE;
   END IF;
 
-  -- 2. Check JWT app_metadata role
-  IF (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' THEN
-    RETURN TRUE;
-  END IF;
-
-  -- 3. Check admin_users table
+  -- 2. Check active admin_users table against confirmed auth.users email
   IF EXISTS (
     SELECT 1 FROM admin_users 
-    WHERE LOWER(email) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
+    WHERE LOWER(email) = LOWER(COALESCE(caller_email, ''))
     AND is_active = true
   ) THEN
     RETURN TRUE;
@@ -154,7 +179,9 @@ BEGIN
 
   RETURN FALSE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+GRANT EXECUTE ON FUNCTION is_admin() TO anon, authenticated, service_role;
 
 -- 5. LEAST-PRIVILEGE ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
@@ -195,35 +222,49 @@ DROP POLICY IF EXISTS "Admin manage variations" ON product_variations;
 DROP POLICY IF EXISTS "Admin manage images" ON product_images;
 DROP POLICY IF EXISTS "Admin manage store_settings" ON store_settings;
 DROP POLICY IF EXISTS "Public read store_settings" ON store_settings;
+DROP POLICY IF EXISTS "Admin read store_settings" ON store_settings;
 
 -- PUBLIC READ-ONLY POLICIES (No write/update/delete permissions for unauthenticated visitors)
 CREATE POLICY "Public can read active categories" ON categories
-FOR SELECT USING (is_active = true);
+FOR SELECT TO anon, authenticated
+USING (is_active = true OR is_admin());
 
 CREATE POLICY "Public can read published products" ON products
-FOR SELECT USING (is_published = true);
+FOR SELECT TO anon, authenticated
+USING ((is_published = true AND COALESCE(is_archived, false) = false AND deleted_at IS NULL) OR is_admin());
 
 CREATE POLICY "Public can read published product images" ON product_images
-FOR SELECT USING (
+FOR SELECT TO anon, authenticated
+USING (
   EXISTS (
     SELECT 1 FROM products
     WHERE products.id = product_images.product_id
     AND products.is_published = true
+    AND COALESCE(products.is_archived, false) = false
+    AND products.deleted_at IS NULL
   )
+  OR is_admin()
 );
 
 CREATE POLICY "Public can read active variations of published products" ON product_variations
-FOR SELECT USING (
-  is_active = true AND
-  EXISTS (
-    SELECT 1 FROM products
-    WHERE products.id = product_variations.product_id
-    AND products.is_published = true
+FOR SELECT TO anon, authenticated
+USING (
+  (
+    is_active = true AND
+    EXISTS (
+      SELECT 1 FROM products
+      WHERE products.id = product_variations.product_id
+      AND products.is_published = true
+      AND COALESCE(products.is_archived, false) = false
+      AND products.deleted_at IS NULL
+    )
   )
+  OR is_admin()
 );
 
-CREATE POLICY "Public read store_settings" ON store_settings
-FOR SELECT USING (true);
+CREATE POLICY "Admin read store_settings" ON store_settings
+FOR SELECT TO authenticated
+USING (is_admin());
 
 -- AUTHENTICATED ADMINISTRATOR POLICIES (Strictly protected by is_admin())
 CREATE POLICY "Admin manage categories" ON categories

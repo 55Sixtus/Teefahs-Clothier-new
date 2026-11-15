@@ -59,9 +59,8 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
 
-  const adminEmail = user?.email || 'queenlateefalive@yahoo.com';
-  const adminRole =
-    adminEmail.toLowerCase() === 'queenlateefalive@yahoo.com' ? 'Store Owner' : 'Administrator';
+  const adminEmail = user?.email || 'Authenticated Admin';
+  const adminRole = 'Administrator';
 
   const loadAuxData = useCallback(async () => {
     try {
@@ -437,6 +436,7 @@ export default function AdminDashboard() {
           <Link
             to="/"
             target="_blank"
+            rel="noopener noreferrer"
             className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 hover:bg-stone-100/60 transition-all flex flex-col justify-between group"
           >
             <div>

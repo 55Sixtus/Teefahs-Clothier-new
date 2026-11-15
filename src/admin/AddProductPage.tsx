@@ -398,7 +398,7 @@ export default function AddProductPage() {
       <input
         ref={replaceInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         onChange={handleReplacePhoto}
         className="hidden"
       />
@@ -611,7 +611,7 @@ export default function AddProductPage() {
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             capture="environment"
             onChange={handleFileInput}
             className="hidden"
@@ -619,7 +619,7 @@ export default function AddProductPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             multiple
             onChange={handleFileInput}
             className="hidden"
@@ -1136,7 +1136,7 @@ export default function AddProductPage() {
               <Link
                 to={`/product/${createdProduct.slug || createdProduct.id}`}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="w-full py-3 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-semibold uppercase tracking-wider rounded-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <span>View on Live Storefront</span>

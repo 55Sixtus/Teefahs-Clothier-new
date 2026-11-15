@@ -83,19 +83,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return parsed.filter(
-            (item: any): item is CartItem =>
-              item &&
-              item.product &&
-              typeof item.product.id === 'string' &&
-              typeof item.quantity === 'number' &&
-              item.quantity > 0 &&
-              !isNaN(item.product.base_price || 0)
-          );
+          return parsed
+            .filter(
+              (item: any): item is CartItem =>
+                item &&
+                item.product &&
+                typeof item.product.id === 'string' &&
+                item.product.id.length <= 80 &&
+                typeof item.product.name === 'string' &&
+                typeof item.quantity === 'number' &&
+                Number.isFinite(item.quantity) &&
+                item.quantity > 0 &&
+                Number.isFinite(Number(item.product.base_price ?? 0))
+            )
+            .map((item) => ({
+              ...item,
+              selectedSize: String(item.selectedSize || 'Standard').slice(0, 60),
+              selectedColour: String(item.selectedColour || 'Original').slice(0, 60),
+              quantity: Math.min(50, Math.max(1, Math.round(item.quantity))),
+            }));
         }
       }
-    } catch (e) {
-      console.error('Failed to parse stored cart:', e);
+    } catch {
+      // ignore corrupted stored cart
     }
     return [];
   });

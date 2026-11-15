@@ -395,7 +395,7 @@ export default function CategoriesPage() {
                   />
                   <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[11px] font-semibold uppercase tracking-wider border border-stone-300 rounded-sm cursor-pointer transition-colors flex items-center gap-1">
                     <span>{uploading ? 'Uploading...' : 'Upload'}</span>
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileUpload} className="hidden" />
                   </label>
                 </div>
                 {imageUrl && (

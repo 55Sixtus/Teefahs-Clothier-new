@@ -14,22 +14,85 @@ UPDATE public.products
 SET is_archived = false
 WHERE is_archived IS NULL;
 
--- 2. CREATE / HARDEN public.is_admin() VERIFICATION FUNCTION
+-- 2. VERIFIED ADMINISTRATOR REGISTRY & HARDENED public.is_admin() FUNCTION
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.admin_users (email, role, is_active)
+VALUES
+  ('queenlateefalive@yahoo.com', 'admin', true),
+  ('greatezirim8@gmail.com', 'admin', true)
+ON CONFLICT (email) DO UPDATE
+SET is_active = true, role = 'admin';
+
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id UUID,
+  actor_email TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
+
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
+DECLARE
+  caller_uid UUID;
+  caller_email TEXT;
+  email_confirmed BOOLEAN;
+  is_banned BOOLEAN;
 BEGIN
-  RETURN (
-    auth.role() = 'authenticated' AND (
-      LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN (
-        'queenlateefalive@yahoo.com',
-        'greatezirim8@gmail.com'
-      )
-      OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
-      OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
-    )
-  );
+  IF auth.role() <> 'authenticated' THEN
+    RETURN FALSE;
+  END IF;
+
+  caller_uid := auth.uid();
+  IF caller_uid IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT
+    u.email,
+    (u.email_confirmed_at IS NOT NULL),
+    (u.banned_until IS NOT NULL AND u.banned_until > NOW())
+  INTO caller_email, email_confirmed, is_banned
+  FROM auth.users u
+  WHERE u.id = caller_uid;
+
+  IF NOT FOUND OR NOT COALESCE(email_confirmed, FALSE) OR COALESCE(is_banned, FALSE) THEN
+    RETURN FALSE;
+  END IF;
+
+  IF LOWER(COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' THEN
+    RETURN TRUE;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.admin_users a
+    WHERE LOWER(a.email) = LOWER(COALESCE(caller_email, ''))
+      AND a.is_active = true
+  ) THEN
+    RETURN TRUE;
+  END IF;
+
+  RETURN FALSE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
 
 -- 3. DYNAMICALLY DROP ALL EXISTING POLICIES ON CORE COMMERCE TABLES
 --    (Removes any manually created permissive FOR ALL TO anon, authenticated USING (true) WITH CHECK (true) policies)
@@ -47,7 +110,9 @@ BEGIN
         'product_images',
         'product_variations',
         'promotions',
-        'store_settings'
+        'store_settings',
+        'admin_users',
+        'admin_audit_logs'
       )
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I;', pol.policyname, pol.schemaname, pol.tablename);
@@ -68,6 +133,8 @@ BEGIN
         policyname ILIKE '%product-images%'
         OR policyname ILIKE '%Allow all%'
         OR policyname ILIKE '%Public%'
+        OR COALESCE(qual, '') ILIKE '%product-images%'
+        OR COALESCE(with_check, '') ILIKE '%product-images%'
       )
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects;', spol.policyname);
@@ -205,11 +272,34 @@ CREATE POLICY "Admin write store settings" ON public.store_settings
   USING (public.is_admin())
   WITH CHECK (public.is_admin());
 
+CREATE POLICY "Admin read admin_users" ON public.admin_users
+  FOR SELECT TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "Admin write admin_users" ON public.admin_users
+  FOR ALL TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin read audit logs" ON public.admin_audit_logs
+  FOR SELECT TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "Admin insert audit logs" ON public.admin_audit_logs
+  FOR INSERT TO authenticated
+  WITH CHECK (public.is_admin());
+
 -- 8. STORAGE BUCKET POLICIES ('product-images')
--- Public can read product images; only verified admins can upload, overwrite, or delete files.
-CREATE POLICY "Public read product-images bucket" ON storage.objects
-  FOR SELECT TO anon, authenticated
-  USING (bucket_id = 'product-images');
+-- Public image CDN URLs work via bucket public=true; directory listing and writes require verified admin.
+UPDATE storage.buckets
+SET
+  file_size_limit = 10485760,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp']
+WHERE id = 'product-images';
+
+CREATE POLICY "Admin read product-images bucket" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (bucket_id = 'product-images' AND public.is_admin());
 
 CREATE POLICY "Admin insert product-images bucket" ON storage.objects
   FOR INSERT TO authenticated

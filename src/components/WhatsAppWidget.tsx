@@ -18,7 +18,7 @@ export default function WhatsAppWidget() {
     <a
       href={whatsappUrl}
       target="_blank"
-      rel="noreferrer"
+      rel="noopener noreferrer"
       onClick={() => {
         trackWhatsAppConversion('floating_widget', {
           source_page: location.pathname,

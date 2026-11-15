@@ -26,6 +26,7 @@ export default function AnalyticsSeoPage() {
   const [gaId, setGaId] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [gaError, setGaError] = useState('');
   const [testSent, setTestSent] = useState(false);
 
   useEffect(() => {
@@ -40,11 +41,20 @@ export default function AnalyticsSeoPage() {
 
   const handleSaveGaId = (e: React.FormEvent) => {
     e.preventDefault();
-    if (gaId.trim()) {
-      setActiveGaMeasurementId(gaId.trim());
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2500);
+    setGaError('');
+    const trimmed = gaId.trim().toUpperCase();
+    if (!trimmed) {
+      setGaError('Please enter a Google Analytics or Google Ads Measurement ID.');
+      return;
     }
+    const ok = setActiveGaMeasurementId(trimmed);
+    if (!ok) {
+      setGaError('Invalid format. Use a valid Measurement ID such as G-XXXXXXXXXX, AW-XXXXXXXXXX, or GT-XXXXXXXXXX.');
+      return;
+    }
+    setGaId(trimmed);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const handleSendTestEvent = () => {
@@ -148,23 +158,31 @@ export default function AnalyticsSeoPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSaveGaId} className="flex flex-col sm:flex-row gap-3 items-stretch max-w-2xl">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={gaId}
-              onChange={e => setGaId(e.target.value)}
-              placeholder="e.g. G-TEEFAHS2026"
-              className="w-full px-3.5 py-2.5 text-sm font-mono border border-stone-300 rounded-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
-            />
+        <form onSubmit={handleSaveGaId} className="space-y-2 max-w-2xl">
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={gaId}
+                onChange={e => {
+                  setGaId(e.target.value);
+                  if (gaError) setGaError('');
+                }}
+                placeholder="e.g. G-TEEFAHS2026"
+                className="w-full px-3.5 py-2.5 text-sm font-mono border border-stone-300 rounded-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors cursor-pointer shadow-2xs"
+            >
+              {savedSuccess ? <Check size={14} className="text-emerald-400" /> : <Save size={14} />}
+              <span>{savedSuccess ? 'Saved & Activated!' : 'Save ID'}</span>
+            </button>
           </div>
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors cursor-pointer shadow-2xs"
-          >
-            {savedSuccess ? <Check size={14} className="text-emerald-400" /> : <Save size={14} />}
-            <span>{savedSuccess ? 'Saved & Activated!' : 'Save ID'}</span>
-          </button>
+          {gaError && (
+            <p className="text-xs text-red-700 font-medium">{gaError}</p>
+          )}
         </form>
 
         {/* Ad Performance Events Table */}
@@ -241,7 +259,7 @@ export default function AnalyticsSeoPage() {
             <a
               href="/google616a7805306b17ab.html"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="text-emerald-700 hover:text-emerald-900 text-xs font-semibold flex items-center gap-1"
             >
               <span>Test Live URL</span>
@@ -269,7 +287,7 @@ export default function AnalyticsSeoPage() {
           <a
             href="https://search.google.com/search-console"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors"
           >
             <span>Open Google Search Console</span>
@@ -278,7 +296,7 @@ export default function AnalyticsSeoPage() {
           <a
             href="https://analytics.google.com/"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors border border-stone-700"
           >
             <span>Open Google Analytics</span>
@@ -287,7 +305,7 @@ export default function AnalyticsSeoPage() {
           <a
             href="/sitemap.xml"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold uppercase tracking-wider rounded-sm transition-colors border border-stone-700"
           >
             <span>View XML Sitemap</span>

@@ -79,7 +79,29 @@ CREATE TABLE IF NOT EXISTS promotions (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS Policies
+-- Admin Users
+CREATE TABLE IF NOT EXISTS admin_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Admin Audit Logs (Append-only)
+CREATE TABLE IF NOT EXISTS admin_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id UUID,
+  actor_email TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- RLS Policies (apply database/security-hardening.sql for complete production RLS & storage hardening)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read published products" ON products
   FOR SELECT TO anon, authenticated
@@ -94,3 +116,5 @@ ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_variations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_audit_logs ENABLE ROW LEVEL SECURITY;

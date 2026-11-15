@@ -1,0 +1,1315 @@
+# TEEFAHS CLOTHIER — COMPLETE E-COMMERCE TRANSFORMATION, PRODUCT PRESENTATION REBUILD, INTERNATIONAL SHOPPING EXPERIENCE AND PRODUCTION FUNCTIONALITY REPAIR
+
+## PROJECT OBJECTIVE
+
+Transform the existing Teefahs Clothier website into a world-class, international-standard modest-fashion e-commerce platform.
+
+The target experience should have the product-discovery depth, detailed product presentation, shopping convenience and customer confidence associated with major international shopping platforms such as Temu, Amazon and other established e-commerce websites.
+
+However, Teefahs Clothier must retain its own premium, elegant, luxurious and distinctive fashion identity.
+
+This is not a request to copy another website. It is a request to build a genuinely professional shopping experience that meets international customer expectations.
+
+The website must serve customers in Nigeria and the international diaspora, including customers in the UK, USA, Canada and other countries.
+
+**The most important objective:** Customers must be able to understand exactly what they are buying, select the correct product options, place orders and follow their orders without needing to contact the store owner for information that should already be available on the website.
+
+The owner must also be able to manage products, images, variations, inventory and orders independently through a real, reliable admin dashboard.
+
+This is a production improvement, not a demonstration or prototype.
+
+---
+
+# PHASE 1 — AUDIT THE EXISTING WEBSITE BEFORE MAKING CHANGES
+
+Before modifying anything, inspect the complete existing application.
+
+Examine:
+
+- Current frontend architecture and components.
+- Existing product listing and product detail pages.
+- Product database structure.
+- Supabase tables, relationships and Storage buckets.
+- Existing admin dashboard.
+- Product image management.
+- Product variations, sizes and colours.
+- Inventory and stock management.
+- Cart and WhatsApp checkout.
+- Existing order-management functionality.
+- Authentication and admin permissions.
+- Category navigation and filtering.
+- Currency and location handling.
+- Existing email or notification integrations.
+- Responsive mobile and desktop layouts.
+- Existing deployment configuration.
+
+Identify which functionality is real, which is incomplete, which is simulated and which is broken.
+
+Pay particular attention to the previously reported problems:
+
+1. Product edits do not consistently appear on the storefront.
+2. Deleted products continue to appear.
+3. Different garments have incorrectly been grouped into one product.
+4. Multiple photographs of one garment have been treated as separate products.
+5. Some product images do not show the complete garment.
+6. Product sizes and measurements are missing.
+7. Product colours are not properly organised.
+8. Customers cannot obtain sufficient information before ordering.
+9. The owner still has to answer questions that should be answered by product pages.
+10. Admin operations do not consistently persist to Supabase.
+
+Do not start by redesigning the homepage while these underlying problems remain unresolved.
+
+Produce an audit of the existing architecture, then implement the improvements in the same project.
+
+Preserve the existing Supabase project, valid records, customer accounts, order history and working integrations.
+
+Do not run a full database seed or overwrite the existing catalogue.
+
+---
+
+# PHASE 2 — CORRECT THE PRODUCT DATABASE AND PRODUCT ORGANISATION
+
+This is one of the most important requirements.
+
+The current product organisation must be corrected so that one garment is represented as one product, with multiple photographs and variations attached to that product.
+
+## 2.1 One garment must equal one product
+
+For example, one Abaya may have:
+
+- Front photograph.
+- Back photograph.
+- Side photograph.
+- Close-up of fabric.
+- Close-up of sleeves.
+- Photograph showing its embellishments.
+- Additional photographs showing the garment being worn.
+
+These are all photographs of ONE product.
+
+They must be displayed together in one product gallery.
+
+They must not become seven separate products.
+
+Each product must have its own:
+
+- Unique product ID.
+- Product name.
+- Category.
+- Price.
+- Description.
+- Product gallery.
+- Available colours.
+- Available sizes.
+- Measurements.
+- Country of origin, where confirmed.
+- Sizing system, where applicable.
+- Stock information.
+- Publication status.
+
+## 2.2 Correctly distinguish products and variations
+
+There must be a clear distinction between:
+
+**Different photographs:** Different views of the same garment. These belong to one product gallery.
+
+**Different colours:** If the garment design is the same but the colour differs, represent the colours as variations of one product where appropriate.
+
+**Different sizes:** Represent these as size variations with their own stock quantities where applicable.
+
+**Different garment designs:** If two garments have genuinely different designs, they must remain separate product listings, even if they belong to the same category or have similar colours.
+
+Do not combine unrelated garments into one product simply to reduce the number of listings.
+
+Do not create duplicate products by giving the same garment different names.
+
+Do not merge products based only on similar colours or vague descriptions. Compare the actual designs and photographs.
+
+If a product's identity is uncertain, flag it for owner review rather than deleting or merging it automatically.
+
+## 2.3 Database structure
+
+Inspect and improve the existing Supabase schema where necessary.
+
+The architecture should properly support:
+
+- Products.
+- Categories.
+- Product images.
+- Image ordering and primary-image selection.
+- Product colour variations.
+- Product size variations.
+- Variation-specific stock.
+- Product measurements.
+- Country of origin.
+- Sizing systems.
+- Product videos.
+- Product publication status.
+- Product descriptions and attributes.
+
+Reuse existing tables and relationships where suitable. Make only necessary migrations.
+
+Do not create a second competing product system.
+
+Every product gallery image must be associated with the correct product ID.
+
+Every colour and size variation must be associated with the correct product.
+
+---
+
+# PHASE 3 — WORLD-CLASS PRODUCT IMAGE PRESENTATION
+
+A major customer complaint is that some product photographs are incomplete, too small or insufficient to show what the customer is actually buying.
+
+This must be corrected.
+
+## 3.1 Product card images
+
+The product listing cards should display:
+
+- Clear, high-quality product photographs.
+- Consistent image dimensions and presentation.
+- A complete view of the garment wherever possible.
+- Product name.
+- Correct price.
+- Available colour indicators where relevant.
+- A clear indication of available sizes where appropriate.
+- A visible link to view the full product.
+
+Do not crop garments in a way that hides important parts of the design.
+
+Do not cut off the hem, sleeves, hood, neckline or other important details.
+
+Use a consistent image container, but preserve the full garment using an appropriate image fit such as `contain` when necessary.
+
+Avoid forcing every photograph into an unsuitable crop.
+
+## 3.2 Detailed product image gallery
+
+Every product detail page must have a professional image gallery.
+
+The gallery should support:
+
+1. Large primary image.
+2. Clickable thumbnail images.
+3. Front view.
+4. Back view.
+5. Side view.
+6. Close-up photographs.
+7. Fabric and texture details.
+8. Additional product photographs.
+9. Full-screen image viewing.
+10. Image zoom.
+11. Easy previous/next image navigation.
+
+The gallery should be responsive on mobile and desktop.
+
+Customers should be able to inspect the garment comfortably without downloading the image.
+
+The image gallery must show only photographs belonging to the selected product and, where applicable, its selected colour variation.
+
+## 3.3 Do not manufacture missing product photographs
+
+Use genuine photographs supplied or approved by the business owner.
+
+Do not invent back views or side views using AI and present them as actual product photographs.
+
+Do not use Google-downloaded images as though they are genuine Teefahs stock.
+
+Do not substitute a photograph of a similar garment.
+
+If a product has only one genuine photograph, display that photograph properly and show only the available image count. The admin dashboard should allow additional views to be added later.
+
+Where a product has insufficient photographs, flag it as needing more images.
+
+Do not block the entire catalogue because some products have incomplete galleries.
+
+## 3.4 AI-enhanced and illustrative photographs
+
+If AI-generated or AI-enhanced model images are used, they must not misrepresent the actual garment.
+
+Provide an appropriate label such as:
+
+- Actual Product Photograph.
+- AI-Enhanced Presentation.
+- Illustrative Model Image.
+
+Use these labels only when they accurately describe the image.
+
+The actual garment's design, colour, fabric appearance, embellishments and finishing must not be falsely represented.
+
+The customer must be able to distinguish an illustrative presentation from a genuine photograph of the product being sold.
+
+---
+
+# PHASE 4 — PRODUCT VIDEOS
+
+Introduce optional video support on product detail pages.
+
+A product video should allow customers to see:
+
+- The garment from the front.
+- The garment from the back.
+- The garment from the side.
+- How the material moves.
+- How the garment falls when worn.
+- Sleeve, neckline and finishing details.
+- Any important features that photographs alone may not communicate.
+
+Keep videos short, clear and professionally presented.
+
+Support an appropriate video upload or a valid external video link, depending on the existing application architecture.
+
+The admin dashboard must allow the owner to:
+
+- Add a video.
+- Replace a video.
+- Remove a video.
+- Preview a video before publishing.
+
+Videos must be optional.
+
+Do not generate fake videos or display empty video controls.
+
+Use appropriate video compression and lazy loading to protect website performance.
+
+---
+
+# PHASE 5 — COMPREHENSIVE PRODUCT INFORMATION
+
+Customers should not need to message the owner just to discover basic product specifications.
+
+Every product detail page should have a clear, organised information section.
+
+Support the following fields:
+
+### Product identity
+- Product name.
+- Category.
+- Product description.
+- Product code or SKU, where used.
+
+### Price
+- Base price in NGN.
+- International currency display, when supported.
+- Clear pricing for variations if prices genuinely differ.
+
+### Product origin
+- Country of manufacture or origin, when confirmed.
+- Supplier or collection origin, if relevant and approved.
+
+Never assume a garment is made in Dubai, Egypt, Nigeria, Turkey or any other country simply because of its style.
+
+### Material and fabric
+- Fabric type.
+- Texture.
+- Thickness or weight, if known.
+- Transparency or lining information, if known.
+- Care instructions, if supplied.
+
+Do not invent material claims.
+
+### Product construction
+Where relevant, show:
+- Sleeve style.
+- Neckline.
+- Closure type.
+- Hood or attached veil.
+- Embroidery.
+- Pockets.
+- Included accessories.
+- Other genuine design features.
+
+### Product contents
+
+Clearly explain what is included in the purchase.
+
+For example, if an item includes an Abaya only, say so.
+
+If it includes an Abaya and matching veil, state that.
+
+Do not allow customers to assume accessories in a photograph are included when they are not.
+
+### Availability
+- Available colours.
+- Available sizes.
+- Actual stock status.
+- Availability of each variation.
+
+Do not display fabricated product specifications.
+
+If information has not been supplied, omit it or show a clear neutral message such as "Contact the store for details."
+
+---
+
+# PHASE 6 — INTERNATIONAL SIZING AND MEASUREMENT SYSTEM
+
+This is essential for international customers.
+
+A customer in the UK, USA, Canada or another country should be able to understand whether a garment will fit before ordering.
+
+## 6.1 Country and sizing-system information
+
+Support relevant sizing systems, including:
+
+- Nigerian sizing.
+- UK sizing.
+- US sizing.
+- European sizing.
+- UAE sizing.
+- Egyptian sizing.
+
+Only display the systems that are genuinely relevant to the product and supported by verified measurements.
+
+Do not assume that a UK Large, US Large, Egyptian Large and UAE Large are identical.
+
+Where a supplier uses a particular sizing standard, record that accurately.
+
+## 6.2 Actual garment measurements
+
+Allow the owner to enter measurements for each product or size variation.
+
+Relevant measurements may include:
+
+| Measurement | Unit |
+|---|---|
+| Bust/chest | cm and inches |
+| Garment length | cm and inches |
+| Sleeve length | cm and inches |
+| Shoulder width | cm and inches |
+| Waist | cm and inches |
+| Hip | cm and inches |
+| Other relevant dimensions | cm and inches |
+
+Not every garment needs every measurement.
+
+The fields should adapt to the product type.
+
+For Abayas, garment length, bust, sleeve and shoulder measurements are particularly useful.
+
+For Khimars, relevant length, width and coverage measurements may be more appropriate.
+
+For Hijabs and veils, dimensions may be more useful than conventional clothing sizes.
+
+## 6.3 Size guide on the product page
+
+Provide an easy-to-open size guide.
+
+It should explain:
+
+- What each size means.
+- Whether measurements refer to the body or the garment.
+- How to measure correctly.
+- Whether the garment has a loose or fitted cut.
+- Whether customers should allow additional room for a comfortable fit.
+
+Provide cm/inches conversion.
+
+Do not use random generic size charts for every product.
+
+The owner must be able to supply and edit product-specific measurements.
+
+## 6.4 Fit guidance
+
+Where sufficient verified measurements exist, provide helpful fit guidance.
+
+For example:
+
+"Compare your measurements with the garment measurements before selecting a size."
+
+Do not guarantee that a particular size will fit a customer without sufficient information.
+
+Do not make customers believe that a size recommendation is a professional body-fitting assessment.
+
+---
+
+# PHASE 7 — COLOUR AND SIZE VARIATION SELECTION
+
+Create a professional product-option selection experience.
+
+When a product has multiple genuine colours, display clearly labelled colour swatches.
+
+When a customer selects a colour:
+
+- Update the selected colour indicator.
+- Show the correct photograph for that colour, where available.
+- Display available sizes for that colour.
+- Display accurate stock availability.
+- Update the selected variation in the cart.
+
+When a customer selects a size:
+
+- Clearly show the selected size.
+- Check the corresponding variation's stock.
+- Prevent the customer from selecting unavailable stock.
+- Update the cart with the correct size and colour.
+
+The selected colour and size must be included in the final WhatsApp order message.
+
+Do not display colour or size options that are not actually available.
+
+The admin must be able to manage stock independently for each size and colour combination where applicable.
+
+---
+
+# PHASE 8 — WORLD-CLASS PRODUCT DETAIL PAGE DESIGN
+
+Redesign the product detail page to feel like a professional international fashion retailer.
+
+The experience should be clean, elegant, premium and highly informative.
+
+Suggested layout:
+
+### Main product section
+
+Desktop:
+- Large image gallery on the left.
+- Product information and purchase controls on the right.
+
+Mobile:
+- Large image gallery at the top.
+- Product details underneath.
+- Easy-to-use variation selectors.
+- Convenient Add to Cart control.
+
+### Product information hierarchy
+
+Display in this order:
+
+1. Product name.
+2. Product price.
+3. Product rating only if genuine verified customer reviews exist.
+4. Availability status.
+5. Colour selection.
+6. Size selection.
+7. Size guide.
+8. Key product details.
+9. Quantity selection.
+10. Add to Cart.
+11. WhatsApp order option.
+12. Delivery and returns information, based on the actual store policy.
+
+### Additional product sections
+
+Add organised expandable sections or tabs for:
+
+- Product Description.
+- Details and Fabric.
+- Size and Measurements.
+- Colour and Variations.
+- Delivery Information.
+- Returns and Exchange Policy.
+
+Do not make the product page unnecessarily crowded.
+
+Important information must be easy to find.
+
+### Related products
+
+Show relevant products from the same category or collection.
+
+Do not use unrelated products simply to fill space.
+
+Do not present fake recommendations or fabricated ratings.
+
+---
+
+# PHASE 9 — PREMIUM STORE NAVIGATION AND PRODUCT DISCOVERY
+
+Improve the overall storefront to make browsing simple and intuitive.
+
+The website should have a professional navigation system with:
+
+- Home.
+- Shop All.
+- New Arrivals.
+- Collections.
+- Abayas.
+- Hijabs.
+- Khimars.
+- Veils.
+- Prayer Wear.
+- Occasion Wear.
+- Workerwear.
+- Caps.
+- Accessories.
+- Contact.
+
+Only show categories that exist and are intended to be visible.
+
+The navigation must work correctly on desktop and mobile.
+
+## Product search
+
+Provide a functional search feature that can search by:
+
+- Product name.
+- Category.
+- Product type.
+- Available colour, where supported.
+- Relevant product attributes.
+
+Show useful search results and a clear empty state when nothing matches.
+
+## Product filters
+
+Allow customers to filter by:
+
+- Category.
+- Price range.
+- Size.
+- Colour.
+- Availability.
+- New arrivals.
+- Other genuine product attributes.
+
+## Sorting
+
+Allow sorting by:
+
+- Newest arrivals.
+- Price: low to high.
+- Price: high to low.
+- Name, where appropriate.
+
+Filters and sorting must use actual database values.
+
+Do not create decorative controls that do not work.
+
+---
+
+# PHASE 10 — INTERNATIONAL CUSTOMER EXPERIENCE AND CURRENCY DISPLAY
+
+Teefahs Clothier serves customers outside Nigeria.
+
+Improve the experience for international visitors.
+
+## 10.1 Country selection
+
+Provide a country or region selector.
+
+Customers should be able to choose their shopping or delivery country.
+
+Do not assume that the customer's browsing location is their delivery location.
+
+## 10.2 Currency display
+
+NGN remains the base catalogue currency.
+
+Support international display currencies where appropriate, including:
+
+- NGN.
+- GBP.
+- USD.
+- CAD.
+- EUR.
+
+Use a reliable exchange-rate source if live conversion is implemented.
+
+Clearly distinguish between:
+
+- Base product price in NGN.
+- Converted indicative price.
+- Actual final amount payable.
+
+Do not pretend that a converted display amount is a guaranteed payment amount.
+
+Display the exchange-rate timestamp where practical.
+
+Do not independently change the actual NGN product price when currency display changes.
+
+The store owner must retain control of the base product price.
+
+Do not introduce online payment integration as part of this task. The current checkout process is WhatsApp-based.
+
+## 10.3 International delivery information
+
+Allow delivery information to be configured by the owner.
+
+Support different delivery destinations and delivery policies.
+
+However, delivery coverage, charges, timelines, customs duties and international shipping conditions must only be displayed when confirmed by the business.
+
+Do not invent delivery prices or promise delivery to countries the store has not approved.
+
+If delivery information is unavailable, clearly explain that the customer must confirm delivery availability before completing the order.
+
+---
+
+# PHASE 11 — REAL CART AND SIMPLIFIED WHATSAPP CHECKOUT
+
+The cart must behave like a genuine e-commerce shopping cart.
+
+Customers must be able to:
+
+- Add multiple products.
+- Add different products together.
+- Select product variations.
+- Change quantities.
+- Remove products.
+- Review the selected product photographs.
+- Review sizes and colours.
+- See individual prices.
+- See line totals.
+- See the order subtotal.
+- Review the complete order before sending it.
+
+The cart must not combine different garment designs incorrectly.
+
+The WhatsApp checkout message must include:
+
+- Customer's name, where supplied.
+- Contact details, where supplied.
+- Delivery country.
+- Delivery address, where supplied.
+- Product names.
+- Selected colours.
+- Selected sizes.
+- Quantities.
+- Individual prices.
+- Order subtotal.
+- Delivery charge, only if confirmed.
+- Special customer instructions.
+
+Use the existing Teefahs Clothier WhatsApp checkout number and preserve the current working WhatsApp integration.
+
+The WhatsApp message must be properly formatted and easy to understand.
+
+Do not claim an order has been paid simply because a WhatsApp message was sent.
+
+Do not add a fake online payment page.
+
+---
+
+# PHASE 12 — REAL ORDER MANAGEMENT AND CUSTOMER NOTIFICATIONS
+
+The customer specifically requested a system that informs her when an order has been received, processed, dispatched and delivered.
+
+Implement a proper order-management workflow.
+
+## 12.1 Order records
+
+If the current WhatsApp checkout only sends a message and does not create an order record, improve the architecture so that the customer can submit an order request and the store can record and manage it.
+
+Do not mark an order as confirmed merely because a customer opened WhatsApp.
+
+Where the business workflow requires owner confirmation, make that distinction clear.
+
+Create or improve the existing Supabase order records to support:
+
+- Unique order reference.
+- Customer details.
+- Ordered products.
+- Selected variations.
+- Quantities.
+- Product prices at the time of ordering.
+- Order subtotal.
+- Delivery information.
+- Order status.
+- Order creation date.
+- Status update timestamps.
+- Tracking reference, where available.
+
+Preserve historical order information even if a product is later edited or deleted.
+
+## 12.2 Order statuses
+
+Support an appropriate order lifecycle:
+
+1. Order received.
+2. Awaiting confirmation.
+3. Confirmed.
+4. Processing.
+5. Ready for dispatch.
+6. Dispatched.
+7. Out for delivery.
+8. Delivered.
+9. Cancelled.
+10. Returned, where the business supports returns.
+
+The admin must be able to update the order status.
+
+Each status change must persist in Supabase.
+
+Do not display a false delivered status.
+
+## 12.3 Customer order tracking
+
+Provide a secure customer-facing way to check order progress.
+
+This may use a secure order reference and an appropriate verification mechanism.
+
+Do not expose one customer's address, phone number, order history or personal information to another customer.
+
+The tracking page should clearly display:
+
+- Order reference.
+- Order date.
+- Current status.
+- Status timeline.
+- Dispatch information.
+- Delivery information, where available.
+
+## 12.4 Email notifications
+
+Support email notifications for relevant order events:
+
+- Order received.
+- Order confirmed.
+- Order dispatched.
+- Out for delivery, where supported.
+- Order delivered.
+
+Use a suitable email service and secure server-side configuration.
+
+Do not hardcode email API secrets into the frontend.
+
+Do not claim emails have been sent unless the email service confirms successful delivery or acceptance.
+
+If no email provider is configured, build the integration safely and document the exact configuration required.
+
+## 12.5 Delivery confirmation
+
+Delivery should be recorded only when the store or delivery provider confirms it.
+
+Where the delivery provider offers tracking integration, use it only if the provider supports the required API.
+
+If no integration exists, allow the authorised admin to update delivery status manually and record who made the update and when.
+
+The customer should then receive the appropriate notification.
+
+---
+
+# PHASE 13 — PRODUCT ADMIN DASHBOARD: MAKE IT SIMPLE AND COMPLETE
+
+The admin dashboard is the control centre of the business.
+
+The owner should not need a developer to make routine changes.
+
+Redesign the product-management workflow so that it is easy to understand and use.
+
+## 13.1 Product creation
+
+Create a simple guided product creation process.
+
+Suggested steps:
+
+**Step 1 — Basic information**
+- Product name.
+- Category.
+- Price.
+- Description.
+- Country of origin, if known.
+
+**Step 2 — Product photographs**
+- Upload multiple images.
+- Preview photographs.
+- Mark primary image.
+- Reorder images.
+- Remove incorrect images.
+
+**Step 3 — Variations**
+- Add colours.
+- Add sizes.
+- Add stock quantities.
+- Attach appropriate photographs to colour variations.
+
+**Step 4 — Measurements and specifications**
+- Add measurements.
+- Select the applicable sizing system.
+- Enter material and other confirmed attributes.
+
+**Step 5 — Video and publication**
+- Add optional video.
+- Preview the product.
+- Save as draft or publish.
+
+The owner should be able to skip optional fields and return to them later.
+
+Do not force the owner to fill in information that is not available.
+
+## 13.2 Product editing
+
+The owner must be able to edit every relevant product field.
+
+Changes must save to Supabase.
+
+The public storefront must update from the saved database records.
+
+## 13.3 Product deletion
+
+Implement genuine deletion or safe archiving according to the existing data relationships.
+
+When deleting a product:
+
+- Remove it from the active catalogue.
+- Remove it from public category pages.
+- Remove it from search results.
+- Prevent new customers from adding it to carts.
+- Handle associated image records and files safely.
+- Preserve legitimate historical order records.
+- Confirm the deletion outcome.
+
+Do not merely hide the product in frontend state.
+
+## 13.4 Product image management
+
+The admin must support:
+
+- Multiple image uploads.
+- Primary image selection.
+- Reordering.
+- Replacing images.
+- Removing images.
+- Image previews.
+- Correct product association.
+
+Use Supabase Storage where supported by the existing architecture.
+
+Do not leave broken external image links.
+
+Do not claim an upload succeeded until the image has actually been stored and its reference saved.
+
+## 13.5 Variation and stock management
+
+The owner must be able to manage:
+
+- Colour.
+- Size.
+- Stock quantity.
+- Variation-specific photographs.
+- Availability.
+
+The system must prevent customers from purchasing unavailable variations.
+
+## 13.6 Admin order management
+
+Add a straightforward order-management area.
+
+The owner should be able to:
+
+- View incoming orders.
+- Open order details.
+- Contact customers where necessary.
+- Confirm orders.
+- Update order status.
+- Enter dispatch and tracking information.
+- Mark delivery only after confirmation.
+- Review completed orders.
+- Search orders by reference or customer.
+
+## 13.7 Admin usability
+
+The admin dashboard must be clean and understandable.
+
+Use clear labels, helpful empty states, proper confirmations and meaningful success/error messages.
+
+Do not create buttons with empty callbacks.
+
+Do not display fake sales figures, fake order counts or fabricated stock data.
+
+Do not display a success message before the operation has actually succeeded.
+
+---
+
+# PHASE 14 — DATA CLEANUP AND EXISTING CATALOGUE PROTECTION
+
+Before applying product changes, audit the existing catalogue.
+
+Identify:
+
+- Duplicate products.
+- Incorrectly combined products.
+- Products with multiple garment designs in one listing.
+- Products with incorrect image associations.
+- Broken image links.
+- Products missing important information.
+- Unapproved or irrelevant images.
+- Incorrect category assignments.
+
+Do not delete or merge ambiguous products automatically.
+
+Prepare a report of records that require owner confirmation.
+
+The owner has previously identified Google-downloaded Kmouse photographs and product entries that do not represent actual stock. Remove unapproved Kmouse photographs and associated unapproved listings from the active storefront. Preserve the Kmouse category for genuine products to be added later.
+
+Do not generate replacement Kmouse images.
+
+Do not run a full seed file.
+
+Do not reset the product catalogue.
+
+Do not delete historical orders.
+
+Do not change unrelated category prices.
+
+Preserve the existing approved products and product images.
+
+**Pricing protection:** The established owner instruction is that genuine Abaya products must use the confirmed price of ₦229,500. Apply this only to products genuinely categorised as Abayas. Do not apply it to Khimars, Hijabs, Veils, Workerwear or other categories. Do not overwrite other confirmed prices.
+
+Do not import additional pending products as part of this structural repair unless explicitly instructed. Complete the product architecture first so that future catalogue additions are handled correctly.
+
+---
+
+# PHASE 15 — PREMIUM HOMEPAGE AND VISUAL DESIGN
+
+After the underlying functionality and product architecture have been audited and corrected, improve the visual experience.
+
+The website must look like a premium international fashion retailer.
+
+The design should communicate:
+
+- Elegance.
+- Modesty.
+- Quality.
+- Trust.
+- Luxury.
+- International accessibility.
+- Professionalism.
+
+Use the existing Teefahs Clothier brand identity, approved logo and brand photographs.
+
+## Homepage structure
+
+Create a polished homepage with:
+
+1. Premium hero section.
+2. Clear Shop Now action.
+3. Featured categories.
+4. New arrivals.
+5. Featured collections.
+6. Best-selling products, only where genuine sales data supports the claim.
+7. Carefully selected product highlights.
+8. Brand introduction.
+9. Customer service and shopping information.
+10. Delivery and ordering information.
+11. Newsletter or contact subscription only if genuinely operational.
+12. Professional footer with contact details and social links.
+
+## Visual direction
+
+Use:
+
+- Elegant typography.
+- Refined spacing.
+- Premium product photography.
+- Consistent image presentation.
+- Tasteful transitions and animations.
+- Clean navigation.
+- Strong visual hierarchy.
+- Well-designed mobile layouts.
+- Clear calls to action.
+
+Avoid:
+
+- Generic template appearance.
+- Excessive animation.
+- Overcrowded product cards.
+- Tiny text.
+- Unnecessary pop-ups.
+- Cluttered navigation.
+- Fake urgency timers.
+- Fake stock warnings.
+- Fake customer reviews.
+- Fake discount claims.
+- Unverified best-seller labels.
+
+The website should feel premium, not like a cheap marketplace flyer.
+
+---
+
+# PHASE 16 — MOBILE, TABLET AND DESKTOP EXPERIENCE
+
+Most customers may visit through mobile devices.
+
+The entire shopping experience must work properly on:
+
+- Mobile phones.
+- Tablets.
+- Laptops.
+- Desktop computers.
+
+Pay special attention to:
+
+- Image gallery controls.
+- Image zoom.
+- Size selection.
+- Colour swatches.
+- Product filters.
+- Cart.
+- WhatsApp checkout.
+- Navigation menu.
+- Order tracking.
+- Admin dashboard.
+
+Buttons must be easy to tap.
+
+Product photographs must not be cropped incorrectly on mobile.
+
+Do not hide important product details behind unusable controls.
+
+Test actual responsive layouts, not only desktop preview.
+
+---
+
+# PHASE 17 — WEBSITE PERFORMANCE, ACCESSIBILITY AND SEARCH ENGINE OPTIMISATION
+
+The improved website must remain fast and reliable.
+
+Implement:
+
+- Responsive image delivery.
+- Appropriate image compression.
+- Lazy loading for images below the fold.
+- Efficient image galleries.
+- Optimised video loading.
+- Caching that does not show stale product information.
+- Proper loading indicators.
+- Helpful error states.
+- Accessible image descriptions.
+- Keyboard-friendly navigation.
+- Adequate colour contrast.
+- Clear page titles and descriptions.
+- Product structured data where accurate.
+- Proper canonical URLs.
+- Search-engine-friendly category and product pages.
+
+Do not sacrifice product image quality to achieve speed.
+
+Do not let caching prevent product edits and deletions from appearing correctly.
+
+---
+
+# PHASE 18 — SECURITY AND CUSTOMER DATA PROTECTION
+
+Keep the existing Supabase security architecture intact.
+
+Review Row Level Security policies.
+
+Requirements:
+
+- Public visitors may read published products and relevant public category information.
+- Only authorised administrators may create, edit, publish, unpublish or delete products.
+- Only authorised administrators may change stock and prices.
+- Customer order information must not be publicly accessible.
+- Customers must only be able to access their own order information through a secure mechanism.
+- Service-role credentials must never be exposed in frontend code.
+- Email and delivery API credentials must be stored securely.
+- Validate customer inputs.
+- Validate product variation and stock availability on the server.
+- Protect admin routes and operations.
+
+Do not disable security policies to make features work.
+
+Do not create unrestricted public write access to Supabase tables.
+
+---
+
+# PHASE 19 — END-TO-END TESTING AND ACCEPTANCE REQUIREMENTS
+
+Do not finish after making the interface look attractive.
+
+Test the actual system.
+
+## Product data tests
+
+- Create a new product.
+- Upload several genuine product photographs.
+- Set the primary image.
+- Add a video.
+- Add colours.
+- Add sizes.
+- Enter measurements.
+- Enter country of origin.
+- Save the product.
+- Refresh the page.
+- Confirm the information remains correct.
+- Edit the product.
+- Confirm the storefront updates.
+- Delete or archive a test product.
+- Confirm it disappears from the active storefront.
+
+## Product gallery tests
+
+- Open a product with multiple photographs.
+- Navigate between photographs.
+- Open full-screen view.
+- Zoom into the image.
+- Confirm front, back and side views belong to the same product.
+- Confirm the selected colour displays the correct photographs.
+- Confirm no unrelated product images appear.
+
+## Size and variation tests
+
+- Select a colour.
+- Select a size.
+- Check the corresponding stock.
+- Add the variation to the cart.
+- Confirm the cart displays the correct options.
+- Confirm unavailable stock cannot be ordered.
+
+## Cart and checkout tests
+
+- Add multiple different products.
+- Add different variations of the same product.
+- Change quantities.
+- Remove products.
+- Verify line totals and subtotal.
+- Send the order through WhatsApp.
+- Verify that all product details and selected variations appear correctly.
+
+## International shopping tests
+
+- Change the selected country.
+- Confirm that country selection does not silently change product prices.
+- Test currency display.
+- Verify exchange-rate source and timestamp if live conversion is enabled.
+- Confirm that unconfigured delivery charges are not invented.
+- Confirm that delivery information is accurate.
+
+## Order-management tests
+
+- Create a test order.
+- Confirm it is saved correctly.
+- Update its status.
+- Verify the status timeline.
+- Test customer access restrictions.
+- Test email notifications if configured.
+- Confirm no false delivery notification is sent.
+- Confirm delivery status persists after refresh.
+
+## Security tests
+
+- Verify unauthorised users cannot access admin operations.
+- Verify customers cannot view other customers' orders.
+- Verify public users cannot change product prices or stock.
+- Verify secret keys are not exposed in the frontend.
+
+## Production deployment tests
+
+A successful local build is not proof that the production website works.
+
+After implementation:
+
+- Build the application.
+- Check for runtime errors.
+- Deploy to the existing production environment.
+- Confirm the deployed website loads.
+- Test the deployed product pages.
+- Test the deployed admin dashboard.
+- Test Supabase operations from the deployed website.
+- Test WhatsApp checkout.
+- Test mobile responsiveness.
+- Confirm that the latest changes are visible on the production domain.
+
+If deployment access or configuration is unavailable, clearly identify what remains to be done. Do not claim deployment was completed.
+
+---
+
+# PHASE 20 — FINAL IMPLEMENTATION REPORT
+
+When finished, provide a detailed report with these sections:
+
+### A. Existing problems discovered
+List the actual issues found in the current application.
+
+### B. Database improvements
+Explain the actual Supabase changes and migrations performed.
+
+### C. Product architecture
+Explain how one product now supports multiple photographs, colours, sizes and measurements.
+
+### D. Product gallery
+Confirm which gallery features are implemented and tested.
+
+### E. International shopping
+Report country selection, sizing, currency and delivery functionality.
+
+### F. Cart and checkout
+Report actual working functionality.
+
+### G. Order management
+Report which order statuses, tracking features and notifications work.
+
+### H. Admin dashboard
+Report the actual product and order-management capabilities.
+
+### I. Security
+Report the relevant security and access-control checks.
+
+### J. Production deployment
+State whether the changes are deployed and verified on the production website.
+
+### K. Remaining work
+Identify every incomplete feature, missing external integration, configuration requirement or issue requiring owner input.
+
+For each major feature, use one of these statuses:
+
+- Implemented and verified.
+- Implemented but not yet verified.
+- Requires external configuration.
+- Requires owner information.
+- Not implemented.
+- Failed testing.
+
+Include actual test evidence where possible, not just descriptions.
+
+---
+
+# FINAL INSTRUCTIONS — READ CAREFULLY
+
+1. Do not simply redesign the website and leave the existing functional problems unresolved.
+2. Do not create a dummy shopping experience.
+3. Do not simulate database updates.
+4. Do not use localStorage as the source of truth for products, stock, prices or orders.
+5. Do not invent product photographs, measurements, materials, country of origin, stock or prices.
+6. Do not group different garments into one product.
+7. Do not turn different photographs of one garment into separate product listings.
+8. Do not delete legitimate products or historical orders.
+9. Do not introduce online payment integration. Preserve the current WhatsApp checkout model.
+10. Do not add fake reviews, fake delivery tracking, fake ratings or false notifications.
+11. Do not claim that a product has been saved, deleted, uploaded or delivered unless the corresponding operation has actually succeeded.
+12. Do not expose credentials or weaken Supabase security.
+13. Do not break the existing working website while improving it.
+14. Do not remove the existing Teefahs brand identity.
+15. Do not deploy untested or destructive database changes.
+
+## IMPLEMENTATION ORDER
+
+Work in this sequence:
+
+1. Audit the existing codebase and Supabase database.
+2. Correct the product and variation architecture.
+3. Correct product image-gallery relationships.
+4. Repair real admin CRUD and persistence.
+5. Improve product details, photographs and measurements.
+6. Implement colour and size selection.
+7. Improve product search, navigation and filtering.
+8. Improve cart and WhatsApp checkout.
+9. Implement order management and customer notifications.
+10. Implement international shopping features.
+11. Refine the premium visual design.
+12. Test security, responsiveness and performance.
+13. Deploy and verify production.
+
+Do not skip a phase simply because the visual interface is already present.
+
+If a feature depends on information or credentials the business has not supplied, implement the safe parts, identify the missing information and do not fabricate the rest.
+
+**THE FINAL STANDARD**
+
+Teefahs Clothier must become a professional, trustworthy, international-ready fashion e-commerce website where:
+
+- Customers can inspect a garment properly before buying.
+- One garment has one organised product listing with all its genuine photographs.
+- Sizes, colours and measurements are clearly presented.
+- Customers can make informed purchasing decisions.
+- Customers can order multiple products conveniently.
+- Customers can receive meaningful order updates.
+- The owner can independently manage the complete store.
+- Every important operation is saved in Supabase.
+- The public storefront reflects the real database.
+- The website is beautiful, fast, responsive, secure and reliable.
+
+Build a complete shopping experience, not merely a beautiful website.

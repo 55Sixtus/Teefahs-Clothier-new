@@ -309,7 +309,7 @@ export default function MediaStoragePage() {
           <span>{uploading ? 'Compressing & Uploading...' : 'Upload New Photo'}</span>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             disabled={uploading}
             onChange={handleFileUpload}
             className="hidden"
@@ -453,7 +453,7 @@ export default function MediaStoragePage() {
                   <a
                     href={item.url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="p-1.5 bg-white text-stone-900 rounded-full hover:bg-stone-100 shadow-md"
                     title="Open in new tab"
                   >

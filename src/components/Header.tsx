@@ -75,7 +75,7 @@ export default function Header() {
         <a 
           href="https://wa.me/2348028991921" 
           target="_blank" 
-          rel="noreferrer" 
+          rel="noopener noreferrer" 
           className="text-amber-300 hover:text-white font-medium flex items-center gap-1 transition-colors"
         >
           WhatsApp: +234 802 899 1921
@@ -414,7 +414,7 @@ export default function Header() {
               <a
                 href={SHOP_CONFIG.whatsappChatUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="text-xs text-emerald-800 font-medium hover:underline block"
               >
                 Chat with Stylist on WhatsApp &rarr;

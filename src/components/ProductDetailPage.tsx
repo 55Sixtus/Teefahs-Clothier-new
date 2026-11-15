@@ -528,7 +528,7 @@ export default function ProductDetailPage() {
                       `Assalamu Alaikum Teefahs Clothier! I am viewing:\n\n*${product.name}*\nPrice: ${pricing.formattedSellingPrice}\nSize: ${currentSize}\nColour: ${currentColour}\n\nCould you please confirm availability and order details?`
                     )}`}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     onClick={() => {
                       trackWhatsAppConversion('inquire_whatsapp', {
                         product_id: product.id,

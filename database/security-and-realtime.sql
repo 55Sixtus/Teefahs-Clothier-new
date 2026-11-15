@@ -12,31 +12,95 @@ BEGIN
     SELECT schemaname, tablename, policyname
     FROM pg_policies
     WHERE schemaname = 'public'
-      AND tablename IN ('products', 'categories', 'product_images', 'product_variations', 'promotions', 'store_settings')
+      AND tablename IN ('products', 'categories', 'product_images', 'product_variations', 'promotions', 'store_settings', 'admin_users', 'admin_audit_logs')
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I;', pol.policyname, pol.schemaname, pol.tablename);
   END LOOP;
 END $$;
 
--- STEP 2: ENSURE SOFT-DELETE COLUMNS EXIST ON PRODUCTS
+-- STEP 2: ENSURE SOFT-DELETE COLUMNS & ADMIN TABLES EXIST
 ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL,
   ADD COLUMN IF NOT EXISTS deleted_by TEXT DEFAULT NULL;
 
--- STEP 3: ENSURE is_admin() FUNCTION EXISTS
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.admin_users (email, role, is_active)
+VALUES
+  ('queenlateefalive@yahoo.com', 'admin', true),
+  ('greatezirim8@gmail.com', 'admin', true)
+ON CONFLICT (email) DO UPDATE SET is_active = true, role = 'admin';
+
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id UUID,
+  actor_email TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- STEP 3: HARDENED is_admin() FUNCTION (NO user_metadata TRUST)
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
+DECLARE
+  caller_uid UUID;
+  caller_email TEXT;
+  email_confirmed BOOLEAN;
+  is_banned BOOLEAN;
 BEGIN
-  RETURN (
-    auth.role() = 'authenticated' AND (
-      LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN ('queenlateefalive@yahoo.com', 'greatezirim8@gmail.com')
-      OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
-      OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
-    )
-  );
+  IF auth.role() <> 'authenticated' THEN
+    RETURN FALSE;
+  END IF;
+
+  caller_uid := auth.uid();
+  IF caller_uid IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT
+    u.email,
+    (u.email_confirmed_at IS NOT NULL),
+    (u.banned_until IS NOT NULL AND u.banned_until > NOW())
+  INTO caller_email, email_confirmed, is_banned
+  FROM auth.users u
+  WHERE u.id = caller_uid;
+
+  IF NOT FOUND OR NOT COALESCE(email_confirmed, FALSE) OR COALESCE(is_banned, FALSE) THEN
+    RETURN FALSE;
+  END IF;
+
+  IF LOWER(COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '')) = 'admin' THEN
+    RETURN TRUE;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.admin_users a
+    WHERE LOWER(a.email) = LOWER(COALESCE(caller_email, ''))
+      AND a.is_active = true
+  ) THEN
+    RETURN TRUE;
+  END IF;
+
+  RETURN FALSE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
+
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
 
 -- STEP 4: ENSURE PROMOTIONS TABLE EXISTS
 CREATE TABLE IF NOT EXISTS public.promotions (
@@ -137,6 +201,23 @@ CREATE POLICY "Admin write store settings" ON public.store_settings
 CREATE POLICY "Admin write promotions" ON public.promotions
   FOR ALL TO authenticated
   USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin read admin_users" ON public.admin_users
+  FOR SELECT TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "Admin write admin_users" ON public.admin_users
+  FOR ALL TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admin read audit logs" ON public.admin_audit_logs
+  FOR SELECT TO authenticated
+  USING (public.is_admin());
+
+CREATE POLICY "Admin insert audit logs" ON public.admin_audit_logs
+  FOR INSERT TO authenticated
   WITH CHECK (public.is_admin());
 
 -- STEP 8: ENABLE SUPABASE REALTIME REPLICATION

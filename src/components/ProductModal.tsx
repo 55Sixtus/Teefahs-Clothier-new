@@ -589,7 +589,7 @@ export default function ProductModal({
                 <a
                   href={`https://wa.me/${chatNumber}?text=${whatsappMessage}`}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   onClick={() => {
                     trackWhatsAppConversion('inquire_whatsapp', {
                       product_id: activeProduct.id,

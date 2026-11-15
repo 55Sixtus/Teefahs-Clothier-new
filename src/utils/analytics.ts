@@ -10,58 +10,93 @@ declare global {
 }
 
 export const DEFAULT_GA_ID = 'G-TEEFAHS2026';
+const GA_MEASUREMENT_ID_PATTERN = /^(G|AW|GT)-[A-Z0-9]{6,16}$/i;
+
+export const isValidGaMeasurementId = (id: string): boolean => {
+  return GA_MEASUREMENT_ID_PATTERN.test(id.trim());
+};
+
+const isAdminPath = (): boolean => {
+  return typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+};
 
 /**
- * Retrieve the active GA Measurement ID (from localStorage or default)
+ * Retrieve the active validated GA Measurement ID (from localStorage, env, or default)
  */
 export const getActiveGaMeasurementId = (): string => {
   try {
     const saved = localStorage.getItem('teefahs_ga_measurement_id');
-    if (saved && saved.trim().length > 3) {
-      return saved.trim();
+    if (saved && isValidGaMeasurementId(saved)) {
+      return saved.trim().toUpperCase();
     }
-    if (window.GA_MEASUREMENT_ID) {
-      return window.GA_MEASUREMENT_ID;
+    if (window.GA_MEASUREMENT_ID && isValidGaMeasurementId(window.GA_MEASUREMENT_ID)) {
+      return window.GA_MEASUREMENT_ID.trim().toUpperCase();
     }
     const envId = (import.meta as any).env?.VITE_GA_MEASUREMENT_ID;
-    if (envId && envId.trim().length > 3) {
-      return envId.trim();
+    if (envId && isValidGaMeasurementId(envId)) {
+      return envId.trim().toUpperCase();
     }
-  } catch (e) {
-    // ignore
+  } catch {
+    // ignore storage errors
   }
   return DEFAULT_GA_ID;
 };
 
 /**
- * Set active GA Measurement ID dynamically
+ * Initialize Google Analytics on public storefront routes (skipped on /admin/*)
  */
-export const setActiveGaMeasurementId = (id: string): void => {
+export const initializeAnalytics = (): void => {
+  if (typeof window === 'undefined' || isAdminPath()) return;
   try {
-    const cleaned = id.trim();
-    localStorage.setItem('teefahs_ga_measurement_id', cleaned);
-    if (typeof window.gtag === 'function' && cleaned) {
-      window.gtag('config', cleaned, {
-        send_page_view: true,
-      });
+    window.dataLayer = window.dataLayer || [];
+    if (typeof window.gtag !== 'function') {
+      window.gtag = function gtag() {
+        // eslint-disable-next-line prefer-rest-params
+        window.dataLayer.push(arguments);
+      };
     }
-  } catch (e) {
-    console.error('Failed to set GA Measurement ID:', e);
+    const activeId = getActiveGaMeasurementId();
+    window.gtag('js', new Date());
+    window.gtag('config', activeId, {
+      page_path: window.location.pathname,
+      send_page_view: true,
+    });
+  } catch {
+    // ignore analytics errors
   }
 };
 
 /**
- * Safely send a Google Analytics / Ads event
+ * Set active GA Measurement ID dynamically with strict format validation
+ */
+export const setActiveGaMeasurementId = (id: string): boolean => {
+  const cleaned = id.trim().toUpperCase();
+  if (!isValidGaMeasurementId(cleaned)) {
+    return false;
+  }
+  try {
+    localStorage.setItem('teefahs_ga_measurement_id', cleaned);
+    if (!isAdminPath() && typeof window.gtag === 'function') {
+      window.gtag('config', cleaned, {
+        send_page_view: true,
+      });
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Safely send a Google Analytics / Ads event (suppressed on /admin/* routes)
  */
 export const trackEvent = (eventName: string, params: Record<string, any> = {}) => {
+  if (isAdminPath()) return;
   if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     try {
       window.gtag('event', eventName, params);
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Google Analytics Event] ${eventName}:`, params);
-      }
-    } catch (err) {
-      console.warn(`[Google Analytics] Failed to emit event ${eventName}:`, err);
+    } catch {
+      // analytics optional
     }
   }
 };

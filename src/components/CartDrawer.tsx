@@ -449,7 +449,7 @@ export default function CartDrawer() {
             <a
               href={whatsappCheckoutUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               onClick={() => {
                 trackBeginCheckout(
                   cart.map(item => ({
