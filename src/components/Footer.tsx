@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MessageCircle, Instagram, Lock, Mail, MapPin, Globe } from 'lucide-react';
+import { MessageCircle, Instagram, Lock, Mail, MapPin, Globe, PackageSearch } from 'lucide-react';
 import { ASSETS } from '../data/assets';
 import { SHOP_CONFIG } from '../config/shopConfig';
 
@@ -10,9 +10,9 @@ export default function Footer() {
         {/* Brand Column */}
         <div className="flex flex-col gap-3.5 sm:col-span-2 md:col-span-1">
           <Link to="/" className="inline-block">
-            <img 
-              src={ASSETS.logo} 
-              alt="Teefahs Clothier" 
+            <img
+              src={ASSETS.logo}
+              alt="Teefahs Clothier"
               className="h-9 w-auto invert brightness-200 object-contain"
               onError={(e) => {
                 const target = e.currentTarget;
@@ -23,7 +23,7 @@ export default function Footer() {
             />
           </Link>
           <p className="text-xs text-stone-400 leading-relaxed font-light">
-            Timeless Modesty, Effortless Elegance.
+            Timeless Modesty, Effortless Elegance. Serving Lagos, Nigeria, and the international modest diaspora.
           </p>
           <p className="text-xs text-emerald-400 font-serif italic">
             "Dress modest. Look elegant. Stand out."
@@ -73,28 +73,50 @@ export default function Footer() {
 
         {/* Collections */}
         <div>
-          <h4 className="font-serif text-sm text-stone-100 uppercase tracking-widest mb-4">Shop Collections</h4>
+          <h4 className="font-serif text-sm text-stone-100 uppercase tracking-widest mb-4">
+            Shop Collections
+          </h4>
           <ul className="flex flex-col gap-2.5 text-xs text-stone-400">
             <li><Link to="/shop" className="hover:text-white transition-colors">All Pieces</Link></li>
             <li><Link to="/new-arrivals" className="hover:text-emerald-300 transition-colors">New Arrivals</Link></li>
             <li><Link to="/collections" className="hover:text-white transition-colors">Collections</Link></li>
-            <li><Link to="/gallery" className="hover:text-emerald-300 transition-colors font-medium">The Teefahs Gallery</Link></li>
             <li><Link to="/shop?category=abayas" className="hover:text-white transition-colors">Abayas</Link></li>
             <li><Link to="/shop?category=khimars" className="hover:text-white transition-colors">Khimars</Link></li>
-            <li><Link to="/shop?category=workerwear" className="hover:text-white transition-colors">Workerwear</Link></li>
-            <li><Link to="/shop?category=prayer-wear" className="hover:text-white transition-colors">Prayer Wear</Link></li>
+            <li><Link to="/shop?category=workwear" className="hover:text-white transition-colors">Workwear</Link></li>
+            <li><Link to="/shop?category=caps" className="hover:text-white transition-colors">Jersey Caps &amp; Veils</Link></li>
+          </ul>
+        </div>
+
+        {/* Client Care & Order Tracking */}
+        <div>
+          <h4 className="font-serif text-sm text-stone-100 uppercase tracking-widest mb-4">
+            Client Services
+          </h4>
+          <ul className="flex flex-col gap-2.5 text-xs text-stone-400">
+            <li>
+              <Link to="/track-order" className="hover:text-amber-300 transition-colors inline-flex items-center gap-1.5 font-medium text-stone-200">
+                <PackageSearch size={13} className="text-emerald-400" />
+                <span>Track Your Order</span>
+              </Link>
+            </li>
+            <li><Link to="/gallery" className="hover:text-white transition-colors">The Teefahs Gallery</Link></li>
+            <li><Link to="/our-story" className="hover:text-white transition-colors">Our Story</Link></li>
+            <li><Link to="/contact" className="hover:text-white transition-colors">Boutique Location &amp; Hours</Link></li>
+            <li className="text-[11px] text-stone-500 pt-1 leading-relaxed">
+              Delivery &amp; Dispatch: Lagos, nationwide Nigeria, and international courier options confirmed on WhatsApp prior to payment.
+            </li>
           </ul>
         </div>
 
         {/* Contact & Store Location */}
         <div>
-          <h4 className="font-serif text-sm text-stone-100 uppercase tracking-widest mb-4">Store &amp; Contact</h4>
+          <h4 className="font-serif text-sm text-stone-100 uppercase tracking-widest mb-4">
+            Store &amp; Contact
+          </h4>
           <ul className="flex flex-col gap-3 text-xs text-stone-400">
             <li className="flex items-start gap-2">
               <MapPin size={15} className="text-emerald-400 flex-shrink-0 mt-0.5" />
-              <span className="leading-relaxed">
-                {SHOP_CONFIG.address}
-              </span>
+              <span className="leading-relaxed">{SHOP_CONFIG.address}</span>
             </li>
             <li className="flex items-center gap-2">
               <MessageCircle size={15} className="text-emerald-400 flex-shrink-0" />
@@ -123,7 +145,6 @@ export default function Footer() {
             </li>
           </ul>
         </div>
-
       </div>
 
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between text-[11px] text-stone-500 mt-12 pt-8 border-t border-stone-800 gap-4">

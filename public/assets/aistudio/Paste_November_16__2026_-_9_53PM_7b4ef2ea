@@ -1,0 +1,741 @@
+# TEEFAHS CLOTHIER — COMPREHENSIVE FINAL PRODUCTION REPAIR, PRICE PERSISTENCE, CATALOGUE CLEANUP, ADMIN CRUD, DATABASE SECURITY AND LIVE VERIFICATION
+
+## IMPORTANT: READ THIS ENTIRE INSTRUCTION BEFORE MAKING CHANGES
+
+This is an existing, operating e-commerce website. It is not a new project, a demonstration, or a disposable prototype.
+
+The website has undergone several rounds of corrections. However, the business owner continues to report that prices she changes in the Admin Dashboard do not update on the storefront and sometimes do not even update in the Admin Dashboard itself.
+
+This problem has been reported repeatedly. It must now be investigated at its actual technical root cause and permanently resolved.
+
+The business owner should not have to contact a developer every time she changes a product price, edits a product, updates stock, uploads a photograph, or deletes an item.
+
+The objective is to make the website a dependable, genuinely database-backed e-commerce platform that the owner can independently operate.
+
+**Do not merely change the prices listed below. Find and repair the underlying reason why admin changes are not reliably saving and propagating.**
+
+Do not rebuild the application. Do not introduce unnecessary features. Do not destroy existing business data. Inspect the existing implementation first, preserve successful work, and make targeted, comprehensive repairs.
+
+---
+
+# PART 1 — INSPECT THE EXISTING APPLICATION AND ESTABLISH THE REAL ROOT CAUSE
+
+Before editing anything, inspect the actual source code, database integration, existing Supabase schema, admin product management workflow, storefront queries, deployment configuration and previous fixes.
+
+Pay particular attention to:
+
+- src/lib/supabase.ts
+- src/lib/api.ts
+- src/admin/
+- ProductWizard and product edit components
+- Product management and category management components
+- ProductCard, ProductModal and ProductDetailPage
+- CartContext and CartDrawer
+- All product, category, variation and image query functions
+- Any cache, localStorage, sessionStorage or browser persistence mechanisms
+- Supabase migrations and SQL files
+- Vercel configuration and environment variables
+
+Inspect the actual live product data and schema rather than assuming the source code and database are synchronized.
+
+Produce an internal diagnosis before changing the code.
+
+Identify exactly why product edits and price changes are failing.
+
+Investigate these possible causes:
+
+1. Admin edit forms updating React state but not successfully updating Supabase.
+2. Database updates targeting the wrong product ID, slug or record.
+3. Updates writing to base_price while the storefront reads sale_price, or the reverse.
+4. Multiple competing price fields or inconsistent price precedence.
+5. Product updates succeeding but returning an error that the interface ignores.
+6. Product updates failing due to RLS policies or insufficient permissions.
+7. Incorrect Supabase update filters.
+8. Stale React state, query caches or localStorage overriding the latest database values.
+9. Storefront pages fetching an older product record or a different duplicate product.
+10. Product variants overriding the intended product price.
+11. Multiple product records with the same name or slug causing the wrong record to be edited.
+12. A successful database update being overwritten by another save, background synchronization or stale form state.
+13. Numeric conversion, currency formatting or serialization errors.
+14. Vercel production environment configuration differing from the local environment.
+15. Any other actual implementation defect.
+
+Do not assume one of these is the cause. Establish the cause from the code and available database evidence.
+
+**Critical requirement:** If a price change fails, the owner must receive an honest, understandable error. Never display "Saved successfully" when Supabase rejected the operation or when persistence was not confirmed.
+
+---
+
+# PART 2 — PERMANENTLY FIX ADMIN PRODUCT PRICE AND EDIT PERSISTENCE
+
+This is the highest-priority functional repair.
+
+Implement one reliable product-update process for the entire application.
+
+When the owner edits a product and presses Save:
+
+1. Validate the form.
+2. Identify the exact product record using its stable database ID.
+3. Validate the new values.
+4. Submit the update to the correct Supabase table.
+5. Check the actual Supabase response and error.
+6. Re-fetch the updated product from Supabase.
+7. Confirm that the returned record contains the saved values.
+8. Update the admin interface using the confirmed database record.
+9. Invalidate or refresh affected product queries and caches.
+10. Ensure public storefront queries retrieve the updated product.
+11. Display a clear success message only after persistence is confirmed.
+
+If any step fails:
+- Do not show false success.
+- Preserve the owner's unsaved form data where possible.
+- Explain what failed in plain language.
+- Provide a retry option.
+- Log useful technical diagnostics without exposing secrets or sensitive information.
+
+## Price consistency
+
+Inspect all price fields in the existing schema.
+
+Establish one clearly defined authoritative NGN base-price field and one consistent set of rules for optional sale prices and variation-specific price overrides.
+
+Do not create another competing price system.
+
+Ensure that:
+- The admin editor displays the current database price.
+- Editing the price updates the correct database field.
+- The product list displays the updated price.
+- The public storefront displays the updated price.
+- Quick View displays the updated price.
+- Product details display the updated price.
+- The cart uses the current authoritative price.
+- WhatsApp checkout uses the current verified price.
+- International currency equivalents are recalculated from the authoritative NGN price.
+- A stale cached price cannot override a newer database price.
+
+If sale_price or price_override is used, document and enforce a consistent precedence rule. Do not allow a stale variation price to silently override an owner-approved product price.
+
+## Make the owner experience simple
+
+The owner should be able to:
+- Open All Products.
+- Select Edit.
+- Change the price.
+- Press Save.
+- See confirmation that the new price was actually saved.
+- See the new price immediately in the admin product list.
+- See the new price on the public storefront after refresh.
+
+Do not require the owner to delete and recreate products to change their prices.
+
+Do not require manual browser cache clearing or technical intervention.
+
+If a save is still pending, show a clear saving state and prevent duplicate submissions.
+
+---
+
+# PART 3 — APPLY THE OWNER'S EXACT PRICE CORRECTIONS FROM THE PROVIDED SCREENSHOTS
+
+Use the three supplied screenshots as the visual reference for the following corrections.
+
+These prices are owner-provided instructions, not estimates.
+
+## A. Noor Embellished Luxury Abaya products
+
+The first screenshot displays four product cards currently carrying the same product name, Noor Embellished Luxury Abaya.
+
+The owner has clarified that the first photograph has the correct existing price. Preserve that first product's current correct price.
+
+The other three prices must be corrected as follows, in the exact left-to-right order shown in the screenshot:
+
+1. First photograph: preserve its existing correct price.
+2. Second photograph: ₦185,000.
+3. Third photograph: ₦120,000.
+4. Fourth photograph: ₦58,000.
+
+Important:
+- Match each price to the correct photograph and exact database record.
+- Do not apply one price to all four records.
+- Do not simply update every record with the same product name.
+- Inspect the actual photographs and product IDs.
+- Check whether these are genuinely distinct garments, incorrectly duplicated listings, or separate photographs of one garment.
+- Preserve genuinely distinct garments as separate products.
+- If they are actually the same garment and only different photographs, organize them under one listing rather than creating duplicate products.
+- Do not delete or merge anything merely because the names are identical.
+- Preserve the correct first product price.
+- Verify each corrected price in Supabase, the admin product list, the storefront and product detail page.
+
+The existing universal Abaya pricing rule must not be applied indiscriminately to these owner-specified records. These four screenshot corrections are explicit owner-authorized prices for the identified records.
+
+## B. Soraya Hand-Beaded Black Occasion Kimono
+
+The third screenshot shows:
+
+Product: Soraya Hand-Beaded Black Occasion Kimono.
+
+Current displayed price: ₦110,000.
+
+Owner-confirmed correct price: **₦70,000**.
+
+Update the exact Soraya product record to ₦70,000.
+
+Verify the database and every relevant storefront display.
+
+## C. Jawhara Royal Evening Silk Kimono — duplicate removal
+
+The same screenshot identifies:
+
+Product: Jawhara Royal Evening Silk Kimono.
+
+The owner has marked this listing as a repetition of the Soraya garment.
+
+Inspect both product photographs, database records, product variations, stock quantities and image records.
+
+If the records confirm they represent the same physical garment in the same colour, retain one correct listing and remove the duplicate listing from the active catalogue.
+
+Based on the owner's instruction, the intended outcome is:
+- Retain the Soraya listing at ₦70,000.
+- Remove the duplicate Jawhara listing.
+
+However, before deletion:
+- Confirm the matching garment visually.
+- Confirm that it is not a genuinely different design.
+- Preserve the retained product's genuine photographs and relevant information.
+- Do not double-count stock.
+- Check for any order references or other records linked to the duplicate.
+- Preserve historical order snapshots if they exist.
+- Remove or deactivate only the duplicate product and its unnecessary associations.
+- Ensure the duplicate no longer appears on the public storefront, Shop All, search, collections or related-product recommendations.
+
+If the actual records reveal a meaningful difference that contradicts the owner's identification, flag it instead of silently deleting a different garment.
+
+## D. Sultana Beaded Sweeping Hemline Kimono
+
+Current displayed price: ₦95,000.
+
+Owner-confirmed correct price: **₦75,000**.
+
+Update the correct Sultana product record to ₦75,000.
+
+Verify the saved value in Supabase, Admin Dashboard, product detail page and storefront.
+
+Do not change unrelated occasion-wear prices.
+
+## E. Other products in the screenshot
+
+Do not change the Editorial Photoshoot #31 Abaya price or other products unless a specific owner-approved correction is identified.
+
+Do not guess missing prices.
+
+---
+
+# PART 4 — FIX THE WORKWEAR CATEGORY AND REMOVE CATEGORY CONFUSION
+
+The business owner has explicitly clarified that the category is called:
+
+**Workwear**
+
+It is not Workout Wear.
+
+The owner has also stated that she previously created the correct category herself.
+
+The latest reports mention overlapping category records:
+- WORK WEAR
+- Workerwear
+- Workerwear
+- Possible Workout Wear naming introduced elsewhere.
+
+Inspect the live Supabase categories table and the actual Admin Categories interface.
+
+Determine which category record the owner created and which one currently contains the genuine Workerwear products.
+
+Required outcome:
+
+1. Use one canonical category name: Workwear.
+2. Prefer the owner's existing correct category record if it is valid and usable.
+3. If the application currently uses WORK WEAR or Workerwear, consolidate the records safely.
+4. Reassign the three genuine existing Workwear products to the canonical category:
+   - Halima set.
+   - Leemah set.
+   - Safiyah set.
+5. Preserve their prices, photographs, sizes, stock and product identities.
+6. Do not create another duplicate category.
+7. Do not delete a category while genuine products still depend on it.
+8. Update navigation, category filters, category cards, Admin Categories and product forms.
+9. Maintain URL compatibility for old category slugs where necessary.
+10. Ensure Workwear appears only once in public navigation and category filters.
+
+If a duplicate category is empty after safe reassignment, remove or deactivate that empty duplicate only after verifying that no products or dependencies still reference it.
+
+Do not create a new category if the owner's existing one can be corrected and reused.
+
+---
+
+# PART 5 — SYSTEMATIC CATALOGUE DUPLICATE AUDIT
+
+The owner has repeatedly complained about repeated garments appearing as separate products.
+
+This must be treated as a catalogue integrity problem.
+
+Inspect the full live catalogue, not only the products shown in the screenshots.
+
+Compare:
+- Product photographs.
+- Garment design and embellishment.
+- Colour.
+- Product names.
+- Product descriptions.
+- Image URLs and image records.
+- Variation records.
+- SKU and product identifiers.
+- Stock quantities.
+
+Apply these rules:
+
+1. The same garment in the same colour should have one product listing with multiple genuine photographs.
+2. The same garment in genuinely different colours may be represented as colour variations under one product where appropriate.
+3. Genuinely different garment designs must remain separate listings.
+4. Different product names do not automatically make two identical garments different products.
+5. Similar colours alone do not prove two garments are identical.
+6. Never merge two products solely because their names are similar.
+7. Never delete genuine product photographs without checking whether they belong to the retained listing.
+8. Do not double-count stock when merging confirmed duplicates.
+9. Preserve genuine product information and order history.
+10. Do not invent replacement photographs.
+
+Create a non-destructive catalogue audit before performing any merges.
+
+Classify findings as:
+- Confirmed duplicate.
+- Possible duplicate requiring owner confirmation.
+- Genuine separate product.
+- Category mismatch.
+- Missing product image.
+- Missing variation or stock information.
+
+Automatically consolidate only clearly confirmed duplicates where the owner has already authorized the correction.
+
+For ambiguous cases, leave the records intact and report the exact product names and reasons for uncertainty.
+
+Ensure deleted or archived products do not continue appearing in public catalogue queries due to stale caches, duplicate records or fallback arrays.
+
+---
+
+# PART 6 — PRESERVE THE ESTABLISHED ABAYA PRICING RULE WITHOUT OVERRIDING EXPLICIT CORRECTIONS
+
+The previously established general pricing instruction is that genuine Abaya products are normally ₦229,500.
+
+However, the owner has now provided explicit product-specific price corrections in Part 3.
+
+Therefore:
+- Preserve the general ₦229,500 rule for genuine Abaya products where applicable.
+- Apply the specific owner-authorized screenshot prices to the exact identified records.
+- Do not apply the Abaya price to Khimars, Hijabs, Veils, Workwear, Caps or Accessories.
+- Do not overwrite explicit product-specific prices with a blanket bulk update.
+- Do not automatically reapply old prices through seed data, default values, migrations or background synchronization.
+
+Never run seed.sql or reset the database.
+
+---
+
+# PART 7 — COMPLETE ADMIN CREATE, EDIT, DELETE AND INVENTORY FUNCTIONALITY
+
+The Admin Dashboard must be the reliable source of truth for routine store management.
+
+Verify and repair all operations:
+
+## Create
+- Add a new product.
+- Assign its correct category.
+- Enter price.
+- Upload genuine product photographs.
+- Add sizes, colours and stock.
+- Save and publish.
+- Confirm the product exists in Supabase and appears on the storefront.
+
+## Edit
+- Change name, price, description and category.
+- Replace or add photographs.
+- Edit sizes, colours and stock.
+- Save and verify persistence.
+- Refresh and confirm that the latest values remain.
+
+## Delete and archive
+- Provide clear and safe delete/archive actions.
+- Confirm the intended record before deletion.
+- Prevent accidental deletion of unrelated products.
+- Remove deleted products from public queries.
+- Invalidate caches and refresh affected storefront sections.
+- Preserve historical order records and snapshots.
+- Never show a deleted product as active after refresh.
+
+## Inventory
+- Make stock quantities consistent between product variations and aggregate product stock.
+- Prevent negative quantities.
+- Ensure out-of-stock items are represented accurately.
+- Do not invent available stock.
+- Ensure the cart cannot submit unavailable quantities.
+
+The owner must be able to complete these tasks independently without editing code, using SQL, or contacting a developer.
+
+---
+
+# PART 8 — VERIFY THE EXISTING PRODUCT IMAGE AND GALLERY SYSTEM
+
+Preserve genuine product photographs.
+
+Ensure:
+- Multiple images belonging to one garment are grouped under one product.
+- Product galleries show the correct images.
+- Variation photos correspond to the selected colour.
+- Images are not accidentally shared across unrelated products.
+- Missing images use a neutral placeholder.
+- No fabricated or unrelated garment image appears as a fallback.
+- Kmouse remains empty until genuine owner-approved photographs are supplied.
+- The message "New Kmouse Collection Coming Soon." remains available.
+- Product images load correctly on desktop and mobile.
+
+Do not restore the previously removed fabricated lookbook photographs or unapproved Google-downloaded Kmouse photographs.
+
+---
+
+# PART 9 — COMPLETE THE REMAINING SUPABASE SECURITY WORK SAFELY
+
+The previous security audit identified an unresolved live issue: anonymous users could still enumerate the product-images Storage directory.
+
+Inspect:
+- database/security-hardening.sql
+- database/ecommerce-transformation-migration.sql
+- database/production-repair.sql
+
+The reports say these migrations have not yet been executed against live Supabase.
+
+Review their complete contents before recommending or executing them.
+
+Check for:
+- Destructive operations.
+- Conflicting policies.
+- Duplicate constraints.
+- Existing tables or functions.
+- Storage MIME and size conflicts.
+- Migration-order dependencies.
+- Compatibility with the existing 30MB optional video upload feature.
+
+Preserve the existing security improvements:
+- Server-verified administrator authorization.
+- No trust in client-writable user_metadata for admin privilege.
+- Authenticated session verification.
+- Admin login throttling.
+- Secure upload validation.
+- Protected administrative operations.
+- No client-exposed service_role keys.
+- Safe URL validation.
+- Safe cart validation.
+- WhatsApp number locked to the official business number.
+
+Resolve anonymous Storage directory listing so anonymous users cannot enumerate private Storage contents while public storefront images remain accessible through their intended public URLs.
+
+Only authorized administrators should be able to upload, replace or delete product images.
+
+Ensure RLS policies correctly protect:
+- products
+- categories
+- product_images
+- product_variations
+- promotions
+- store_settings
+- admin_users
+- admin_audit_logs
+- orders
+- order_items
+- order_status_history
+
+Preserve public read access where necessary for published storefront content.
+
+Never remove public access to genuine product images merely to prevent directory enumeration.
+
+Do not claim live database security is fixed unless the actual live endpoint has been tested after the migration.
+
+If the environment cannot execute SQL against Supabase, provide the exact migration files and owner execution instructions.
+
+---
+
+# PART 10 — COMPLETE THE OUTSTANDING ORDER DATABASE MIGRATION
+
+The previous report identified missing live tables and functions:
+
+- orders
+- order_items
+- order_status_history
+- store_delivery_zones
+- create_store_order
+- track_customer_order
+
+Inspect the existing ecommerce-transformation-migration.sql.
+
+Make sure it is compatible with the actual live schema and can be safely applied without destroying product data.
+
+Once applied, test:
+- Customer order creation.
+- Order reference generation.
+- Item and variation snapshots.
+- Customer order lookup.
+- Order tracking.
+- Admin order management.
+- Order status changes.
+- Delivery fee entry only when confirmed.
+- Courier and tracking information only when actually available.
+
+Do not mark an order as paid merely because the customer opened WhatsApp.
+
+Keep the website WhatsApp-first. Do not add online card or bank payment integration.
+
+The official WhatsApp checkout number remains:
+
++234 802 899 1921
+
+If the required SQL cannot be executed from this environment, clearly identify the remaining owner action.
+
+---
+
+# PART 11 — VERIFY CART, STOREFRONT AND INTERNATIONAL PRICING
+
+Preserve the existing live Supabase catalogue integration.
+
+The previously fixed Supabase URL normalization must remain intact:
+
+https://mxovvqjyfgyrzjauzodh.supabase.co
+
+Do not reintroduce the /rest/v1/ duplicated path problem.
+
+Preserve the Google Analytics Measurement ID extraction fix.
+
+Ensure the storefront always obtains current product data from the authoritative database.
+
+Verify:
+- Shop All.
+- New Arrivals.
+- Collections.
+- Category pages.
+- Search and filters.
+- Product detail pages.
+- Quick View.
+- Cart.
+- WhatsApp checkout.
+- Product prices.
+- Variation prices.
+- Stock.
+- Currency conversion.
+
+The NGN amount remains authoritative.
+
+GBP, USD, CAD and EUR values are indicative conversions using the configured live exchange-rate source. Do not invent offline exchange rates.
+
+Before WhatsApp dispatch, verify current prices and availability against Supabase.
+
+---
+
+# PART 12 — TEST THE ACTUAL APPLICATION, NOT JUST THE BUILD
+
+A successful TypeScript check or Vite build does not prove that the website works.
+
+Perform a real end-to-end test.
+
+Use a temporary test product only. Do not use genuine business products for destructive testing.
+
+## Required admin persistence test
+
+1. Log in with an authorized administrator account.
+2. Create a temporary unpublished test product.
+3. Save it.
+4. Verify its database record.
+5. Edit its name.
+6. Change its price.
+7. Save and verify the database value.
+8. Refresh the admin page.
+9. Confirm the changed price is still displayed.
+10. Open the public storefront and confirm the price is correct when published.
+11. Change stock and a variation.
+12. Verify the new stock and variation values.
+13. Archive or unpublish the temporary product.
+14. Confirm it disappears from public listings.
+15. Delete the temporary product through the intended admin workflow.
+16. Verify it no longer appears in active database queries.
+
+If authenticated browser testing is unavailable, say so. Do not substitute anonymous REST probes or compilation tests and claim admin CRUD has passed.
+
+## Required price correction verification
+
+After the owner-authorized corrections in Part 3, verify each exact product record against:
+- Supabase database.
+- Admin product list.
+- Admin edit form.
+- Storefront product card.
+- Product detail page.
+- Cart, where applicable.
+
+Use stable product IDs to ensure the same records are being checked.
+
+## Required cache and refresh verification
+
+Test after:
+- Normal page refresh.
+- Navigating away and back.
+- Logging out and back in.
+- Opening a new browser session.
+- Opening the website on a separate device, if available.
+
+A price or product edit must not revert to an older value.
+
+---
+
+# PART 13 — VERIFY THE DEPLOYED PRODUCTION WEBSITE
+
+The live domain is:
+
+https://teefahsclothier.com
+
+The Vercel deployment is the production frontend and Supabase is the backend.
+
+Do not claim that a local localhost test proves the production website is fixed.
+
+Where access permits, verify:
+- Production HTTPS.
+- Correct deployed frontend build.
+- Correct Supabase environment variables.
+- Live catalogue loading.
+- Correct product prices.
+- Admin login.
+- Product edits.
+- Product deletion.
+- Storage access.
+- Security headers.
+- Content Security Policy.
+- Analytics.
+- WhatsApp checkout.
+
+If a new build is required, prepare it and deploy only when the available environment and permissions allow.
+
+Do not claim deployment succeeded unless the deployed domain has been tested.
+
+---
+
+# PART 14 — MAKE THE ADMIN DASHBOARD EASY FOR THE OWNER
+
+The owner is not a developer.
+
+Make the product-management experience exceptionally simple and clear.
+
+The owner should not need to understand:
+- Product IDs.
+- Database tables.
+- Slugs.
+- SQL.
+- Cache invalidation.
+- API errors.
+- Technical configuration.
+
+Use simple labels and clear actions:
+- Add Product.
+- Edit Product.
+- Change Price.
+- Upload Photos.
+- Manage Sizes and Colours.
+- Update Stock.
+- Save Changes.
+- Publish.
+- Archive.
+- Delete Product.
+
+Show the actual current saved price when the owner opens an edit form.
+
+After saving, show the confirmed new price.
+
+If saving fails, explain that the change was not saved and preserve the form values.
+
+Prevent duplicate save submissions.
+
+Do not introduce an unnecessarily complicated product creation process.
+
+Keep the existing guided workflow, but remove unnecessary steps if they make routine product updates difficult.
+
+---
+
+# PART 15 — FINAL REPORT AND ACCEPTANCE CRITERIA
+
+After completing the work, produce an evidence-based report.
+
+Include:
+
+A. Root cause of the repeated price persistence problem.
+
+B. Exact code files changed and what was corrected.
+
+C. Exact database fields and update paths used for product prices.
+
+D. Price corrections completed, listing each product and confirmed final price.
+
+E. Soraya/Jawhara duplicate investigation and final action.
+
+F. Workwear category consolidation and final category structure.
+
+G. Other confirmed catalogue duplicates corrected.
+
+H. Admin create/edit/delete test results.
+
+I. Supabase live database and Storage security test results.
+
+J. Order migration status and tracking test results.
+
+K. Production website verification results.
+
+L. Remaining owner actions and unresolved issues.
+
+M. Final verdict:
+- Production ready.
+- Conditionally ready.
+- Not ready.
+
+For every test, distinguish:
+- Code inspection.
+- Local build test.
+- Local browser test.
+- Live Supabase test.
+- Authenticated admin test.
+- Deployed production test.
+
+Do not say "fixed" if only code was written.
+
+Do not say "saved" if the database did not confirm the update.
+
+Do not say "deleted" if the product still appears in active public queries.
+
+Do not say "production ready" if critical live database or admin functionality remains unverified.
+
+## ABSOLUTE RESTRICTIONS
+
+- Do not rebuild the website.
+- Do not reset Supabase.
+- Do not run seed.sql.
+- Do not delete genuine products indiscriminately.
+- Do not bulk-overwrite unrelated product prices.
+- Do not introduce dummy records.
+- Do not fabricate product information or photographs.
+- Do not introduce an online payment gateway.
+- Do not expose credentials or service_role keys.
+- Do not bypass RLS to make the interface appear functional.
+- Do not hide database errors.
+- Do not make frontend-only changes that pretend to persist data.
+- Do not leave duplicate products or categories where they have been confirmed and authorized for correction.
+- Do not overwrite the owner's explicitly supplied prices with old defaults.
+- Do not claim tests were performed when they were not.
+
+**THE MOST IMPORTANT ACCEPTANCE REQUIREMENT:**
+
+When the owner changes a product price in the Admin Dashboard, that exact change must be saved to Supabase, remain saved after refresh and login, and appear correctly throughout the public storefront.
+
+The same must be true for product edits, stock changes, images, variations, publishing, archiving and deletion.
+
+This is an essential business requirement, not an optional enhancement.
+
+Complete the repair with the smallest safe set of changes that genuinely resolves the underlying problems and makes the existing Teefahs Clothier website reliable for daily business operations.

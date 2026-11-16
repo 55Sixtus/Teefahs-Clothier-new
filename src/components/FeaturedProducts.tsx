@@ -39,7 +39,7 @@ export default function FeaturedProducts({
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 animate-pulse">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="aspect-[3/4] bg-stone-200 rounded-sm" />
           ))}

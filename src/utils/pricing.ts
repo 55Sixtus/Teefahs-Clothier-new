@@ -1,19 +1,21 @@
-import { Product, Category } from '../types/product';
+import { Product, Category, ProductVariation } from '../types/product';
 
 /**
  * Storefront Pricing & Discount Configuration
  * Teefahs Clothier
  *
  * Rules:
- * - Supabase `products.base_price` is ALWAYS the authoritative selling price.
+ * - Supabase `products.base_price` is ALWAYS the authoritative base selling price.
+ * - Optional variation overrides (`variation.price_override`) or adjustments
+ *   (`variation.price_adjustment`) apply dynamically when a variation is selected.
  * - Optional original / pre-discount strike-through price comes strictly from
- *   `product.sale_price` when `sale_price > base_price` (never hardcoded by slug).
+ *   `product.sale_price` when `sale_price > sellingPrice` (never hardcoded by slug).
  * - Accessories (Hijabs, Veils, Khimars, Caps, Accessories) never display discount badges.
  */
 export const PROMOTION_CONFIG = {
   isEnabled: true,
-  eligibleCategorySlugs: ['abayas', 'occasion-wear', 'prayer-wear'],
-  eligibleCategoryNames: ['Abayas', 'Occasion Wear', 'Prayer Wear'],
+  eligibleCategorySlugs: ['abayas', 'occasion-wear', 'prayer-wear', 'workwear', 'work-wear'],
+  eligibleCategoryNames: ['Abayas', 'Occasion Wear', 'Prayer Wear', 'Workwear', 'WORK WEAR'],
   excludedCategorySlugs: ['hijabs', 'veils', 'khimars', 'caps', 'accessories'],
   excludedCategoryNames: ['Hijabs', 'Veils', 'Khimars', 'Caps', 'Accessories'],
 };
@@ -40,38 +42,34 @@ export function isAccessory(product: Partial<Product>, categories?: Category[]):
   const name = (product.name || '').toLowerCase();
   const slug = (product.slug || '').toLowerCase();
 
-  // Check category first when category metadata is available
   if (categories && product.category_id) {
-    const cat = categories.find(c => c.id === product.category_id || c.slug === product.category_id);
+    const cat = categories.find((c) => c.id === product.category_id || c.slug === product.category_id);
     if (cat) {
       const catSlug = (cat.slug || '').toLowerCase();
       const catName = (cat.name || '').toLowerCase();
 
       if (
         PROMOTION_CONFIG.excludedCategorySlugs.includes(catSlug) ||
-        PROMOTION_CONFIG.excludedCategoryNames.some(n => n.toLowerCase() === catName)
+        PROMOTION_CONFIG.excludedCategoryNames.some((n) => n.toLowerCase() === catName)
       ) {
         return true;
       }
 
-      // If category is explicitly eligible (e.g., Abayas, Occasion Wear, Prayer Wear),
-      // only exclude if the product's own display name explicitly denotes headwear/accessories.
       if (
         PROMOTION_CONFIG.eligibleCategorySlugs.includes(catSlug) ||
-        PROMOTION_CONFIG.eligibleCategoryNames.some(n => n.toLowerCase() === catName)
+        PROMOTION_CONFIG.eligibleCategoryNames.some((n) => n.toLowerCase() === catName)
       ) {
-        return EXCLUDED_KEYWORDS.some(kw => name.includes(kw));
+        return EXCLUDED_KEYWORDS.some((kw) => name.includes(kw));
       }
     }
   }
 
-  // Fallback when category metadata isn't available
-  if (EXCLUDED_KEYWORDS.some(kw => name.includes(kw) || slug.includes(kw))) {
+  if (EXCLUDED_KEYWORDS.some((kw) => name.includes(kw) || slug.includes(kw))) {
     return true;
   }
 
-  const eligibleKeywords = ['abaya', 'dress', 'gown', 'kimono', 'kaftan', 'coord', 'robe'];
-  if (eligibleKeywords.some(kw => name.includes(kw) || slug.includes(kw))) {
+  const eligibleKeywords = ['abaya', 'dress', 'gown', 'kimono', 'kaftan', 'coord', 'robe', 'workwear', 'set'];
+  if (eligibleKeywords.some((kw) => name.includes(kw) || slug.includes(kw))) {
     return false;
   }
 
@@ -82,18 +80,48 @@ export function isEligibleForPromotion(product: Partial<Product>, categories?: C
   return !isAccessory(product, categories);
 }
 
+export function findMatchingVariation(
+  product?: Partial<Product> | null,
+  selectedSize?: string,
+  selectedColour?: string
+): ProductVariation | undefined {
+  const variations = product?.variations || [];
+  if (variations.length === 0) return undefined;
+
+  return variations.find((v) => {
+    const sizeMatch =
+      !v.size ||
+      !selectedSize ||
+      v.size.trim().toLowerCase() === selectedSize.trim().toLowerCase();
+    const colourMatch =
+      !v.colour ||
+      !selectedColour ||
+      v.colour.trim().toLowerCase() === selectedColour.trim().toLowerCase();
+    return sizeMatch && colourMatch;
+  });
+}
+
 /**
  * Authoritative selling price calculation.
- * `base_price` from Supabase is used directly without secret multipliers.
- * If `sale_price` (stored as optional original strike-through price) is higher than `base_price`,
- * the discount badge & savings are computed dynamically for non-accessory items.
+ * `base_price` from Supabase is used directly, plus optional variation override/adjustment.
  */
 export function calculateProductPricing(
   product: Partial<Product>,
   categories?: Category[],
-  options?: { disablePromotion?: boolean }
+  options?: { disablePromotion?: boolean; variation?: ProductVariation | null }
 ): ProductPricing {
-  const sellingPrice = Math.max(0, Math.round(Number(product?.base_price) || 0));
+  const basePrice = Math.max(0, Math.round(Number(product?.base_price) || 0));
+  const variation = options?.variation;
+
+  let sellingPrice = basePrice;
+  if (variation) {
+    if (variation.price_override !== null && variation.price_override !== undefined && Number.isFinite(Number(variation.price_override))) {
+      sellingPrice = Math.max(0, Math.round(Number(variation.price_override)));
+    } else if (Number.isFinite(Number(variation.price_adjustment)) && Number(variation.price_adjustment) !== 0) {
+      sellingPrice = Math.max(0, Math.round(basePrice + Number(variation.price_adjustment)));
+    }
+  }
+
   const rawOriginal = Number(product?.sale_price);
   const hasHigherOriginal =
     Number.isFinite(rawOriginal) && Math.round(rawOriginal) > sellingPrice && sellingPrice > 0;

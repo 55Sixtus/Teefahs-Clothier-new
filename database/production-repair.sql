@@ -293,8 +293,8 @@ CREATE POLICY "Admin insert audit logs" ON public.admin_audit_logs
 -- Public image CDN URLs work via bucket public=true; directory listing and writes require verified admin.
 UPDATE storage.buckets
 SET
-  file_size_limit = 10485760,
-  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp']
+  file_size_limit = 31457280,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime']
 WHERE id = 'product-images';
 
 CREATE POLICY "Admin read product-images bucket" ON storage.objects
@@ -336,21 +336,25 @@ BEGIN
   END LOOP;
 END $$;
 
--- 10. PRICE & DATA RECONCILIATION
--- Standardise genuine Abayas to ₦229,500 authoritative selling price (with optional ₦255,000 original price)
+-- 10. PRICE & DATA RECONCILIATION (Non-destructive: never overwrite explicit owner prices)
+-- Fill missing/zero prices for baseline Abayas without touching owner-updated prices
 UPDATE public.products
 SET
   base_price = 229500,
   sale_price = 255000,
   updated_at = NOW()
-WHERE slug IN ('noor-embroidered-luxury-abaya', 'fatima-pleated-hem-minimalist-abaya')
-   OR name ILIKE '%Noor Embellished Luxury Abaya%'
-   OR name ILIKE '%Fatima Pleated Hem Minimalist Abaya%';
+WHERE (
+  slug IN ('noor-embroidered-luxury-abaya', 'fatima-pleated-hem-minimalist-abaya')
+  OR name ILIKE '%Noor Embellished Luxury Abaya%'
+  OR name ILIKE '%Fatima Pleated Hem Minimalist Abaya%'
+)
+AND (base_price IS NULL OR base_price <= 0);
 
--- Preserve Comfort Fit Jersey Cap at ₦1,500
+-- Fill Comfort Fit Jersey Cap at ₦1,500 only if missing or zero
 UPDATE public.products
 SET base_price = 1500, updated_at = NOW()
-WHERE slug = 'jersey-cap' OR name ILIKE '%Comfort Fit Jersey Cap%';
+WHERE (slug = 'jersey-cap' OR name ILIKE '%Comfort Fit Jersey Cap%')
+  AND (base_price IS NULL OR base_price <= 0);
 
 -- Archive any accidentally seeded unapproved third-party Khimar catalog items
 UPDATE public.products

@@ -35,7 +35,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
       <SEO
         title="Contact & Boutique Location — Ikeja, Lagos"
-        description="Visit Teefahs Clothier at 165 Ekoro Road, Ekoro Junction, Abule Egba, Ikeja, Lagos. WhatsApp: +234 802 899 1921. Fast nationwide express delivery."
+        description="Visit Teefahs Clothier at 165 Ekoro Road, Ekoro Junction, Abule Egba, Ikeja, Lagos. WhatsApp: +234 802 899 1921. Dispatch arranged via our Lagos boutique desk."
         keywords="contact Teefahs Clothier, abaya shop Lagos location, modest boutique address Lagos, WhatsApp modest clothing"
       />
       <div>
@@ -159,9 +159,9 @@ export default function ContactPage() {
               </div>
 
               <div className="p-5 bg-stone-100 border border-stone-200 rounded-sm">
-                <h4 className="font-serif text-stone-900 text-sm mb-1 font-semibold">Insured Nationwide Delivery</h4>
+                <h4 className="font-serif text-stone-900 text-sm mb-1 font-semibold">Lagos &amp; Nationwide Dispatch</h4>
                 <p className="text-xs text-stone-600 leading-relaxed font-light">
-                  All orders are packaged in protective dust bags and fulfilled with trusted logistics partners across Lagos, Abuja, Port Harcourt, and every state in Nigeria.
+                  Orders are inspected at our Abule Egba, Lagos boutique and arranged with courier partners across Lagos and Nigeria, with exact dispatch fees and timelines confirmed on WhatsApp prior to payment.
                 </p>
               </div>
             </div>

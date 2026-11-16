@@ -1,0 +1,1197 @@
+# TEEFAHS CLOTHIER — MASTER PRODUCTION REPAIR, API SECURITY HARDENING, DATABASE INTEGRITY, EXISTING SECURITY AUDIT REVIEW AND COMPLETE E-COMMERCE FUNCTIONALITY
+
+## ROLE AND RESPONSIBILITY
+
+Act as a Senior Full-Stack Software Engineer, Supabase Database Architect, Application Security Engineer, API Security Specialist, E-commerce Systems Architect, QA Engineer and Premium E-commerce UI/UX Designer.
+
+Your task is to carefully inspect, repair, secure, complete and verify the existing Teefahs Clothier website.
+
+This is an existing business website with an established brand identity, frontend, backend, database, authentication system, administrator dashboard, product catalogue and customer shopping experience.
+
+You are NOT being asked to build a new website.
+
+You are NOT being asked to rebuild the existing application from scratch.
+
+You are NOT being asked to replace working features with new implementations.
+
+Your responsibility is to improve the existing application while preserving everything that is legitimate, relevant and already working.
+
+The ultimate objective is a dependable, secure, professional and fully functional international e-commerce website for Teefahs Clothier.
+
+---
+
+# SECTION 1 — CRITICAL INSTRUCTION ABOUT THE PREVIOUS SECURITY MASTER PROMPT AND WORK ALREADY COMPLETED
+
+**READ THIS SECTION CAREFULLY BEFORE MAKING ANY CHANGES.**
+
+I previously supplied you with a broad master instruction requesting a complete application security audit, backend protection, database security and data privacy improvements.
+
+You inspected the application, made changes based on that instruction and subsequently produced a detailed security audit report.
+
+I have now reviewed that report.
+
+However, I did not carefully inspect every requirement in the original general security master prompt before submitting it to you. Therefore, I cannot confirm whether every requirement in that prompt was relevant to the Teefahs Clothier website.
+
+Some requirements may have been useful and necessary.
+
+Others may have been intended for applications with features, infrastructure or business operations that this particular website does not have.
+
+I therefore need you to perform an additional scope and compatibility review of the work you have already completed.
+
+## A. Do not blindly implement the previous general security master prompt again
+
+The previous security master prompt must now be treated as a reference document, not as an instruction to implement every security feature it contains.
+
+You must select only the requirements that genuinely concern the existing Teefahs Clothier application.
+
+The relevant areas include:
+
+- Administrator authentication and authorization.
+- Supabase database protection.
+- Row-Level Security.
+- Product and inventory protection.
+- Product-management APIs.
+- Customer information and order protection, where applicable.
+- Secure image and media uploads.
+- Authentication sessions.
+- Administrator account protection.
+- WhatsApp checkout integrity.
+- Environment variables and application secrets.
+- Relevant API security.
+- Relevant file-storage security.
+- Production security headers.
+- Relevant deployment security.
+- Input validation and safe error handling.
+- Administrative activity logging.
+- Protection against unauthorized database modifications.
+
+Ignore requirements that have no genuine application or business purpose in this website.
+
+For example, do not introduce unrelated financial systems, online payment gateway security, private document-management systems, multi-tenant architecture, unnecessary webhook infrastructure, unrelated enterprise services or additional authentication features that the existing application does not need.
+
+Do not create unnecessary tables, endpoints, integrations or infrastructure simply because a generic security checklist mentions them.
+
+If a requirement is not applicable, leave it out and explain why in the final report.
+
+## B. Review what you have ALREADY implemented
+
+Your previous security report identified and claimed to address several problems.
+
+Among the reported changes were:
+
+1. Removal of the client-side administrator email allowlist.
+2. Removal of reliance on client-writable user_metadata for administrator privileges.
+3. Server-verified administrator authentication using Supabase Auth and is_admin().
+4. Improved administrator session verification.
+5. Login throttling and stronger password-reset requirements.
+6. Generic login and password-reset error messages.
+7. Improved product image-upload validation.
+8. Removal of unsafe raw-file upload fallback behaviour.
+9. Improved HTTP security headers and Content Security Policy.
+10. Removal of the localStorage WhatsApp-number override.
+11. Improved cart-data validation.
+12. External-link security improvements.
+13. Creation of database/security-hardening.sql.
+14. Proposed changes to database Row-Level Security.
+15. Proposed removal of anonymous storage directory enumeration.
+16. Proposed non-negative database constraints.
+17. Proposed administrative audit logging.
+
+Do not assume these changes are all active in production.
+
+Do not assume they are all fully correct simply because they appear in your previous report.
+
+Inspect the actual current project files and compare them with the previous report.
+
+Determine exactly which changes were made, which remain in the codebase, which were successfully tested and which still require live Supabase or Vercel configuration.
+
+## C. Preserve useful work already completed
+
+**DO NOT undo or remove useful security improvements that genuinely protect this website.**
+
+If a previous change is relevant, correctly implemented and compatible with the existing application, retain it.
+
+Do not recreate it unnecessarily.
+
+Do not overwrite it with a competing implementation.
+
+Do not introduce duplicate security functions or conflicting database policies.
+
+Do not replace working authentication, product management or application functionality simply because you are performing another audit.
+
+## D. Identify changes that may have affected the existing website
+
+Carefully investigate whether any changes made during the previous security implementation have:
+
+- Broken administrator login.
+- Prevented legitimate administrators from accessing the dashboard.
+- Interrupted product creation or editing.
+- Prevented product deletion or archiving.
+- Blocked legitimate product-image uploads.
+- Broken public product-image loading.
+- Prevented product or category data from loading.
+- Blocked legitimate Supabase queries.
+- Broken the cart.
+- Changed the official WhatsApp checkout behaviour.
+- Interfered with Google Analytics or other legitimate integrations.
+- Broken website navigation or customer-facing functionality.
+- Introduced unnecessary complexity.
+- Created conflicting database policies.
+- Introduced unnecessary services or features.
+- Changed existing business logic in an unintended way.
+
+If any previous change has negatively affected the existing website, repair the incompatibility while retaining the necessary security protection.
+
+If a previous change introduced a feature or infrastructure component that is genuinely irrelevant to this website, assess it carefully and remove or reverse only that unnecessary implementation.
+
+Do not remove a useful security measure merely because it affects an existing file or component.
+
+If a security improvement is necessary, modify the affected application component so that both security and normal website functionality work correctly.
+
+## E. No blind rollback and no unnecessary rebuild
+
+Do not blindly roll back the previous security implementation.
+
+Do not blindly repeat the previous implementation.
+
+Do not restore insecure code simply because the newer implementation has compatibility problems.
+
+Do not delete previous work without identifying its purpose and consequences.
+
+For every proposed rollback, replacement or major change:
+
+1. Identify the original change.
+2. Explain why it is irrelevant, incorrect or harmful.
+3. Identify what functionality or security protection depends on it.
+4. Determine the safest correction.
+5. Preserve legitimate business data and functionality.
+6. Test the resulting implementation.
+
+**The objective is to retain the good work, correct the bad work and exclude unrelated work.**
+
+---
+
+# SECTION 2 — INSPECT THE EXISTING APPLICATION AND ESTABLISH ITS CURRENT STATE
+
+Before making changes, inspect the actual application.
+
+Review:
+
+- Frontend architecture.
+- Backend architecture.
+- Supabase configuration.
+- Database schema.
+- SQL migrations.
+- Authentication logic.
+- Administrator dashboard.
+- Product-management components.
+- Product and variation APIs.
+- Image storage and upload logic.
+- Product catalogue.
+- Shopping cart.
+- WhatsApp checkout.
+- Order-management features, where implemented.
+- Local storage and caching.
+- Vercel configuration.
+- Environment-variable usage.
+- Existing security implementation.
+
+Compare the current application against:
+
+1. The original security audit findings.
+2. Your previous security implementation report.
+3. The existing Teefahs Clothier e-commerce requirements.
+4. The problems repeatedly reported by the store owner.
+
+Create an internal implementation plan.
+
+Classify each relevant issue as:
+
+- Correctly implemented and verified.
+- Implemented but not live-verified.
+- Partially implemented.
+- Still unresolved.
+- Broken by an earlier change.
+- Unnecessary or unrelated.
+- Requires manual owner action.
+
+Do not start making large changes until you understand the current architecture and existing implementation.
+
+---
+
+# SECTION 3 — REPAIR THE ADMIN DASHBOARD AND PRODUCT MANAGEMENT SYSTEM
+
+The store owner has repeatedly complained that product edits, price changes and deletions do not reliably reflect on the public storefront.
+
+This is a critical business problem.
+
+Repair the actual underlying cause rather than applying temporary frontend fixes.
+
+## A. Product creation and editing
+
+The administrator must be able to create and edit products reliably.
+
+Supported information includes:
+
+- Product name.
+- Product description.
+- Price.
+- Sale price, where applicable.
+- Category.
+- Product images.
+- Product variations.
+- Available sizes.
+- Available colours.
+- Stock quantities.
+- Measurements.
+- Country of origin, where confirmed.
+- Product status.
+- Other relevant product information.
+
+Every operation must save to the actual Supabase database.
+
+Do not save important product changes only in React state, localStorage or static frontend data.
+
+After a successful operation:
+
+- Confirm the database response.
+- Refresh the relevant product data.
+- Invalidate stale caches.
+- Update the public storefront.
+- Preserve the changes after browser refresh.
+- Preserve the changes after logout and login.
+- Ensure other devices receive the updated information.
+
+Do not show a successful save message before the database confirms success.
+
+## B. Product deletion
+
+Repair product deletion completely.
+
+When the administrator deletes a product:
+
+- Verify administrator permissions.
+- Perform the actual database operation.
+- Ensure the product disappears from the active catalogue.
+- Ensure it disappears from Shop All.
+- Ensure it disappears from category pages.
+- Ensure it disappears from New Arrivals.
+- Ensure it disappears from Collections.
+- Ensure it disappears from search results.
+- Ensure it does not reappear because of stale cached or localStorage data.
+
+Handle associated images and variations correctly.
+
+Preserve historical order information.
+
+Where historical orders reference a product, use an appropriate archive or soft-delete approach if necessary.
+
+Do not destroy historical customer orders.
+
+Do not display a success message when the deletion fails.
+
+## C. Product publication and availability
+
+Support reliable product states:
+
+- Draft.
+- Published.
+- Archived.
+- Out of stock.
+- Unavailable.
+
+Only appropriate published products should appear in the public storefront.
+
+Archived, deleted and unpublished products must not reappear through fallback datasets or outdated cache entries.
+
+## D. One authoritative product source
+
+Supabase must be the source of truth for:
+
+- Products.
+- Prices.
+- Product images and image relationships.
+- Categories.
+- Variations.
+- Sizes.
+- Colours.
+- Stock.
+- Publication status.
+
+Inspect existing localStorage and static product-data fallbacks.
+
+Remove any fallback behaviour that allows old product information to override current database information.
+
+Preserve legitimate customer cart information and unrelated browser data.
+
+Do not unnecessarily reset existing storage keys.
+
+---
+
+# SECTION 4 — PRODUCT DUPLICATION AND CATALOGUE DATA INTEGRITY
+
+The owner has reported identical garments appearing under different names and prices.
+
+Correct this carefully.
+
+Apply these rules:
+
+1. One actual garment design should have one product listing.
+2. Different photographs of the same garment belong to the same product gallery.
+3. The same design in genuinely different colours may be managed as variations.
+4. Different garment designs must remain separate products.
+5. Renaming an identical garment does not create a new product.
+6. Images should not be unnecessarily duplicated.
+7. Stock must not be double-counted when consolidating confirmed duplicates.
+
+Inspect the current catalogue.
+
+Use actual available images, product information, variations and other reliable identifiers to identify likely duplicates.
+
+Do not delete products based only on similar names or colours.
+
+Two garments with the same colour may have completely different designs.
+
+If you cannot confidently establish whether two products are identical, preserve both and report them for owner confirmation.
+
+Before any consolidation:
+
+- Identify the records involved.
+- Identify the correct product record to retain.
+- Identify the associated images.
+- Identify variations and stock.
+- Check historical order references.
+- Preserve necessary historical data.
+- Use a safe and reversible approach where possible.
+
+Do not bulk-delete products.
+
+Do not execute old seed files to recreate the catalogue.
+
+---
+
+# SECTION 5 — PRODUCT PRICING RULES
+
+The owner has confirmed the following instruction:
+
+**All genuine products belonging to the Abayas category must have a price of ₦229,500.**
+
+Apply this price only to products genuinely classified as Abayas.
+
+Do not change the prices of Hijabs, Khimars, Veils, Prayer Wear, Occasion Wear, Caps, Accessories, Workerwear or other unrelated categories.
+
+Do not invent or assume prices for products in other categories.
+
+Ensure the administrator can edit prices reliably.
+
+The same authoritative price must appear on:
+
+- Product cards.
+- Product detail pages.
+- Cart.
+- WhatsApp order summaries.
+
+Do not hardcode product prices into the frontend.
+
+Do not allow stale cached prices to override the current database price.
+
+---
+
+# SECTION 6 — KMOUSE SECTION CLEANUP
+
+The owner has confirmed that certain Google-downloaded images currently appearing in the Kmouse section are not genuine products stocked by the business.
+
+Inspect the Kmouse category and associated product records.
+
+Remove unapproved Google-sourced product entries and images from the active storefront.
+
+Keep the Kmouse category available for future genuine products.
+
+Do not replace removed items with random internet images, stock photos or AI-generated garments.
+
+Where no approved products exist, display:
+
+"New Kmouse Collection Coming Soon."
+
+Preserve genuine approved content.
+
+If ownership or approval is uncertain, report the item instead of automatically deleting it.
+
+---
+
+# SECTION 7 — PRODUCT GALLERIES AND MEDIA MANAGEMENT
+
+Every product should support multiple genuine product photographs.
+
+Allow photographs showing:
+
+- Front.
+- Back.
+- Side.
+- Fabric.
+- Embellishments.
+- Stitching.
+- Included accessories or other relevant details.
+
+Build or repair a premium product gallery with:
+
+- Main product image.
+- Thumbnail navigation.
+- Zoom.
+- Full-screen display.
+- Previous and next navigation.
+- Mobile swipe navigation.
+- Clear loading and error states.
+
+The administrator must be able to:
+
+- Upload multiple photographs.
+- Select a primary image.
+- Reorder photographs.
+- Replace photographs.
+- Remove photographs.
+- Preview the gallery.
+
+Do not invent product photographs.
+
+Do not use AI-generated rear, side or detail images as genuine photographs of the actual garment.
+
+If only one genuine image exists, show that image honestly and allow more photographs to be uploaded later.
+
+## Optional product videos
+
+Support optional genuine product videos where the owner has footage.
+
+Allow the administrator to upload, replace and remove them.
+
+Videos must remain optional.
+
+Do not invent videos or require them for publication.
+
+Optimise media for performance and mobile devices.
+
+---
+
+# SECTION 8 — PRODUCT VARIATIONS, SIZES, COLOURS AND INVENTORY
+
+Support accurate product options.
+
+Implement or repair:
+
+- Available sizes.
+- Available colours.
+- Colour swatches.
+- Variation-specific images.
+- Variation-specific stock.
+- Availability indicators.
+- Quantity validation.
+
+When customers select a colour, show its genuine photographs where available and display the sizes and stock available for that colour.
+
+When customers select a size, validate that the selected size is available.
+
+Ensure the correct colour, size and quantity appear in the cart and WhatsApp order.
+
+Do not display unavailable options.
+
+Do not invent stock quantities.
+
+Prevent orders exceeding actual available stock.
+
+If the existing database cannot reliably manage stock per variation, introduce a suitable structure through a safe migration that preserves existing data.
+
+---
+
+# SECTION 9 — PRODUCT MEASUREMENTS AND INTERNATIONAL SIZE INFORMATION
+
+Where verified information exists, support:
+
+- Bust.
+- Garment length.
+- Sleeve length.
+- Shoulder.
+- Waist.
+- Hip.
+- Other relevant measurements.
+
+Support centimetres and inches.
+
+Clearly distinguish garment measurements from body measurements.
+
+Allow the administrator to specify a sizing system where confirmed, including Nigerian, UK, US, EU, UAE and other applicable systems.
+
+Display country of manufacture only when confirmed.
+
+Do not invent measurements, country of origin, fabric composition or fit guarantees.
+
+Omit unavailable information rather than displaying fabricated details.
+
+---
+
+# SECTION 10 — CUSTOMER SHOPPING EXPERIENCE
+
+Repair and complete the actual customer shopping journey.
+
+Ensure the following work correctly:
+
+- Shop All.
+- New Arrivals.
+- Collections.
+- Categories.
+- Search.
+- Filters.
+- Sorting.
+- Product detail pages.
+- Product image galleries.
+- Size selection.
+- Colour selection.
+- Stock validation.
+- Add to Cart.
+- Cart editing.
+- Quantity changes.
+- Product removal.
+- WhatsApp checkout.
+
+Every visible interactive element must perform its advertised function.
+
+Remove or repair nonfunctional buttons, filters, menus and controls.
+
+Search and filters must operate on actual product data.
+
+Customers must not see deleted, archived, unpublished or unavailable products in active shopping sections.
+
+## Cart
+
+The cart must preserve:
+
+- Product name.
+- Product image.
+- Selected size.
+- Selected colour.
+- Quantity.
+- Current price.
+- Line total.
+- Subtotal.
+
+Customers must be able to change quantities and remove items.
+
+Validate current product prices and availability against Supabase before preparing the order.
+
+Do not trust browser-supplied prices or quantities as authoritative.
+
+## WhatsApp checkout
+
+This store does not currently accept online payments.
+
+Do not introduce an online payment gateway.
+
+Use the official WhatsApp business number:
+
++234 802 899 1921
+
+The WhatsApp order message must contain:
+
+- Product names.
+- Colours.
+- Sizes.
+- Quantities.
+- Unit prices.
+- Line totals.
+- Subtotal.
+- Relevant customer details.
+- Delivery information where collected.
+
+Do not allow localStorage or arbitrary browser input to change the official WhatsApp number.
+
+Opening WhatsApp does not mean an order has been paid or completed.
+
+Do not falsely mark an order as paid.
+
+---
+
+# SECTION 11 — INTERNATIONAL SHOPPING
+
+The business is based in Nigeria and serves local and diaspora customers.
+
+Keep NGN as the authoritative product catalogue currency.
+
+Where supported and configured, provide indicative display conversions for:
+
+- NGN.
+- GBP.
+- USD.
+- CAD.
+- EUR.
+
+Use a reliable exchange-rate source where available.
+
+Show the conversion date or timestamp.
+
+Changing display currency must not change the authoritative NGN product price.
+
+Do not invent exchange rates.
+
+Do not make unsupported claims about delivery countries, delivery charges, timelines, customs fees or duties.
+
+Keep the international shopping experience simple.
+
+---
+
+# SECTION 12 — ORDER MANAGEMENT
+
+Inspect the existing order architecture.
+
+If order management already exists, repair it rather than creating a competing system.
+
+Where applicable, ensure that:
+
+- Orders persist in Supabase.
+- Orders have unique references.
+- Selected products and variations are preserved.
+- Historical orders remain available.
+- The administrator can view and manage orders.
+- Order statuses persist.
+- Customer information is protected.
+
+Where supported, use statuses such as:
+
+- Pending.
+- Confirmed.
+- Processing.
+- Dispatched.
+- Out for delivery.
+- Delivered.
+- Cancelled.
+
+Do not falsely mark orders as delivered or paid.
+
+Do not claim email notifications, tracking pages or delivery integrations are functional unless they have been implemented and tested.
+
+---
+
+# SECTION 13 — API SECURITY AND BACKEND PROTECTION
+
+Inspect all relevant APIs and database operations.
+
+Protect sensitive endpoints with appropriate authentication and authorization.
+
+Validate request payloads on the server or trusted backend.
+
+Prevent unauthorized users from:
+
+- Creating products.
+- Editing products.
+- Changing prices.
+- Changing stock.
+- Deleting products.
+- Managing categories.
+- Uploading or deleting product images.
+- Accessing administrative settings.
+- Accessing private customer order information.
+
+Use safe database operations.
+
+Prevent relevant SQL injection, XSS, CSRF, IDOR and privilege-escalation vulnerabilities.
+
+Validate URLs and reject unsafe protocols.
+
+Do not expose raw database errors or internal stack traces to customers.
+
+Apply rate limiting to sensitive operations where appropriate.
+
+Do not introduce unnecessary APIs or backend services.
+
+---
+
+# SECTION 14 — SUPABASE AUTHENTICATION AND DATABASE SECURITY
+
+Review the previous audit findings and correct all relevant unresolved issues.
+
+## Administrator authentication
+
+- Do not trust client-writable user_metadata for administrator privileges.
+- Use trusted server-controlled authorization.
+- Protect all administrative routes and operations.
+- Verify permissions for sensitive database and API requests.
+- Prevent privilege escalation.
+- Remove unnecessary administrator email exposure.
+- Protect sessions and logout.
+- Maintain appropriate login throttling.
+- Use secure password-reset procedures.
+- Avoid revealing whether an administrator email exists.
+
+If public customer registration is not required, disable it in live Supabase Auth settings.
+
+Do not break the existing legitimate administrator login flow.
+
+## Database and RLS
+
+Ensure:
+
+- Public users can read only intended published storefront information.
+- Only authorized administrators can modify products and prices.
+- Only authorized administrators can manage categories and inventory.
+- Private administrative tables are protected.
+- Customer order information is not publicly accessible.
+- Legacy permissive policies do not bypass the intended protections.
+
+## Storage
+
+Inspect the live and prepared policies for the product-images bucket.
+
+Prevent anonymous directory enumeration.
+
+Preserve public access to images intentionally displayed on the storefront.
+
+Require authorization for image uploads, replacements and deletions.
+
+Validate file contents, MIME types and size limits.
+
+Do not permit unsafe upload fallbacks.
+
+Do not break existing legitimate public product-image URLs.
+
+---
+
+# SECTION 15 — REVIEW THE PREVIOUS SECURITY SQL MIGRATION
+
+The previous audit created:
+
+database/security-hardening.sql
+
+The previous report stated that this migration had not yet been applied to the live Supabase database.
+
+Do not blindly execute it.
+
+Inspect the complete SQL file before recommending execution.
+
+Review:
+
+- CREATE POLICY.
+- DROP POLICY.
+- ALTER TABLE.
+- CREATE OR REPLACE FUNCTION.
+- SECURITY DEFINER.
+- GRANT.
+- REVOKE.
+- Storage policies.
+- Constraints.
+- Administrator authorization.
+- Existing table and column assumptions.
+
+Pay particular attention to public.is_admin() and the administrator authorization records.
+
+Confirm that legitimate administrators will retain access.
+
+Confirm that public product reading will continue working.
+
+Confirm that image loading will continue working.
+
+Confirm that product creation, editing, deletion and archiving will remain possible for administrators.
+
+Confirm that existing orders and business records will not be destroyed.
+
+Confirm that the migration is compatible with the actual live database schema.
+
+### Migration safety
+
+Do not execute destructive SQL blindly.
+
+Do not remove existing policies without understanding their purpose and replacement.
+
+Do not drop or recreate product, order, category, image or variation tables.
+
+Do not reset the database.
+
+Do not execute seed.sql.
+
+Do not delete customer orders.
+
+Do not overwrite legitimate product records.
+
+Use safe, reversible migrations where possible.
+
+If you cannot access the live Supabase SQL Editor, identify that limitation and provide the reviewed migration with exact manual instructions.
+
+Never claim a live migration has been applied without confirmation from the live database.
+
+---
+
+# SECTION 16 — ADMIN DASHBOARD SIMPLICITY
+
+The owner must be able to manage the store independently.
+
+Keep the administration experience simple and intuitive.
+
+The owner should be able to:
+
+- Add products.
+- Edit products.
+- Change prices.
+- Upload and manage multiple images.
+- Manage colours.
+- Manage sizes.
+- Update stock.
+- Change categories.
+- Publish products.
+- Unpublish products.
+- Archive products.
+- Delete products safely.
+- View orders.
+- Update order statuses.
+- Review important administrative activity.
+
+Product creation should be a short guided workflow.
+
+Use sensible defaults.
+
+Do not require unnecessary information.
+
+Clearly distinguish:
+
+- Save Draft.
+- Publish.
+- Update.
+- Archive.
+- Delete.
+
+Show meaningful errors when something fails.
+
+Require confirmation before destructive actions.
+
+Never show false success messages.
+
+---
+
+# SECTION 17 — DESIGN AND USER EXPERIENCE
+
+Preserve the established Teefahs Clothier brand identity.
+
+The website should feel like a premium international modest-fashion boutique.
+
+Use major e-commerce websites only as inspiration for useful shopping functionality, product discovery, product galleries, filtering, variations and order visibility.
+
+Do not copy another company's branding or create a cluttered discount-marketplace appearance.
+
+Maintain:
+
+- Elegant typography.
+- Consistent spacing.
+- Refined product cards.
+- Clear category navigation.
+- High-quality genuine product imagery.
+- Mobile responsiveness.
+- Consistent button styles.
+- Tasteful animations.
+- Clear loading and feedback states.
+
+Do not invent:
+
+- Reviews.
+- Ratings.
+- Discounts.
+- Countdown timers.
+- Best-seller claims.
+- Stock warnings.
+- Customer testimonials.
+
+Do not sacrifice functionality or performance for visual effects.
+
+---
+
+# SECTION 18 — PERFORMANCE, ACCESSIBILITY AND SEO
+
+Ensure:
+
+- Responsive mobile-first design.
+- Optimised image delivery.
+- Lazy loading where appropriate.
+- Efficient database queries.
+- Correct cache invalidation.
+- No unnecessary repeated requests.
+- Accessible navigation.
+- Appropriate contrast.
+- Descriptive image alt text.
+- Relevant page metadata.
+- Product structured data where appropriate.
+- Public product pages can be indexed.
+- Administrative pages are protected from unnecessary indexing.
+
+Do not expose private administrative information through page metadata or source code.
+
+---
+
+# SECTION 19 — REQUIRED TESTING
+
+Do not stop after modifying code.
+
+Run tests against the actual implementation.
+
+## Administrator tests
+
+Verify:
+
+1. Legitimate administrator login.
+2. Unauthorized users cannot access administrator functions.
+3. Unauthorized API requests are rejected.
+4. Administrator logout works.
+5. Session verification works.
+6. Login throttling works.
+7. Password recovery works correctly.
+
+## Product-management tests
+
+Using a clearly identified test product:
+
+1. Create a test product.
+2. Confirm it is saved in Supabase.
+3. Change its name.
+4. Change its price.
+5. Change its description.
+6. Upload multiple images.
+7. Change its category.
+8. Update sizes and colours.
+9. Update stock.
+10. Refresh the browser.
+11. Confirm all changes persist.
+12. Confirm the storefront reflects the changes.
+13. Archive or delete the test product.
+14. Confirm it disappears from every relevant public section.
+15. Confirm it does not return after refreshing or signing in on another device.
+
+Clean up only the test record created for testing.
+
+Never use a genuine customer product for destructive tests.
+
+## Security tests
+
+Verify:
+
+- Anonymous users cannot access private administrative records.
+- Anonymous users cannot modify products.
+- Anonymous users cannot enumerate private storage directories.
+- Unauthorized users cannot upload or delete product images.
+- Users cannot gain administrator privileges through user_metadata.
+- Private credentials are absent from frontend bundles.
+- Sensitive database errors are not exposed.
+- Security headers are present in deployed responses.
+- Legitimate website integrations are not blocked by CSP.
+
+## Customer shopping tests
+
+Verify:
+
+- Product galleries.
+- Image loading.
+- Colour selection.
+- Size selection.
+- Stock validation.
+- Add to Cart.
+- Quantity editing.
+- Cart removal.
+- Price accuracy.
+- Cart totals.
+- WhatsApp checkout.
+- Official WhatsApp number.
+- Correct order message contents.
+
+## Database tests
+
+Verify:
+
+- Product persistence.
+- Image relationships.
+- Variation persistence.
+- Stock persistence.
+- Price persistence.
+- Correct archive and deletion behaviour.
+- Preservation of historical orders.
+- RLS protection.
+
+Do not report a test as passed unless it was actually performed.
+
+Clearly distinguish local tests from live production tests.
+
+---
+
+# SECTION 20 — DEPLOYMENT AND LIVE VERIFICATION
+
+Inspect the existing Vercel and Supabase configuration.
+
+Do not assume the production domain is active or correctly configured.
+
+Do not modify DNS or registrar settings without authorization.
+
+Verify the actual configured production URL and authentication redirect URLs.
+
+After deployment, verify:
+
+- HTTPS.
+- Correct production build.
+- Security headers.
+- Administrator login.
+- Public storefront.
+- Supabase product loading.
+- Product image loading.
+- Product edits.
+- Product deletions.
+- Cart.
+- WhatsApp checkout.
+- Important integrations.
+- Absence of critical runtime errors.
+
+If you cannot access Vercel or the live Supabase dashboard, clearly state the remaining manual steps.
+
+A successful local build is not proof of a successful production deployment.
+
+---
+
+# SECTION 21 — STRICT RULES FOR PROTECTING THE EXISTING WEBSITE
+
+These requirements are mandatory.
+
+1. Do not rebuild the website from scratch.
+2. Do not reset the database.
+3. Do not overwrite legitimate product records.
+4. Do not destroy historical orders.
+5. Do not execute seed.sql to recreate the catalogue.
+6. Do not remove working website functionality.
+7. Do not blindly roll back the previous security changes.
+8. Do not repeat completed security work unnecessarily.
+9. Do not introduce unrelated features from the general security master prompt.
+10. Do not create unnecessary infrastructure.
+11. Do not introduce an online payment gateway.
+12. Do not fabricate products, photographs, prices, measurements or stock.
+13. Do not use dummy data to simulate real operations.
+14. Do not rely on frontend-only changes for database operations.
+15. Do not show success messages before operations succeed.
+16. Do not expose private credentials.
+17. Do not weaken security to make a feature work.
+18. Do not delete uncertain products automatically.
+19. Do not change the brand identity unnecessarily.
+20. Do not claim that live changes have been completed without verification.
+21. Preserve the owner's ability to manage the store independently.
+22. Preserve all legitimate existing functionality and business data.
+
+**Retain what is correct. Repair what is broken. Remove only what is genuinely irrelevant or harmful. Do not unnecessarily disturb the existing application.**
+
+---
+
+# SECTION 22 — FINAL IMPLEMENTATION REPORT
+
+When the work is finished, provide a detailed report.
+
+## A. Previous security implementation review
+
+List the previous security changes and classify each as:
+
+- Retained and verified.
+- Retained but not live-verified.
+- Corrected.
+- Replaced.
+- Reversed because it was genuinely unnecessary or harmful.
+- Still unresolved.
+- Not applicable.
+
+For every change reversed or replaced, explain why.
+
+## B. Existing website compatibility
+
+Explain whether any previous security changes affected:
+
+- Administrator login.
+- Product management.
+- Product image uploads.
+- Product display.
+- Supabase operations.
+- Cart.
+- WhatsApp checkout.
+- Other existing functionality.
+
+Identify the corrections made.
+
+## C. Security repairs
+
+List the remaining relevant security issues, fixes and verification results.
+
+## D. Product management
+
+Explain what was repaired concerning:
+
+- Product creation.
+- Editing.
+- Pricing.
+- Deletion.
+- Archiving.
+- Images.
+- Variations.
+- Sizes.
+- Colours.
+- Inventory.
+- Catalogue duplication.
+
+## E. Customer shopping experience
+
+Report which features work and which remain incomplete.
+
+## F. Database and Supabase
+
+Identify:
+
+- Migrations prepared.
+- Migrations actually executed.
+- Policies changed.
+- Tables or columns changed.
+- Storage changes.
+- Remaining manual configuration.
+
+## G. Testing evidence
+
+For every important test, state:
+
+- What was tested.
+- How it was tested.
+- Whether it passed.
+- Whether it was tested locally or against production.
+- Any limitations.
+
+## H. Deployment readiness
+
+Choose one:
+
+- Not ready.
+- Ready for staging.
+- Conditionally ready for production.
+- Verified ready for production.
+
+Explain the reason.
+
+## I. Owner actions
+
+List only the actual tasks that require the owner's involvement.
+
+Do not present unfinished tasks as completed.
+
+---
+
+# FINAL OBJECTIVE
+
+Deliver a genuinely functional, secure and reliable Teefahs Clothier e-commerce website.
+
+The store owner must be able to manage products, prices, images, variations, stock and orders without repeatedly encountering the same problems.
+
+Customers must be able to inspect genuine garments, select the correct options, use the cart and place orders through WhatsApp.
+
+Supabase must remain the authoritative source of product and inventory information.
+
+All important changes must persist.
+
+The public storefront must accurately reflect the current database.
+
+The previous security work must be reviewed carefully, preserving useful improvements and correcting any incompatibilities.
+
+Only security requirements relevant to this particular website should be implemented.
+
+**Do not rebuild unnecessarily. Do not undo useful work. Do not introduce unrelated features. Do not destroy existing data. Inspect, correct, test and verify.**
+
+The final result must be a reliable production-quality business website, not a demonstration or a collection of simulated features.

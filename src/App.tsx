@@ -9,6 +9,7 @@ import CartDrawer from './components/CartDrawer';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { LocaleProvider } from './context/LocaleContext';
 import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminLogin from './admin/AdminLogin';
@@ -19,6 +20,8 @@ import CategoriesPage from './admin/CategoriesPage';
 import InventoryPage from './admin/InventoryPage';
 import MediaStoragePage from './admin/MediaStoragePage';
 import AnalyticsSeoPage from './admin/AnalyticsSeoPage';
+import OrdersPage from './admin/OrdersPage';
+import DeliveryZonesPage from './admin/DeliveryZonesPage';
 import ShopPage from './components/ShopPage';
 import NewArrivalsPage from './components/NewArrivalsPage';
 import CollectionsPage from './components/CollectionsPage';
@@ -26,6 +29,7 @@ import OurStoryPage from './components/OurStoryPage';
 import ContactPage from './components/ContactPage';
 import GalleryPage from './components/GalleryPage';
 import ProductDetailPage from './components/ProductDetailPage';
+import OrderTrackingPage from './components/OrderTrackingPage';
 import GallerySection from './components/GallerySection';
 import PromoBanner from './components/PromoBanner';
 import SEO from './components/SEO';
@@ -168,38 +172,43 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <CartProvider>
-          {/* Global Cart Drawer & Customer WhatsApp Widget - Accessible from every storefront route */}
-          <CartDrawer />
-          <WhatsAppWidget />
+        <LocaleProvider>
+          <CartProvider>
+            {/* Global Cart Drawer & Customer WhatsApp Widget - Accessible from every storefront route */}
+            <CartDrawer />
+            <WhatsAppWidget />
 
-          <Routes>
-            {/* Public Storefront Routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/product/:slugOrId" element={<ProductDetailPage />} />
-            <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-            <Route path="/collections" element={<CollectionsPage />} />
-            <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/our-story" element={<OurStoryPage />} />
-            <Route path="/contact" element={<ContactPage />} />
+            <Routes>
+              {/* Public Storefront Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/product/:slugOrId" element={<ProductDetailPage />} />
+              <Route path="/track-order" element={<OrderTrackingPage />} />
+              <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+              <Route path="/collections" element={<CollectionsPage />} />
+              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/our-story" element={<OurStoryPage />} />
+              <Route path="/contact" element={<ContactPage />} />
 
-            {/* Admin Authentication Route (Separate from AdminLayout to avoid infinite redirect) */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+              {/* Admin Authentication Route (Separate from AdminLayout to avoid infinite redirect) */}
+              <Route path="/admin/login" element={<AdminLogin />} />
 
-            {/* Protected Admin Management Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="products/add" element={<AddProductPage />} />
-              <Route path="products/edit/:id" element={<EditProductPage />} />
-              <Route path="categories" element={<CategoriesPage />} />
-              <Route path="inventory" element={<InventoryPage />} />
-              <Route path="media" element={<MediaStoragePage />} />
-              <Route path="analytics" element={<AnalyticsSeoPage />} />
-            </Route>
-          </Routes>
-        </CartProvider>
+              {/* Protected Admin Management Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="products" element={<ProductsPage />} />
+                <Route path="products/add" element={<AddProductPage />} />
+                <Route path="products/edit/:id" element={<EditProductPage />} />
+                <Route path="categories" element={<CategoriesPage />} />
+                <Route path="inventory" element={<InventoryPage />} />
+                <Route path="delivery" element={<DeliveryZonesPage />} />
+                <Route path="media" element={<MediaStoragePage />} />
+                <Route path="analytics" element={<AnalyticsSeoPage />} />
+              </Route>
+            </Routes>
+          </CartProvider>
+        </LocaleProvider>
       </AuthProvider>
     </ThemeProvider>
   );

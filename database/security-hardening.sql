@@ -298,8 +298,8 @@ CREATE POLICY "Admin delete promotions" ON public.promotions
 --    enumeration (/storage/v1/object/list/product-images) is blocked.
 UPDATE storage.buckets
 SET
-  file_size_limit = 10485760,
-  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp']
+  file_size_limit = 31457280,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime']
 WHERE id = 'product-images';
 
 CREATE POLICY "Admin read product-images bucket" ON storage.objects

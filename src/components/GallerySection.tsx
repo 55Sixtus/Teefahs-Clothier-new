@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, X, ArrowRight, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
-import { SUPPLIED_PHOTOS } from '../data/assets';
 import { useRealtimeProducts } from '../hooks/useRealtimeProducts';
 import { Product } from '../types/product';
 import ProductModal from './ProductModal';
@@ -9,12 +8,13 @@ import { useCart } from '../context/CartContext';
 import { calculateProductPricing } from '../utils/pricing';
 
 interface GalleryItem {
-  id: number;
+  id: string;
   url: string;
+  photos: string[];
   title: string;
   category: string;
-  productSlug?: string;
-  product?: Product;
+  productSlug: string;
+  product: Product;
 }
 
 interface GallerySectionProps {
@@ -27,108 +27,61 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
   const { products, categories: productCategories } = useRealtimeProducts({ includeUnpublished: false });
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeItem, setActiveItem] = useState<GalleryItem | null>(null);
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [quickAdded, setQuickAdded] = useState(false);
 
-  // Build gallery items linked directly to live products in database
+  // Build gallery items dynamically — strictly one lookbook card per published product,
+  // with all genuine angles grouped inside `photos` to prevent repetitive cards.
   const galleryItems: GalleryItem[] = useMemo(() => {
-    return SUPPLIED_PHOTOS.map((url, index) => {
-      let title = `Editorial Silhouette #${index + 1}`;
-      let category = 'Modest Collection';
-      let slug = '';
+    const items: GalleryItem[] = [];
 
-      if (index === 0) {
-        title = 'Royal Black Embellished Occasion Abaya';
-        category = 'Occasion Wear';
-        slug = 'royal-black-embellished-occasion-abaya';
-      } else if (index === 1) {
-        title = 'Noor Ceremonial Black Silk Occasion Robe';
-        category = 'Occasion Wear';
-        slug = 'noor-ceremonial-black-silk-occasion-robe';
-      } else if (index === 2) {
-        title = 'Kamp Elegance Embroidered Evening Abaya';
-        category = 'Occasion Wear';
-        slug = 'kamp-elegance-embroidered-evening-abaya';
-      } else if (index >= 3 && index <= 8) {
-        title = 'Noor Luxury Embroidered Abaya';
-        category = 'Abayas';
-        slug = 'noor-embroidered-luxury-abaya';
-      } else if (index >= 9 && index <= 14) {
-        title = 'Ameera Tiered Chiffon Open Abaya';
-        category = 'Abayas';
-        slug = 'ameera-tiered-chiffon-open-abaya';
-      } else if (index >= 15 && index <= 19) {
-        title = 'Zahra French Diamond Khimar';
-        category = 'Khimars';
-        slug = 'zahra-french-diamond-khimar';
-      } else if (index >= 20 && index <= 25) {
-        title = 'Maryam Flowing Two-Piece Prayer Set';
-        category = 'Prayer Wear';
-        slug = 'maryam-flowing-two-piece-prayer-set';
-      } else if (index === 26) {
-        title = 'Layla Embellished Luxury Occasion Silk Abaya';
-        category = 'Occasion Wear';
-        slug = 'layla-embellished-occasion-silk-abaya';
-      } else if (index === 27) {
-        title = 'Zeenat Royal Gold Thread Occasion Abaya';
-        category = 'Occasion Wear';
-        slug = 'zeenat-royal-gold-thread-occasion-abaya';
-      } else if (index === 28) {
-        title = 'Malika Crystal-Draped Evening Occasion Gown';
-        category = 'Occasion Wear';
-        slug = 'malika-crystal-draped-evening-occasion-gown';
-      } else if (index >= 29 && index <= 32) {
-        title = 'Hafsah Medina Silk Rounded Khimar';
-        category = 'Khimars';
-        slug = 'hafsah-medina-silk-rounded-khimar';
-      } else if (index >= 33 && index <= 34) {
-        title = 'Fatima Pleated Hem Minimalist Abaya';
-        category = 'Abayas';
-        slug = 'fatima-pleated-hem-minimalist-abaya';
-      } else if (index >= 35 && index <= 39) {
-        title = 'Amani Breathable Chiffon Veil & Hijab';
-        category = 'Veils & Hijabs';
-        slug = 'amani-breathable-chiffon-veil-hijab-set';
-      } else if (index === 40) {
-        title = 'Sultana Beaded Evening Occasion Kimono';
-        category = 'Occasion Wear';
-        slug = 'sultana-beaded-evening-occasion-kimono';
-      } else if (index === 41) {
-        title = 'Soraya Hand-Beaded Black Occasion Kimono';
-        category = 'Occasion Wear';
-        slug = 'soraya-hand-beaded-black-occasion-kimono';
-      } else if (index === 42) {
-        title = 'Jawhara Royal Evening Silk Kimono';
-        category = 'Occasion Wear';
-        slug = 'jawhara-royal-evening-silk-kimono';
-      } else if (index === 43) {
-        title = 'Sultana Beaded Sweeping Hemline Kimono';
-        category = 'Occasion Wear';
-        slug = 'sultana-beaded-sweeping-hemline-kimono';
-      } else if (index >= 44 && index <= 48) {
-        title = 'Rukayyah Zip-Front Hooded Prayer Abaya';
-        category = 'Prayer Wear';
-        slug = 'rukayyah-zip-front-hooded-prayer-abaya';
-      } else if (index >= 49 && index <= 53) {
-        title = 'Zainab Luxe Modal Hijab & Under-Cap';
-        category = 'Caps & Hijabs';
-        slug = 'zainab-luxe-modal-hijab-under-cap-set';
-      }
+    products.forEach((product) => {
+      if (!product.is_published || product.is_archived || product.deleted_at) return;
+      const rawCatName =
+        productCategories.find(
+          (c) => c.id === product.category_id || c.slug === product.category_id
+        )?.name || 'Modest Collection';
+      const catName =
+        rawCatName.trim().toLowerCase() === 'work wear' || rawCatName.trim().toLowerCase() === 'workerwear'
+          ? 'Workwear'
+          : rawCatName;
 
-      const product = products.find(p => p.slug === slug || p.main_image_url === url);
-
-      return {
-        id: index,
-        url,
-        title: product?.name || title,
-        category,
-        productSlug: slug,
-        product,
+      const photos: string[] = [];
+      const seenProductUrls = new Set<string>();
+      const pushUnique = (rawUrl?: string) => {
+        const cleanUrl = (rawUrl || '').trim();
+        if (!cleanUrl || seenProductUrls.has(cleanUrl)) return;
+        seenProductUrls.add(cleanUrl);
+        photos.push(cleanUrl);
       };
-    });
-  }, [products]);
 
-  const categories = ['All', 'Abayas', 'Khimars', 'Prayer Wear', 'Occasion Wear', 'Veils & Hijabs', 'Caps & Hijabs'];
+      pushUnique(product.main_image_url);
+      (product.images || []).forEach((img) => {
+        const url = typeof img === 'string' ? img : img?.image_url;
+        pushUnique(url);
+      });
+
+      if (photos.length === 0) return;
+
+      items.push({
+        id: product.id,
+        url: photos[0],
+        photos,
+        title: product.name,
+        category: catName,
+        productSlug: product.slug || product.id,
+        product,
+      });
+    });
+
+    return items;
+  }, [products, productCategories]);
+
+  const categories = useMemo(() => {
+    const uniqueCats = Array.from(new Set(galleryItems.map((i) => i.category).filter(Boolean)));
+    return ['All', ...uniqueCats];
+  }, [galleryItems]);
 
   const filteredItems = selectedCategory === 'All'
     ? galleryItems
@@ -138,22 +91,34 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
 
   const currentIndex = activeItem ? filteredItems.findIndex(i => i.id === activeItem.id) : -1;
 
+  const openLightbox = (item: GalleryItem) => {
+    setActiveItem(item);
+    setActivePhotoIdx(0);
+  };
+
   const goToPrevious = () => {
-    if (filteredItems.length === 0) return;
-    if (currentIndex > 0) {
-      setActiveItem(filteredItems[currentIndex - 1]);
-    } else {
-      setActiveItem(filteredItems[filteredItems.length - 1]);
+    if (activeItem && activeItem.photos.length > 1 && activePhotoIdx > 0) {
+      setActivePhotoIdx(activePhotoIdx - 1);
+      return;
     }
+    if (filteredItems.length === 0) return;
+    const prevItem = currentIndex > 0 ? filteredItems[currentIndex - 1] : filteredItems[filteredItems.length - 1];
+    setActiveItem(prevItem);
+    setActivePhotoIdx(Math.max(0, prevItem.photos.length - 1));
   };
 
   const goToNext = () => {
-    if (filteredItems.length === 0) return;
-    if (currentIndex >= 0 && currentIndex < filteredItems.length - 1) {
-      setActiveItem(filteredItems[currentIndex + 1]);
-    } else {
-      setActiveItem(filteredItems[0]);
+    if (activeItem && activeItem.photos.length > 1 && activePhotoIdx < activeItem.photos.length - 1) {
+      setActivePhotoIdx(activePhotoIdx + 1);
+      return;
     }
+    if (filteredItems.length === 0) return;
+    const nextItem =
+      currentIndex >= 0 && currentIndex < filteredItems.length - 1
+        ? filteredItems[currentIndex + 1]
+        : filteredItems[0];
+    setActiveItem(nextItem);
+    setActivePhotoIdx(0);
   };
 
   useEffect(() => {
@@ -165,7 +130,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeItem, currentIndex, filteredItems]);
+  }, [activeItem, activePhotoIdx, currentIndex, filteredItems]);
 
   const handleShopThisLook = (product: Product) => {
     const variations = product.variations || [];
@@ -197,7 +162,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
             The Teefahs Gallery
           </h2>
           <p className="text-xs md:text-sm text-stone-500 font-light mt-2 max-w-xl leading-relaxed">
-            A photographic celebration of all {SUPPLIED_PHOTOS.length} authentic modest garments, captured across dynamic angles, artisanal textures, and sweeping silhouettes.
+            A live photographic showcase of authentic Teefahs Clothier garments, captured across studio angles, artisanal textures, and sweeping silhouettes.
           </p>
         </div>
 
@@ -214,7 +179,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
               to="/gallery"
               className="text-xs font-semibold uppercase tracking-wider text-stone-700 hover:text-emerald-900 transition-colors hidden sm:inline-block"
             >
-              View All {SUPPLIED_PHOTOS.length} Photos &rarr;
+              View Full Lookbook ({galleryItems.length}) &rarr;
             </Link>
           )}
         </div>
@@ -242,7 +207,7 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
         {displayItems.map((item) => (
           <div
             key={item.id}
-            onClick={() => setActiveItem(item)}
+            onClick={() => openLightbox(item)}
             className="group relative bg-stone-100 rounded-xs overflow-hidden flex flex-col cursor-pointer shadow-2xs hover:shadow-xl transition-all duration-300 border border-stone-200/80"
           >
             <div className="relative aspect-[3/4] overflow-hidden bg-stone-200">
@@ -352,45 +317,65 @@ export default function GallerySection({ isStandalone = false, limit }: GalleryS
             </button>
 
             {/* Image Preview with Prev/Next Controls */}
-            <div className="relative md:w-3/5 bg-stone-100 flex items-center justify-center overflow-hidden max-h-[55vh] md:max-h-full group">
-              <img
-                src={activeItem.url}
-                alt={activeItem.title}
-                className="w-full h-full object-contain object-center"
-              />
+            <div className="relative md:w-3/5 bg-stone-100 flex flex-col items-center justify-center overflow-hidden max-h-[60vh] md:max-h-full group">
+              <div className="relative flex-1 w-full flex items-center justify-center overflow-hidden">
+                <img
+                  src={activeItem.photos[activePhotoIdx] || activeItem.url}
+                  alt={activeItem.title}
+                  className="w-full h-full object-contain object-center"
+                />
 
-              {/* Previous Image Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToPrevious();
-                }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-stone-900/70 hover:bg-stone-900 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md cursor-pointer"
-                title="Previous photograph (Left Arrow)"
-                aria-label="Previous photograph"
-              >
-                <ChevronLeft size={20} />
-              </button>
+                {/* Previous Image Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToPrevious();
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-stone-900/70 hover:bg-stone-900 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md cursor-pointer"
+                  title="Previous photograph (Left Arrow)"
+                  aria-label="Previous photograph"
+                >
+                  <ChevronLeft size={20} />
+                </button>
 
-              {/* Next Image Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goToNext();
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-stone-900/70 hover:bg-stone-900 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md cursor-pointer"
-                title="Next photograph (Right Arrow)"
-                aria-label="Next photograph"
-              >
-                <ChevronRight size={20} />
-              </button>
+                {/* Next Image Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToNext();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-stone-900/70 hover:bg-stone-900 text-white flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-md cursor-pointer"
+                  title="Next photograph (Right Arrow)"
+                  aria-label="Next photograph"
+                >
+                  <ChevronRight size={20} />
+                </button>
 
-              {/* Image Counter Badge */}
-              <div className="absolute bottom-3 left-3 px-2.5 py-1 bg-stone-900/80 backdrop-blur-xs text-white text-[11px] font-mono rounded-xs pointer-events-none">
-                {currentIndex + 1} / {filteredItems.length}
+                {/* Image Counter Badge */}
+                <div className="absolute bottom-3 left-3 px-2.5 py-1 bg-stone-900/80 backdrop-blur-xs text-white text-[11px] font-mono rounded-xs pointer-events-none">
+                  Look {currentIndex + 1} / {filteredItems.length}
+                  {activeItem.photos.length > 1 && ` · View ${activePhotoIdx + 1} / ${activeItem.photos.length}`}
+                </div>
               </div>
+
+              {activeItem.photos.length > 1 && (
+                <div className="w-full p-2.5 bg-stone-200/80 border-t border-stone-300 flex items-center gap-2 overflow-x-auto">
+                  {activeItem.photos.map((photoUrl, pIdx) => (
+                    <button
+                      key={`${photoUrl}-${pIdx}`}
+                      type="button"
+                      onClick={() => setActivePhotoIdx(pIdx)}
+                      className={`w-12 h-14 flex-shrink-0 overflow-hidden border-2 rounded-xs cursor-pointer ${
+                        activePhotoIdx === pIdx ? 'border-stone-900' : 'border-transparent opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={photoUrl} alt="" className="w-full h-full object-cover object-top" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details & Actions */}

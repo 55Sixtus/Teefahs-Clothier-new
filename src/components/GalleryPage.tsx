@@ -23,7 +23,7 @@ export default function GalleryPage() {
             The Teefahs Gallery
           </h1>
           <p className="text-stone-300 text-xs md:text-sm font-light max-w-xl mx-auto leading-relaxed">
-            Explore our curated editorial catalogue featuring all 54 authentic photoshoot captures of luxury Dubai abayas, French khimars, prayer wear, and occasion robes.
+            Explore our live editorial lookbook showcasing genuine photography of bespoke abayas, French khimars, workwear, prayer sets, and occasion wear.
           </p>
         </div>
       </div>

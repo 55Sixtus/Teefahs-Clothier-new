@@ -15,6 +15,8 @@ import {
   Home,
   ArrowLeft,
   BarChart3,
+  ClipboardList,
+  Globe,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -63,10 +65,12 @@ export default function AdminLayout() {
 
   const navItems = [
     { label: 'Overview', to: '/admin', icon: LayoutDashboard, exact: true },
+    { label: 'Orders', to: '/admin/orders', icon: ClipboardList },
     { label: 'All Products', to: '/admin/products', icon: ShoppingBag },
     { label: 'Add Product', to: '/admin/products/add', icon: PlusCircle },
     { label: 'Categories', to: '/admin/categories', icon: FolderTree },
     { label: 'Inventory', to: '/admin/inventory', icon: Boxes },
+    { label: 'Delivery Zones', to: '/admin/delivery', icon: Globe },
     { label: 'Media & Storage', to: '/admin/media', icon: ImageIcon },
     { label: 'Analytics & SEO', to: '/admin/analytics', icon: BarChart3 },
   ];

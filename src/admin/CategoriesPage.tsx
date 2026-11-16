@@ -83,7 +83,7 @@ export default function CategoriesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || saving) return;
 
     setSaving(true);
     setMsg(null);
@@ -99,21 +99,22 @@ export default function CategoriesPage() {
         is_active: isActive,
       });
 
-      setMsg({ type: 'success', text: `Category "${name}" successfully saved.` });
-      setPageSuccess(`Category "${name}" saved cleanly.`);
+      setMsg({ type: 'success', text: `Category "${name.trim()}" saved.` });
+      setPageSuccess(`Category "${name.trim()}" saved cleanly.`);
       await refreshProducts();
       setTimeout(() => {
         setIsEditing(false);
       }, 750);
       setTimeout(() => setPageSuccess(''), 3000);
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || 'Failed to save category.' });
+      setMsg({ type: 'error', text: err.message || 'Could not save category. Please retry.' });
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggleActive = async (cat: Category) => {
+    if (togglingId) return;
     setTogglingId(cat.id);
     setPageError('');
     try {
@@ -132,13 +133,13 @@ export default function CategoriesPage() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!pendingDelete) return;
+    if (!pendingDelete || deletingId) return;
     const target = pendingDelete;
     setDeletingId(target.id);
     setPageError('');
     try {
       await deleteCategory(target.id);
-      setPageSuccess(`Category "${target.name}" deleted from Supabase.`);
+      setPageSuccess(`Category "${target.name}" deleted cleanly.`);
       await refreshProducts();
       setTimeout(() => setPageSuccess(''), 3000);
     } catch (err: any) {
@@ -170,7 +171,7 @@ export default function CategoriesPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors shadow-xs cursor-pointer"
         >
           <Plus size={15} />
-          <span>Add New Category</span>
+          <span>Add Category</span>
         </button>
       </div>
 
@@ -445,7 +446,7 @@ export default function CategoriesPage() {
                   disabled={saving}
                   className="px-6 py-2 bg-stone-900 text-white uppercase font-semibold tracking-wider hover:bg-stone-800 rounded-sm disabled:opacity-50 cursor-pointer"
                 >
-                  {saving ? 'Saving...' : 'Save Category'}
+                  {saving ? 'Saving Changes...' : 'Save Changes'}
                 </button>
               </div>
             </form>

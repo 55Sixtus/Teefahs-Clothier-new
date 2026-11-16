@@ -18,6 +18,8 @@ import {
   Image as ImageIcon,
   Check,
   X,
+  ClipboardList,
+  Globe,
 } from 'lucide-react';
 import {
   getDatabaseDiagnostics,
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
   const [quickPriceProduct, setQuickPriceProduct] = useState<Product | null>(null);
   const [newPriceInput, setNewPriceInput] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
-  const [quickPriceSuccess, setQuickPriceSuccess] = useState(false);
+  const [quickPriceSuccess, setQuickPriceSuccess] = useState<string>('');
   const [quickPriceError, setQuickPriceError] = useState('');
 
   const navigate = useNavigate();
@@ -102,9 +104,9 @@ export default function AdminDashboard() {
     };
   }, [loadAuxData]);
 
-  const handleSaveQuickPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPriceProduct) return;
+  const handleSaveQuickPrice = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quickPriceProduct || savingPrice) return;
     const priceNum = parseFloat(newPriceInput);
     if (isNaN(priceNum) || priceNum < 0) {
       setQuickPriceError('Please enter a valid price in Naira (₦).');
@@ -113,17 +115,23 @@ export default function AdminDashboard() {
 
     setSavingPrice(true);
     setQuickPriceError('');
+    setQuickPriceSuccess('');
     try {
-      await updateProductPrice(quickPriceProduct.id, priceNum);
-      setQuickPriceSuccess(true);
+      const updated = await updateProductPrice(quickPriceProduct.id, priceNum);
+      const confirmedPrice = Number(updated.base_price || 0);
+      setQuickPriceSuccess(`Saved! Confirmed at ₦${confirmedPrice.toLocaleString()} on database & storefront.`);
+      setQuickPriceProduct(updated);
+      setNewPriceInput(String(confirmedPrice));
       await Promise.all([refreshProducts(), loadAuxData()]);
       setTimeout(() => {
         setQuickPriceProduct(null);
-        setQuickPriceSuccess(false);
-      }, 650);
+        setQuickPriceSuccess('');
+      }, 1100);
     } catch (err: any) {
       console.error('Failed to update price:', err);
-      setQuickPriceError(err?.message || 'Failed to update price in Supabase.');
+      setQuickPriceError(
+        err?.message || 'Could not save the new price. Your entered value is kept — please retry.'
+      );
     } finally {
       setSavingPrice(false);
     }
@@ -244,7 +252,7 @@ export default function AdminDashboard() {
             className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-950 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-emerald-900 transition-colors shadow-xs border border-emerald-800"
           >
             <PlusCircle size={15} className="text-emerald-400" />
-            <span>Add New Product</span>
+            <span>Add Product</span>
           </Link>
         </div>
       </div>
@@ -356,101 +364,118 @@ export default function AdminDashboard() {
       {/* 4. QUICK ADMINISTRATION ACTIONS */}
       <div className="bg-white p-6 border border-stone-200 rounded-sm shadow-2xs space-y-4">
         <h2 className="text-base font-serif text-stone-900 font-medium">Quick Management Shortcuts</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Link
             to="/admin/products/add"
             className="p-4 bg-stone-900 text-white rounded-sm hover:bg-stone-800 transition-all flex flex-col justify-between group shadow-xs"
           >
             <div>
-              <div className="w-8 h-8 rounded-full bg-emerald-950 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform border border-emerald-800">
+              <div className="w-8 h-8 rounded-full bg-emerald-950 text-emerald-400 flex items-center justify-center mb-3 border border-emerald-800">
                 <PlusCircle size={18} />
               </div>
-              <h3 className="font-semibold text-sm text-white mb-1">Add New Garment</h3>
+              <h3 className="font-semibold text-sm text-white mb-1">Add Garment</h3>
               <p className="text-[11px] text-stone-300 font-light leading-relaxed">
-                List a bespoke abaya or khimar with photos, sizes, and stock.
+                5-step wizard with multi-angle photos, swatches &amp; measurements.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-emerald-300 font-semibold mt-4">
               <span>Create Product</span>
-              <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight size={13} />
+            </div>
+          </Link>
+
+          <Link
+            to="/admin/orders"
+            className="p-4 bg-emerald-950 text-white rounded-sm hover:bg-emerald-900 transition-all flex flex-col justify-between group shadow-xs"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-full bg-emerald-900 text-amber-300 flex items-center justify-center mb-3 border border-emerald-700">
+                <ClipboardList size={18} />
+              </div>
+              <h3 className="font-semibold text-sm text-white mb-1">Customer Orders</h3>
+              <p className="text-[11px] text-emerald-100/80 font-light leading-relaxed">
+                Track logged WhatsApp orders, courier dispatch &amp; delivery confirmation.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] text-amber-300 font-semibold mt-4">
+              <span>Manage Orders</span>
+              <ChevronRight size={13} />
             </div>
           </Link>
 
           <Link
             to="/admin/products"
-            className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 hover:bg-stone-100/60 transition-all flex flex-col justify-between group"
+            className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 transition-all flex flex-col justify-between group"
           >
             <div>
-              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center mb-3 text-stone-800 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center mb-3 text-stone-800">
                 <ShoppingBag size={18} />
               </div>
               <h3 className="font-semibold text-sm text-stone-900 mb-1">All Products</h3>
               <p className="text-[11px] text-stone-600 font-light leading-relaxed">
-                Edit prices, adjust inventory stock, or toggle publication status.
+                Edit prices, review catalogue health audit, or toggle visibility.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-stone-800 font-semibold mt-4">
-              <span>View Catalogue ({totalProductsCount})</span>
-              <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+              <span>Catalogue ({totalProductsCount})</span>
+              <ChevronRight size={13} />
             </div>
           </Link>
 
           <Link
             to="/admin/categories"
-            className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 hover:bg-stone-100/60 transition-all flex flex-col justify-between group"
+            className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 transition-all flex flex-col justify-between group"
           >
             <div>
-              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center mb-3 text-stone-800 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center mb-3 text-stone-800">
                 <FolderTree size={18} />
               </div>
-              <h3 className="font-semibold text-sm text-stone-900 mb-1">Manage Categories</h3>
+              <h3 className="font-semibold text-sm text-stone-900 mb-1">Categories</h3>
               <p className="text-[11px] text-stone-600 font-light leading-relaxed">
-                Organize store sections, cover photographs, and visibility.
+                Organize sections, cover photos, and visibility.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-stone-800 font-semibold mt-4">
               <span>Manage ({categories.length})</span>
-              <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight size={13} />
+            </div>
+          </Link>
+
+          <Link
+            to="/admin/delivery"
+            className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 transition-all flex flex-col justify-between group"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center mb-3 text-stone-800">
+                <Globe size={18} />
+              </div>
+              <h3 className="font-semibold text-sm text-stone-900 mb-1">Delivery Zones</h3>
+              <p className="text-[11px] text-stone-600 font-light leading-relaxed">
+                Manage Nigeria &amp; international diaspora regions.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] text-stone-800 font-semibold mt-4">
+              <span>Dispatch Rules</span>
+              <ChevronRight size={13} />
             </div>
           </Link>
 
           <Link
             to="/admin/media"
-            className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-sm hover:border-emerald-400 hover:bg-emerald-100/60 transition-all flex flex-col justify-between group"
+            className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-sm hover:border-emerald-400 transition-all flex flex-col justify-between group"
           >
             <div>
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mb-3 text-emerald-800 group-hover:scale-105 transition-transform border border-emerald-300">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mb-3 text-emerald-800 border border-emerald-300">
                 <ImageIcon size={18} />
               </div>
               <h3 className="font-semibold text-sm text-stone-900 mb-1">Media Storage</h3>
               <p className="text-[11px] text-stone-600 font-light leading-relaxed">
-                Upload new photographs, copy URLs, and check connected garments.
+                Upload photographs &amp; inspect linked products.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-semibold mt-4">
-              <span>Manage Media</span>
-              <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </Link>
-
-          <Link
-            to="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-4 bg-stone-50 border border-stone-200 rounded-sm hover:border-stone-400 hover:bg-stone-100/60 transition-all flex flex-col justify-between group"
-          >
-            <div>
-              <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center mb-3 text-stone-800 group-hover:scale-105 transition-transform">
-                <ExternalLink size={18} />
-              </div>
-              <h3 className="font-semibold text-sm text-stone-900 mb-1">Customer Storefront</h3>
-              <p className="text-[11px] text-stone-600 font-light leading-relaxed">
-                Preview your active storefront exactly as customers see it.
-              </p>
-            </div>
-            <div className="flex items-center gap-1 text-[11px] text-stone-800 font-semibold mt-4">
-              <span>Open Storefront</span>
-              <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+              <span>Open Library</span>
+              <ChevronRight size={13} />
             </div>
           </Link>
         </div>
@@ -476,13 +501,12 @@ export default function AdminDashboard() {
           </div>
 
           <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider self-start sm:self-auto ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs font-semibold uppercase tracking-wider self-start sm:self-auto ${
               promoActive
                 ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                 : 'bg-stone-200 text-stone-600'
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${promoActive ? 'bg-emerald-600 animate-pulse' : 'bg-stone-400'}`} />
             {promoActive ? 'Live on Storefront' : 'Hidden from Customers'}
           </span>
         </div>
@@ -598,14 +622,17 @@ export default function AdminDashboard() {
 
       {/* Quick Edit Notice */}
       <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-sm text-xs text-emerald-950 flex items-start gap-3 shadow-2xs">
-        <div className="w-8 h-8 rounded-full bg-emerald-200 text-emerald-950 flex items-center justify-center font-bold flex-shrink-0 text-sm">
-          👑
+        <div className="w-8 h-8 rounded-sm bg-emerald-200 text-emerald-950 flex items-center justify-center font-serif font-bold flex-shrink-0 text-xs">
+          TC
         </div>
         <div>
-          <p className="font-semibold text-sm">Owner Quick Edit Notice:</p>
+          <p className="font-semibold text-sm">Owner Quick Edit &amp; Catalogue Health</p>
           <p className="text-stone-700 mt-0.5 leading-relaxed">
-            Every garment below features <strong className="text-emerald-900">"Edit"</strong> (price) and{' '}
-            <strong className="text-emerald-900">"Full Edit"</strong> controls. Any saved updates synchronize across devices via Supabase Realtime.
+            Every garment below features <strong className="text-emerald-900">Edit Price</strong> and{' '}
+            <strong className="text-emerald-900">Full Edit</strong> controls. Review flagged duplicates or missing photos in{' '}
+            <Link to="/admin/products#health-audit" className="underline font-semibold text-emerald-950">
+              All Products &rarr; Catalogue Health
+            </Link>.
           </p>
         </div>
       </div>
@@ -667,7 +694,8 @@ export default function AdminDashboard() {
                           <img
                             src={imageSrc}
                             alt={product.name}
-                            className="w-10 h-14 object-cover object-top rounded-xs border border-stone-200 bg-stone-100"
+                            referrerPolicy="no-referrer"
+                            className="w-10 h-14 object-contain rounded-xs border border-stone-200 bg-stone-50"
                             loading="lazy"
                           />
                         ) : (
@@ -703,13 +731,13 @@ export default function AdminDashboard() {
                               setQuickPriceProduct(product);
                               setNewPriceInput(product.base_price?.toString() || '');
                               setQuickPriceError('');
-                              setQuickPriceSuccess(false);
+                              setQuickPriceSuccess('');
                             }}
                             className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                            title="Quick Edit Price"
+                            title="Change Price"
                           >
                             <Tag size={10} />
-                            <span>Edit</span>
+                            <span>Change Price</span>
                           </button>
                         </div>
                       </td>
@@ -736,7 +764,7 @@ export default function AdminDashboard() {
                           className="inline-flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50 hover:bg-emerald-100 font-semibold px-3 py-1.5 border border-emerald-300 rounded transition-colors shadow-2xs"
                         >
                           <Edit2 size={13} />
-                          <span>Full Edit</span>
+                          <span>Edit Product</span>
                         </Link>
                       </td>
                     </tr>
@@ -774,14 +802,24 @@ export default function AdminDashboard() {
             <div>
               <p className="text-xs font-semibold text-stone-900">{quickPriceProduct.name}</p>
               <p className="text-[11px] text-stone-500 mt-0.5">
-                Category: {getCategoryName(quickPriceProduct.category_id)}
+                Category: {getCategoryName(quickPriceProduct.category_id)} · Current: ₦{Number(quickPriceProduct.base_price || 0).toLocaleString()}
               </p>
             </div>
 
             {quickPriceError && (
-              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
-                <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <span>{quickPriceError}</span>
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start justify-between gap-2">
+                <div className="flex items-start gap-1.5">
+                  <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <span>{quickPriceError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSaveQuickPrice()}
+                  disabled={savingPrice}
+                  className="px-2 py-0.5 bg-red-700 text-white rounded text-[10px] font-semibold flex-shrink-0 cursor-pointer hover:bg-red-800"
+                >
+                  Retry
+                </button>
               </div>
             )}
 
@@ -810,7 +848,7 @@ export default function AdminDashboard() {
                     Quick Tap Price:
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {['1500', '15000', '35000', '68000', '85000', '130000', '229500'].map(pVal => (
+                    {['1500', '15000', '35000', '68000', '70000', '75000', '120000', '185000', '229500'].map(pVal => (
                       <button
                         key={pVal}
                         type="button"
@@ -831,7 +869,7 @@ export default function AdminDashboard() {
               {quickPriceSuccess && (
                 <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded flex items-center gap-1.5 font-medium">
                   <Check size={14} className="text-emerald-700" />
-                  <span>Price successfully updated on storefront!</span>
+                  <span>{quickPriceSuccess}</span>
                 </div>
               )}
 
@@ -846,9 +884,9 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={savingPrice}
-                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs cursor-pointer"
+                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {savingPrice ? 'Saving...' : 'Save Price'}
+                  {savingPrice ? 'Saving Changes...' : 'Save Changes'}
                 </button>
               </div>
             </form>

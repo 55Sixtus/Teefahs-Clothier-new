@@ -52,6 +52,10 @@ export default function InventoryPage() {
       if (p.variations && p.variations.length > 0) {
         for (const v of p.variations) {
           const liveQty = Math.max(0, Number(v.stock_quantity) || 0);
+          const effectivePrice =
+            v.price_override != null && Number.isFinite(Number(v.price_override))
+              ? Number(v.price_override)
+              : Math.max(0, Number(p.base_price || 0) + Number(v.price_adjustment || 0));
           flatList.push({
             id: v.id,
             productId: p.id,
@@ -60,7 +64,7 @@ export default function InventoryPage() {
             size: v.size || 'One Size',
             colour: v.colour || 'Standard',
             stockQuantity: draftStocks[v.id] !== undefined ? draftStocks[v.id] : liveQty,
-            price: Number(v.price ?? p.base_price) || 0,
+            price: effectivePrice,
           });
         }
       }
@@ -74,6 +78,7 @@ export default function InventoryPage() {
   };
 
   const handleCommitStock = async (id: string, newQty: number) => {
+    if (savingId) return;
     const validQty = Math.max(0, isNaN(newQty) ? 0 : newQty);
     setSavingId(id);
     setErrorMsg('');
@@ -85,7 +90,7 @@ export default function InventoryPage() {
         return next;
       });
       setSavedSuccessId(id);
-      setSuccessMsg(`Stock updated to ${validQty} units in Supabase.`);
+      setSuccessMsg(`Stock confirmed at ${validQty} units.`);
       await refreshProducts();
       setTimeout(() => {
         setSavedSuccessId(null);
@@ -93,7 +98,7 @@ export default function InventoryPage() {
       }, 2500);
     } catch (e: any) {
       console.error('Failed to commit stock:', e);
-      setErrorMsg(e?.message || 'Failed to update stock level in Supabase.');
+      setErrorMsg(e?.message || 'Could not update stock level. Please try again.');
     } finally {
       setSavingId(null);
     }
@@ -105,9 +110,9 @@ export default function InventoryPage() {
     setQuickPriceError('');
   };
 
-  const handleSavePrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPriceItem) return;
+  const handleSavePrice = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quickPriceItem || savingPrice) return;
 
     const parsed = parseFloat(newPriceInput);
     if (isNaN(parsed) || parsed < 0) {
@@ -119,14 +124,18 @@ export default function InventoryPage() {
     setQuickPriceError('');
     setErrorMsg('');
     try {
-      await updateProductPrice(quickPriceItem.productId, parsed);
-      setSuccessMsg(`Updated price for "${quickPriceItem.productName}" to ₦${parsed.toLocaleString()}.`);
+      const updated = await updateProductPrice(quickPriceItem.productId, parsed);
+      setSuccessMsg(
+        `Saved! "${updated.name}" price is now confirmed at ₦${Number(updated.base_price || 0).toLocaleString()}.`
+      );
       setQuickPriceItem(null);
       await refreshProducts();
-      setTimeout(() => setSuccessMsg(''), 3000);
+      setTimeout(() => setSuccessMsg(''), 3500);
     } catch (err: any) {
       console.error('Failed to update price:', err);
-      setQuickPriceError(err?.message || 'Failed to update price in Supabase.');
+      setQuickPriceError(
+        err?.message || 'Could not save the new price. Your entered value is kept — please retry.'
+      );
     } finally {
       setSavingPrice(false);
     }
@@ -430,7 +439,7 @@ export default function InventoryPage() {
             <div className="flex items-center justify-between pb-3 border-b border-stone-200">
               <div className="flex items-center gap-2">
                 <Tag size={16} className="text-emerald-800" />
-                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
+                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Price</h3>
               </div>
               <button
                 onClick={() => setQuickPriceItem(null)}
@@ -448,9 +457,19 @@ export default function InventoryPage() {
             </div>
 
             {quickPriceError && (
-              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
-                <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <span>{quickPriceError}</span>
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start justify-between gap-2">
+                <div className="flex items-start gap-1.5">
+                  <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <span>{quickPriceError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSavePrice()}
+                  disabled={savingPrice}
+                  className="px-2 py-0.5 bg-red-700 text-white rounded text-[10px] font-semibold flex-shrink-0 cursor-pointer hover:bg-red-800"
+                >
+                  Retry
+                </button>
               </div>
             )}
 
@@ -488,7 +507,7 @@ export default function InventoryPage() {
                   disabled={savingPrice || !newPriceInput}
                   className="flex-1 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-emerald-900 hover:bg-emerald-800 disabled:opacity-50 rounded transition-colors cursor-pointer shadow-sm"
                 >
-                  {savingPrice ? 'Saving...' : 'Save Price'}
+                  {savingPrice ? 'Saving Changes...' : 'Save Changes'}
                 </button>
               </div>
             </form>

@@ -15,6 +15,9 @@ import {
   Tag,
   Eye,
   EyeOff,
+  ShieldAlert,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   getArchivedProducts,
@@ -67,6 +70,7 @@ export default function ProductsPage() {
   const [newBasePrice, setNewBasePrice] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
   const [quickPriceError, setQuickPriceError] = useState('');
+  const [showHealthAudit, setShowHealthAudit] = useState(false);
 
   const loadDeleted = useCallback(async () => {
     setLoadingDeleted(true);
@@ -97,9 +101,9 @@ export default function ProductsPage() {
     }
   }, [location.state]);
 
-  const handleSaveQuickPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPriceProduct) return;
+  const handleSaveQuickPrice = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quickPriceProduct || savingPrice) return;
     const priceNum = parseFloat(newBasePrice);
     if (isNaN(priceNum) || priceNum < 0) {
       setQuickPriceError('Please enter a valid price in Naira (₦).');
@@ -110,14 +114,18 @@ export default function ProductsPage() {
     setQuickPriceError('');
     setErrorMsg('');
     try {
-      await updateProductPrice(quickPriceProduct.id, priceNum);
-      setSuccessMsg(`Updated price of "${quickPriceProduct.name}" to ₦${priceNum.toLocaleString()}.`);
+      const updated = await updateProductPrice(quickPriceProduct.id, priceNum);
+      setSuccessMsg(
+        `Saved! "${updated.name}" price is now confirmed at ₦${Number(updated.base_price || 0).toLocaleString()} in database & storefront.`
+      );
       setQuickPriceProduct(null);
       await refreshProducts();
-      setTimeout(() => setSuccessMsg(''), 3500);
+      setTimeout(() => setSuccessMsg(''), 4500);
     } catch (err: any) {
       console.error('Failed to update price:', err);
-      setQuickPriceError(err?.message || 'Could not update price in Supabase.');
+      setQuickPriceError(
+        err?.message || 'The price change could not be saved. Your entered price has been kept — please retry.'
+      );
     } finally {
       setSavingPrice(false);
     }
@@ -238,6 +246,78 @@ export default function ProductsPage() {
 
   const isTableLoading = statusFilter === 'deleted' ? loadingDeleted : loading;
 
+  // Non-destructive live Catalogue Health & Duplicate Audit computation
+  const normalizeTitle = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const duplicateNameGroups: { key: string; items: Product[] }[] = [];
+  const titleBuckets = new Map<string, Product[]>();
+  products.forEach((p) => {
+    const key = normalizeTitle(p.name);
+    if (!key) return;
+    titleBuckets.set(key, [...(titleBuckets.get(key) || []), p]);
+  });
+  titleBuckets.forEach((items, key) => {
+    if (items.length > 1) duplicateNameGroups.push({ key, items });
+  });
+
+  const lowImageProducts = products.filter((p) => {
+    const uniqueUrls = new Set<string>();
+    if (p.main_image_url) uniqueUrls.add(p.main_image_url);
+    (p.images || []).forEach((img) => {
+      if (img.image_url) uniqueUrls.add(img.image_url);
+    });
+    return uniqueUrls.size <= 1;
+  });
+
+  const zeroVariationProducts = products.filter((p) => !p.variations || p.variations.length === 0);
+
+  const ownerFlaggedProducts = products.filter((p) => {
+    const catName = getCategoryName(p.category_id).toLowerCase();
+    const pName = p.name.toLowerCase();
+    const pSlug = (p.slug || '').toLowerCase();
+    const hasMismatch =
+      (pName.includes('khimar') && catName.includes('abaya')) ||
+      (pName.includes('prayer') && catName.includes('casual')) ||
+      (pName.includes('dress') && pSlug.includes('khimar')) ||
+      /^(khimar|workerwear|workwear|abaya)\s+\d+$/i.test(p.name.trim());
+    return Boolean(p.needs_more_images || p.needs_owner_review || hasMismatch);
+  });
+
+  const sharedImageGroups: { url: string; items: Product[] }[] = [];
+  const imageUrlBuckets = new Map<string, Product[]>();
+  products.forEach((p) => {
+    const urls = new Set<string>();
+    if (p.main_image_url && !p.main_image_url.includes('/logo.png')) {
+      urls.add(p.main_image_url.trim());
+    }
+    (p.images || []).forEach((img) => {
+      const url = typeof img === 'string' ? img : img.image_url;
+      if (url && !url.includes('/logo.png')) urls.add(url.trim());
+    });
+    urls.forEach((u) => {
+      imageUrlBuckets.set(u, [...(imageUrlBuckets.get(u) || []), p]);
+    });
+  });
+  imageUrlBuckets.forEach((items, url) => {
+    if (items.length > 1) sharedImageGroups.push({ url, items });
+  });
+
+  const emptyOrDuplicateCategories = categories.filter((c) => {
+    const assignedCount = products.filter((p) => p.category_id === c.id || p.category_id === c.slug).length;
+    const normCat = normalizeTitle(c.name);
+    const hasSibling = categories.some((other) => other.id !== c.id && normalizeTitle(other.name) === normCat);
+    return assignedCount === 0 || hasSibling;
+  });
+
+  const totalAuditFindings =
+    duplicateNameGroups.length +
+    sharedImageGroups.length +
+    lowImageProducts.length +
+    zeroVariationProducts.length +
+    ownerFlaggedProducts.length +
+    emptyOrDuplicateCategories.length;
+
   return (
     <div className="space-y-8 pb-16">
       {/* Header */}
@@ -246,9 +326,9 @@ export default function ProductsPage() {
           <span className="text-xs uppercase tracking-widest text-emerald-800 font-bold block mb-1">
             Store Catalogue
           </span>
-          <h1 className="text-3xl font-serif text-stone-900">Garments &amp; Collections</h1>
+          <h1 className="text-3xl font-serif text-stone-900">All Products</h1>
           <p className="text-xs text-stone-500 mt-1 font-light">
-            Manage your bespoke abayas, French khimars, prayer wear, and boutique inventory.
+            Add products, change prices, update stock, or archive/delete items directly in your live store.
           </p>
         </div>
         <Link
@@ -256,7 +336,7 @@ export default function ProductsPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-900 text-white text-xs font-semibold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors shadow-xs self-start sm:self-auto"
         >
           <PlusCircle size={15} />
-          <span>Add New Garment</span>
+          <span>Add Product</span>
         </Link>
       </div>
 
@@ -287,6 +367,156 @@ export default function ProductsPage() {
         </div>
       )}
 
+      {/* Non-Destructive Catalogue Health & Duplicate Audit Panel */}
+      {!loading && totalAuditFindings > 0 && (
+        <div id="health-audit" className="bg-amber-50/70 border border-amber-300 rounded-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowHealthAudit((v) => !v)}
+            className="w-full p-4 flex flex-wrap items-center justify-between gap-3 text-left cursor-pointer hover:bg-amber-100/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <ShieldAlert size={18} className="text-amber-800 flex-shrink-0" />
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-amber-950">
+                  Catalogue Health &amp; Owner Audit ({totalAuditFindings} items flagged for review)
+                </h2>
+                <p className="text-[11px] text-amber-900">
+                  Non-destructive diagnostics: nothing is ever auto-deleted or merged without owner confirmation.
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-950">
+              <span>{showHealthAudit ? 'Hide Report' : 'Inspect Findings'}</span>
+              {showHealthAudit ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </span>
+          </button>
+
+          {showHealthAudit && (
+            <div className="p-4 pt-2 border-t border-amber-200 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-white">
+              {duplicateNameGroups.length > 0 && (
+                <div className="p-3 border border-stone-200 rounded-sm space-y-2">
+                  <h3 className="font-semibold text-stone-900">
+                    Potential Duplicate Titles ({duplicateNameGroups.length})
+                  </h3>
+                  {duplicateNameGroups.map((grp) => (
+                    <div key={grp.key} className="text-[11px] bg-stone-50 p-2 rounded-xs space-y-1">
+                      {grp.items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2">
+                          <span className="truncate font-medium text-stone-800">
+                            {item.name} ({item.slug})
+                          </span>
+                          <Link
+                            to={`/admin/products/edit/${item.id}`}
+                            className="text-emerald-800 font-semibold underline flex-shrink-0"
+                          >
+                            Edit
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {emptyOrDuplicateCategories.length > 0 && (
+                <div className="p-3 border border-stone-200 rounded-sm space-y-2">
+                  <h3 className="font-semibold text-stone-900">
+                    Empty or Overlapping Categories ({emptyOrDuplicateCategories.length})
+                  </h3>
+                  <div className="space-y-1 text-[11px]">
+                    {emptyOrDuplicateCategories.map((c) => {
+                      const cnt = products.filter((p) => p.category_id === c.id || p.category_id === c.slug).length;
+                      return (
+                        <div key={c.id} className="flex items-center justify-between bg-stone-50 p-2 rounded-xs">
+                          <span>
+                            <strong>{c.name}</strong> ({c.slug}) — {cnt} assigned
+                          </span>
+                          <Link to="/admin/categories" className="text-emerald-800 font-semibold underline">
+                            Manage
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {ownerFlaggedProducts.length > 0 && (
+                <div className="p-3 border border-stone-200 rounded-sm space-y-2">
+                  <h3 className="font-semibold text-stone-900">
+                    Naming / Category Check Needed ({ownerFlaggedProducts.length})
+                  </h3>
+                  <div className="space-y-1 text-[11px] max-h-44 overflow-y-auto">
+                    {ownerFlaggedProducts.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 bg-stone-50 p-2 rounded-xs">
+                        <span className="truncate">
+                          <strong>{p.name}</strong> · in {getCategoryName(p.category_id)}
+                        </span>
+                        <Link
+                          to={`/admin/products/edit/${p.id}`}
+                          className="text-emerald-800 font-semibold underline flex-shrink-0"
+                        >
+                          Review
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {sharedImageGroups.length > 0 && (
+                <div className="p-3 border border-stone-200 rounded-sm space-y-2">
+                  <h3 className="font-semibold text-stone-900">
+                    Shared Photos Across Multiple Products ({sharedImageGroups.length})
+                  </h3>
+                  <div className="space-y-1 text-[11px] max-h-44 overflow-y-auto">
+                    {sharedImageGroups.map((grp) => (
+                      <div key={grp.url} className="bg-stone-50 p-2 rounded-xs space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {grp.items.map((item) => (
+                            <Link
+                              key={item.id}
+                              to={`/admin/products/edit/${item.id}`}
+                              className="text-emerald-800 font-semibold underline"
+                            >
+                              {item.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(lowImageProducts.length > 0 || zeroVariationProducts.length > 0) && (
+                <div className="p-3 border border-stone-200 rounded-sm space-y-2">
+                  <h3 className="font-semibold text-stone-900">
+                    Incomplete Photos ({lowImageProducts.length}) &amp; Zero-Variation ({zeroVariationProducts.length})
+                  </h3>
+                  <div className="space-y-1 text-[11px] max-h-44 overflow-y-auto">
+                    {Array.from(new Set([...lowImageProducts, ...zeroVariationProducts])).map((p) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 bg-stone-50 p-2 rounded-xs">
+                        <span className="truncate">
+                          {p.name} ({(p.images || []).length} gallery imgs · {(p.variations || []).length} vars)
+                        </span>
+                        <Link
+                          to={`/admin/products/edit/${p.id}`}
+                          className="text-emerald-800 font-semibold underline flex-shrink-0"
+                        >
+                          Complete
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="relative w-full lg:w-72">
@@ -295,7 +525,7 @@ export default function ProductsPage() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search garments by title or slug..."
+            placeholder="Search products by name..."
             className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-stone-200 rounded-sm focus:outline-none focus:border-stone-900 placeholder:text-stone-400"
           />
         </div>
@@ -449,7 +679,8 @@ export default function ProductsPage() {
                           <img
                             src={p.main_image_url}
                             alt={p.name}
-                            className="w-10 h-14 object-cover object-top rounded-xs border border-stone-200 grayscale"
+                            referrerPolicy="no-referrer"
+                            className="w-10 h-14 object-contain bg-stone-50 rounded-xs border border-stone-200 grayscale"
                           />
                         ) : (
                           <div className="w-10 h-14 bg-stone-100 flex items-center justify-center rounded-xs text-stone-400 text-[10px]">
@@ -502,7 +733,8 @@ export default function ProductsPage() {
                         <img
                           src={p.main_image_url}
                           alt={p.name}
-                          className="w-10 h-14 object-cover object-top rounded-xs border border-stone-200"
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-14 object-contain bg-stone-50 rounded-xs border border-stone-200"
                         />
                       ) : (
                         <div className="w-10 h-14 bg-stone-100 flex items-center justify-center rounded-xs text-stone-400 text-[10px]">
@@ -512,7 +744,9 @@ export default function ProductsPage() {
                     </td>
                     <td className="py-3 px-4">
                       <span className="font-semibold text-stone-900 block">{p.name}</span>
-                      <span className="text-[10px] text-stone-400 font-mono">{p.slug}</span>
+                      {p.needs_owner_review && (
+                        <span className="text-[10px] text-amber-800 font-medium">Needs owner review</span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-stone-600 font-medium">{getCategoryName(p.category_id)}</td>
                     <td className="py-3 px-4 font-mono font-semibold text-stone-900">
@@ -525,11 +759,11 @@ export default function ProductsPage() {
                             setNewBasePrice(p.base_price?.toString() || '');
                             setQuickPriceError('');
                           }}
-                          className="opacity-80 group-hover/price:opacity-100 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer shadow-2xs border border-emerald-200"
-                          title="Quick Edit Price"
+                          className="opacity-90 group-hover/price:opacity-100 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded text-[10px] font-sans font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all cursor-pointer shadow-2xs border border-emerald-200"
+                          title="Change Price"
                         >
                           <Tag size={10} />
-                          <span>Edit Price</span>
+                          <span>Change Price</span>
                         </button>
                       </div>
                     </td>
@@ -589,13 +823,13 @@ export default function ProductsPage() {
                           className="inline-flex items-center gap-1 text-xs text-stone-700 hover:text-stone-900 font-medium px-2 py-1 border border-stone-200 rounded hover:border-stone-400 transition-colors"
                         >
                           <Edit2 size={12} />
-                          <span>Edit</span>
+                          <span>Edit Product</span>
                         </Link>
                         <button
                           onClick={() => setPendingArchive({ id: p.id, name: p.name })}
                           disabled={archivingId === p.id}
                           className="p-1 text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
-                          title="Move garment to Recently Deleted"
+                          title="Delete / Archive Product"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -633,7 +867,8 @@ export default function ProductsPage() {
                   <img
                     src={p.main_image_url}
                     alt={p.name}
-                    className="w-16 h-22 object-cover object-top rounded-xs border border-stone-200 flex-shrink-0"
+                    referrerPolicy="no-referrer"
+                    className="w-16 h-22 object-contain bg-stone-50 rounded-xs border border-stone-200 flex-shrink-0"
                   />
                 ) : (
                   <div className="w-16 h-22 bg-stone-100 flex items-center justify-center rounded-xs text-stone-400 text-[10px] flex-shrink-0">
@@ -681,7 +916,7 @@ export default function ProductsPage() {
                         className="px-2.5 py-1 bg-emerald-900 hover:bg-emerald-800 text-white rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs cursor-pointer"
                       >
                         <Tag size={11} className="text-amber-300" />
-                        <span>Edit Price</span>
+                        <span>Change Price</span>
                       </button>
                     )}
                   </div>
@@ -714,14 +949,14 @@ export default function ProductsPage() {
                       className="inline-flex items-center gap-1 text-stone-700 hover:text-stone-900 font-medium px-2.5 py-1.5 border border-stone-200 rounded text-[11px]"
                     >
                       <Edit2 size={12} />
-                      <span>Full Edit</span>
+                      <span>Edit Product</span>
                     </Link>
                     <button
                       onClick={() => setPendingArchive({ id: p.id, name: p.name })}
                       className="p-1.5 text-stone-400 hover:text-red-600 transition-colors inline-flex items-center gap-1 text-[11px] cursor-pointer"
                     >
                       <Trash2 size={13} />
-                      <span>Archive</span>
+                      <span>Archive / Delete</span>
                     </button>
                   </>
                 )}
@@ -840,7 +1075,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <h3 className="font-serif text-base text-stone-900 font-bold flex items-center gap-2">
                 <Tag size={16} className="text-emerald-800" />
-                Quick Edit Garment Price
+                Change Price
               </h3>
               <button
                 type="button"
@@ -852,20 +1087,39 @@ export default function ProductsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-stone-900 mb-1">{quickPriceProduct.name}</p>
-              <p className="text-[11px] text-stone-500">Update base selling price in Nigerian Naira (₦).</p>
+              <p className="text-[11px] text-stone-500">
+                Current saved price: <strong>₦{Number(quickPriceProduct.base_price || 0).toLocaleString()}</strong>
+              </p>
+              {(quickPriceProduct.variations || []).some(
+                (v) => v.price_override != null || Number(v.price_adjustment || 0) !== 0
+              ) && (
+                <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1.5">
+                  Saving will synchronize all size/colour variants to this new price.
+                </p>
+              )}
             </div>
 
             {quickPriceError && (
-              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
-                <AlertCircle size={13} className="flex-shrink-0 mt-0.5 text-red-600" />
-                <span>{quickPriceError}</span>
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start justify-between gap-2">
+                <div className="flex items-start gap-1.5">
+                  <AlertCircle size={13} className="flex-shrink-0 mt-0.5 text-red-600" />
+                  <span>{quickPriceError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSaveQuickPrice()}
+                  disabled={savingPrice}
+                  className="px-2 py-0.5 bg-red-700 text-white rounded text-[10px] font-semibold flex-shrink-0 cursor-pointer hover:bg-red-800"
+                >
+                  Retry
+                </button>
               </div>
             )}
 
             <form onSubmit={handleSaveQuickPrice} className="space-y-4">
               <div>
                 <label className="block text-[11px] uppercase tracking-wider font-semibold text-stone-700 mb-1">
-                  New Price (₦)
+                  New Selling Price (₦)
                 </label>
                 <input
                   type="number"
@@ -883,7 +1137,7 @@ export default function ProductsPage() {
                     Quick Tap Price:
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {['1500', '15000', '35000', '68000', '85000', '130000', '229500'].map(pVal => (
+                    {['1500', '15000', '35000', '68000', '70000', '75000', '120000', '185000', '229500'].map(pVal => (
                       <button
                         key={pVal}
                         type="button"
@@ -911,9 +1165,9 @@ export default function ProductsPage() {
                 <button
                   type="submit"
                   disabled={savingPrice}
-                  className="flex-1 py-2.5 bg-emerald-950 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-emerald-900 transition-colors shadow-xs cursor-pointer"
+                  className="flex-1 py-2.5 bg-emerald-950 text-white text-xs uppercase tracking-wider font-semibold rounded-sm hover:bg-emerald-900 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {savingPrice ? 'Saving Price...' : 'Save New Price'}
+                  {savingPrice ? 'Saving Changes...' : 'Save Changes'}
                 </button>
               </div>
             </form>

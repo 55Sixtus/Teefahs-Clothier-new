@@ -21,6 +21,7 @@ interface CartContextType {
   addToCart: (item: CartItem) => void;
   removeFromCart: (index: number) => void;
   updateQuantity: (index: number, quantity: number) => void;
+  replaceCart: (items: CartItem[]) => void;
   clearCart: () => void;
   isCartOpen: boolean;
   toggleCart: () => void;
@@ -36,9 +37,9 @@ export function getProductStockInfo(
   selectedSize?: string,
   selectedColour?: string
 ): ProductStockInfo {
-  const variations = product.variations || [];
+  const variations = (product.variations || []).filter((v) => v.is_active !== false);
   if (variations.length === 0) {
-    // Attributes & stock not yet specified by owner — allow customer cart & WhatsApp order
+    // Attributes & stock not yet specified by owner — allow customer cart & WhatsApp verification
     return { hasVariations: false, maxStock: 20, isOutOfStock: false };
   }
 
@@ -47,15 +48,23 @@ export function getProductStockInfo(
     0
   );
 
-  const matchingVar = variations.find(
-    v =>
-      (!v.size || !selectedSize || v.size === selectedSize) &&
-      (!v.colour || !selectedColour || v.colour === selectedColour)
-  );
+  const matchingVar = variations.find((v) => {
+    const sizeMatch =
+      !v.size ||
+      !selectedSize ||
+      v.size.trim().toLowerCase() === selectedSize.trim().toLowerCase();
+    const colourMatch =
+      !v.colour ||
+      !selectedColour ||
+      v.colour.trim().toLowerCase() === selectedColour.trim().toLowerCase();
+    return sizeMatch && colourMatch;
+  });
 
   const maxStock = matchingVar
     ? Math.max(0, Number(matchingVar.stock_quantity) || 0)
-    : totalStock;
+    : selectedSize || selectedColour
+      ? 0
+      : totalStock;
 
   return {
     hasVariations: true,
@@ -111,7 +120,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Persist cart changes
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
@@ -120,18 +128,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [cart]);
 
-  // Synchronize stored cart items with authoritative live Supabase prices, stock, and availability
+  // Synchronize stored cart items strictly against live Supabase products/variations
   useEffect(() => {
-    if (liveLoading) return;
+    if (liveLoading || liveProducts.length === 0) return;
 
-    setCart(prev => {
+    setCart((prev) => {
       if (prev.length === 0) return prev;
 
       let changed = false;
       const synced: CartItem[] = [];
 
       for (const item of prev) {
-        const freshProduct = liveProducts.find(p => p.id === item.product.id);
+        const freshProduct = liveProducts.find((p) => p.id === item.product.id);
         if (!freshProduct || !freshProduct.is_published || freshProduct.is_archived || freshProduct.deleted_at) {
           changed = true;
           continue;
@@ -155,6 +163,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           freshProduct.name !== item.product.name ||
           freshProduct.main_image_url !== item.product.main_image_url ||
           freshProduct.updated_at !== item.product.updated_at ||
+          JSON.stringify(freshProduct.variations || []) !== JSON.stringify(item.product.variations || []) ||
           clampedQty !== item.quantity;
 
         if (priceChanged || metaChanged) {
@@ -173,7 +182,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [liveProducts, liveLoading]);
 
   const addToCart = (newItem: CartItem) => {
-    const freshProduct = liveProducts.find(p => p.id === newItem.product.id) || newItem.product;
+    const freshProduct = liveProducts.find((p) => p.id === newItem.product.id) || newItem.product;
     const stockInfo = getProductStockInfo(
       freshProduct,
       newItem.selectedSize,
@@ -184,12 +193,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setCart(prev => {
+    setCart((prev) => {
       const existingIndex = prev.findIndex(
-        item =>
+        (item) =>
           item.product.id === freshProduct.id &&
-          item.selectedSize === newItem.selectedSize &&
-          item.selectedColour === newItem.selectedColour
+          item.selectedSize.trim().toLowerCase() === newItem.selectedSize.trim().toLowerCase() &&
+          item.selectedColour.trim().toLowerCase() === newItem.selectedColour.trim().toLowerCase()
       );
 
       if (existingIndex > -1) {
@@ -215,7 +224,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = (index: number) => {
-    setCart(prev => prev.filter((_, i) => i !== index));
+    setCart((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateQuantity = (index: number, quantity: number) => {
@@ -224,7 +233,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setCart(prev => {
+    setCart((prev) => {
       const next: CartItem[] = [];
       prev.forEach((item, i) => {
         if (i !== index) {
@@ -245,8 +254,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const replaceCart = (items: CartItem[]) => setCart(items);
   const clearCart = () => setCart([]);
-  const toggleCart = () => setIsCartOpen(prev => !prev);
+  const toggleCart = () => setIsCartOpen((prev) => !prev);
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
@@ -258,6 +268,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         addToCart,
         removeFromCart,
         updateQuantity,
+        replaceCart,
         clearCart,
         isCartOpen,
         toggleCart,

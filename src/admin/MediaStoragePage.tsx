@@ -43,7 +43,7 @@ export default function MediaStoragePage() {
   const [quickPriceProduct, setQuickPriceProduct] = useState<{ product: Product; itemTitle: string } | null>(null);
   const [newPriceInput, setNewPriceInput] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
-  const [quickPriceSuccess, setQuickPriceSuccess] = useState(false);
+  const [quickPriceSuccess, setQuickPriceSuccess] = useState<string>('');
   const [quickPriceError, setQuickPriceError] = useState('');
 
   const findProductForMedia = (item: MediaItem): Product | undefined => {
@@ -114,65 +114,18 @@ export default function MediaStoragePage() {
       });
     });
 
-    // 2. Approved editorial studio photography not already represented above
+    // 2. Unlinked editorial studio photography (never guess or mislabel unlinked garments)
     SUPPLIED_PHOTOS.forEach((url, idx) => {
       if (seenUrls.has(url)) return;
       seenUrls.add(url);
 
-      let title = `Editorial Photograph #${idx + 1}`;
-      let category = 'Editorial Studio';
-      let productSlug = '';
-      let productName = '';
-
-      if (idx === 0) {
-        title = 'Royal Black Embellished Occasion Abaya';
-        category = 'Occasion Wear';
-        productSlug = 'royal-black-embellished-occasion-abaya';
-        productName = 'Royal Black Embellished Occasion Abaya';
-      } else if (idx === 1) {
-        title = 'Noor Ceremonial Black Silk Occasion Robe';
-        category = 'Occasion Wear';
-        productSlug = 'noor-ceremonial-black-silk-occasion-robe';
-        productName = 'Noor Ceremonial Black Silk Occasion Robe';
-      } else if (idx === 2) {
-        title = 'Kamp Elegance Embroidered Evening Abaya';
-        category = 'Occasion Wear';
-        productSlug = 'kamp-elegance-embroidered-evening-abaya';
-        productName = 'Kamp Elegance Embroidered Evening Abaya';
-      } else if (idx >= 3 && idx <= 8) {
-        title = `Noor Embellished Luxury Abaya - Angle ${idx - 2}`;
-        category = 'Abayas';
-        productSlug = 'noor-embroidered-luxury-abaya';
-        productName = 'Noor Embellished Luxury Abaya';
-      } else if (idx >= 9 && idx <= 14) {
-        title = `Ameera Tiered Chiffon Open Abaya - Shot ${idx - 8}`;
-        category = 'Abayas';
-        productSlug = 'ameera-tiered-chiffon-open-abaya';
-        productName = 'Ameera Tiered Chiffon Open Abaya';
-      } else if (idx >= 15 && idx <= 19) {
-        title = `Zahra French Diamond Khimar - Angle ${idx - 14}`;
-        category = 'Khimars';
-        productSlug = 'zahra-french-diamond-khimar';
-        productName = 'Zahra French Diamond Khimar';
-      } else if (idx >= 20 && idx <= 25) {
-        title = `Maryam Flowing Prayer Set - View ${idx - 19}`;
-        category = 'Prayer Wear';
-        productSlug = 'maryam-flowing-two-piece-prayer-set';
-        productName = 'Maryam Flowing Two-Piece Prayer Set';
-      } else if (idx >= 49 && idx <= 53) {
-        title = `Zainab Modal Hijab & Under-Cap - Shot ${idx - 48}`;
-        category = 'Caps';
-        productSlug = 'zainab-luxe-modal-hijab-under-cap-set';
-        productName = 'Zainab Luxe Modal Hijab & Under-Cap Set';
-      }
-
       list.push({
         id: `editorial-${idx + 1}`,
         url,
-        title,
-        category,
-        productSlug,
-        productName,
+        title: `Editorial Studio Capture #${idx + 1}`,
+        category: 'Editorial Studio',
+        productSlug: '',
+        productName: '',
       });
     });
 
@@ -251,13 +204,13 @@ export default function MediaStoragePage() {
   const openQuickPrice = (product: Product, itemTitle: string) => {
     setQuickPriceProduct({ product, itemTitle });
     setNewPriceInput(product.base_price?.toString() || '');
-    setQuickPriceSuccess(false);
+    setQuickPriceSuccess('');
     setQuickPriceError('');
   };
 
-  const handleSaveQuickPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPriceProduct) return;
+  const handleSaveQuickPrice = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quickPriceProduct || savingPrice) return;
     const priceNum = parseFloat(newPriceInput);
     if (isNaN(priceNum) || priceNum < 0) {
       setQuickPriceError('Please enter a valid price in Naira (₦).');
@@ -266,17 +219,23 @@ export default function MediaStoragePage() {
 
     setSavingPrice(true);
     setQuickPriceError('');
+    setQuickPriceSuccess('');
     try {
-      await updateProductPrice(quickPriceProduct.product.id, priceNum);
-      setQuickPriceSuccess(true);
+      const updated = await updateProductPrice(quickPriceProduct.product.id, priceNum);
+      const confirmedPrice = Number(updated.base_price || 0);
+      setQuickPriceSuccess(`Saved! Confirmed at ₦${confirmedPrice.toLocaleString()}.`);
+      setQuickPriceProduct({ product: updated, itemTitle: quickPriceProduct.itemTitle });
+      setNewPriceInput(String(confirmedPrice));
       await refreshProducts();
       setTimeout(() => {
         setQuickPriceProduct(null);
-        setQuickPriceSuccess(false);
-      }, 650);
+        setQuickPriceSuccess('');
+      }, 1000);
     } catch (err: any) {
       console.error('Failed to update price:', err);
-      setQuickPriceError(err?.message || 'Could not update price in Supabase.');
+      setQuickPriceError(
+        err?.message || 'Could not save the new price. Your entered value is kept — please retry.'
+      );
     } finally {
       setSavingPrice(false);
     }
@@ -419,12 +378,13 @@ export default function MediaStoragePage() {
               key={item.id}
               className="bg-white border border-stone-200 rounded-sm overflow-hidden shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between group"
             >
-              <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden">
+              <div className="aspect-[3/4] bg-stone-50 relative overflow-hidden p-1.5 flex items-center justify-center">
                 <img
                   src={item.url}
                   alt={item.title}
                   loading="lazy"
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
 
                 <div className="absolute top-2 left-2 z-10">
@@ -551,7 +511,7 @@ export default function MediaStoragePage() {
             <div className="flex items-center justify-between pb-3 border-b border-stone-200">
               <div className="flex items-center gap-2">
                 <Tag size={16} className="text-emerald-800" />
-                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Garment Price</h3>
+                <h3 className="font-serif text-base text-stone-900 font-semibold">Change Price</h3>
               </div>
               <button
                 onClick={() => setQuickPriceProduct(null)}
@@ -567,9 +527,19 @@ export default function MediaStoragePage() {
             </div>
 
             {quickPriceError && (
-              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start gap-1.5">
-                <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <span>{quickPriceError}</span>
+              <div className="p-2.5 bg-red-50 border border-red-200 text-red-800 text-[11px] rounded flex items-start justify-between gap-2">
+                <div className="flex items-start gap-1.5">
+                  <AlertCircle size={13} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <span>{quickPriceError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSaveQuickPrice()}
+                  disabled={savingPrice}
+                  className="px-2 py-0.5 bg-red-700 text-white rounded text-[10px] font-semibold flex-shrink-0 cursor-pointer hover:bg-red-800"
+                >
+                  Retry
+                </button>
               </div>
             )}
 
@@ -597,7 +567,7 @@ export default function MediaStoragePage() {
               {quickPriceSuccess && (
                 <div className="p-2 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded flex items-center gap-1.5 font-medium">
                   <Check size={14} className="text-emerald-700" />
-                  <span>Price successfully updated!</span>
+                  <span>{quickPriceSuccess}</span>
                 </div>
               )}
 
@@ -612,9 +582,9 @@ export default function MediaStoragePage() {
                 <button
                   type="submit"
                   disabled={savingPrice}
-                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs cursor-pointer"
+                  className="w-1/2 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {savingPrice ? 'Saving...' : 'Save Price'}
+                  {savingPrice ? 'Saving Changes...' : 'Save Changes'}
                 </button>
               </div>
             </form>

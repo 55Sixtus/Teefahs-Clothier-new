@@ -11,9 +11,16 @@ declare global {
 
 export const DEFAULT_GA_ID = 'G-TEEFAHS2026';
 const GA_MEASUREMENT_ID_PATTERN = /^(G|AW|GT)-[A-Z0-9]{6,16}$/i;
+const GA_MEASUREMENT_ID_EXTRACT = /\b(G|AW|GT)-[A-Z0-9]{6,16}\b/i;
 
 export const isValidGaMeasurementId = (id: string): boolean => {
   return GA_MEASUREMENT_ID_PATTERN.test(id.trim());
+};
+
+const extractGaMeasurementId = (raw?: unknown): string | null => {
+  if (typeof raw !== 'string') return null;
+  const match = raw.trim().toUpperCase().match(GA_MEASUREMENT_ID_EXTRACT);
+  return match ? match[0] : null;
 };
 
 const isAdminPath = (): boolean => {
@@ -25,17 +32,14 @@ const isAdminPath = (): boolean => {
  */
 export const getActiveGaMeasurementId = (): string => {
   try {
-    const saved = localStorage.getItem('teefahs_ga_measurement_id');
-    if (saved && isValidGaMeasurementId(saved)) {
-      return saved.trim().toUpperCase();
-    }
-    if (window.GA_MEASUREMENT_ID && isValidGaMeasurementId(window.GA_MEASUREMENT_ID)) {
-      return window.GA_MEASUREMENT_ID.trim().toUpperCase();
-    }
-    const envId = (import.meta as any).env?.VITE_GA_MEASUREMENT_ID;
-    if (envId && isValidGaMeasurementId(envId)) {
-      return envId.trim().toUpperCase();
-    }
+    const saved = extractGaMeasurementId(localStorage.getItem('teefahs_ga_measurement_id'));
+    if (saved) return saved;
+
+    const winId = extractGaMeasurementId(window.GA_MEASUREMENT_ID);
+    if (winId) return winId;
+
+    const envId = extractGaMeasurementId((import.meta as any).env?.VITE_GA_MEASUREMENT_ID);
+    if (envId) return envId;
   } catch {
     // ignore storage errors
   }
@@ -48,6 +52,17 @@ export const getActiveGaMeasurementId = (): string => {
 export const initializeAnalytics = (): void => {
   if (typeof window === 'undefined' || isAdminPath()) return;
   try {
+    const activeId = getActiveGaMeasurementId();
+    if (
+      activeId !== DEFAULT_GA_ID &&
+      !document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${activeId}"]`)
+    ) {
+      const gtagScript = document.createElement('script');
+      gtagScript.async = true;
+      gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${activeId}`;
+      document.head.appendChild(gtagScript);
+    }
+
     window.dataLayer = window.dataLayer || [];
     if (typeof window.gtag !== 'function') {
       window.gtag = function gtag() {
@@ -55,7 +70,6 @@ export const initializeAnalytics = (): void => {
         window.dataLayer.push(arguments);
       };
     }
-    const activeId = getActiveGaMeasurementId();
     window.gtag('js', new Date());
     window.gtag('config', activeId, {
       page_path: window.location.pathname,
