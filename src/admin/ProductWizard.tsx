@@ -101,6 +101,7 @@ const VIEW_TYPE_OPTIONS: { value: ImageViewType; label: string }[] = [
   { value: 'front', label: 'Front View' },
   { value: 'back', label: 'Back View' },
   { value: 'side', label: 'Side / Silhouette' },
+  { value: 'top', label: 'Top View' },
   { value: 'closeup', label: 'Close-Up' },
   { value: 'fabric', label: 'Fabric Texture' },
   { value: 'detail', label: 'Detail / Embroidery' },

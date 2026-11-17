@@ -11,6 +11,8 @@ import {
   ExternalLink,
   Ruler,
   ImageOff,
+  Play,
+  ZoomIn,
 } from 'lucide-react';
 import { Category, Product } from '../types/product';
 import { useCart } from '../context/CartContext';
@@ -32,7 +34,8 @@ export interface ProductModalProps {
 const VIEW_LABELS: Record<string, string> = {
   front: 'Front View',
   back: 'Back View',
-  side: 'Side Profile',
+  side: 'Side View',
+  top: 'Top View',
   closeup: 'Close-Up',
   fabric: 'Fabric Texture',
   detail: 'Craft Detail',
@@ -52,6 +55,8 @@ export default function ProductModal({
   const [activeCategories, setActiveCategories] = useState<Category[]>(categories || []);
   const [isUnavailable, setIsUnavailable] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+  const [mediaMode, setMediaMode] = useState<'photo' | 'video'>('photo');
+  const [zoomActive, setZoomActive] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -63,6 +68,8 @@ export default function ProductModal({
     setCurrentProduct(product);
     setIsUnavailable(false);
     setSelectedImageIdx(0);
+    setMediaMode('photo');
+    setZoomActive(false);
     setSelectedSize('');
     setSelectedColour('');
     setQuantity(1);
@@ -187,7 +194,7 @@ export default function ProductModal({
     (c) => c.id === activeProduct.category_id || c.slug === activeProduct.category_id
   );
 
-  const gallerySlots: { url: string; label: string }[] = [];
+  const gallerySlots: { url: string; viewType: string; label: string }[] = [];
   const primary =
     activeProduct.main_image_url ||
     activeProduct.images?.[0]?.image_url ||
@@ -195,15 +202,19 @@ export default function ProductModal({
 
   if (primary) {
     const primaryMeta = activeProduct.images?.find((i) => i.image_url === primary);
+    const pType = primaryMeta?.view_type || 'front';
     gallerySlots.push({
       url: primary,
-      label: primaryMeta?.view_type ? VIEW_LABELS[primaryMeta.view_type] || 'Primary View' : 'Primary View',
+      viewType: pType,
+      label: VIEW_LABELS[pType] || 'Front View',
     });
   }
   (activeProduct.images || []).forEach((img, idx) => {
     if (img.image_url && !gallerySlots.some((g) => g.url === img.image_url)) {
+      const iType = img.view_type || (idx === 0 ? 'front' : 'other');
       gallerySlots.push({
         url: img.image_url,
+        viewType: iType,
         label: img.view_type ? VIEW_LABELS[img.view_type] || `View ${idx + 1}` : `View ${idx + 1}`,
       });
     }
@@ -294,33 +305,141 @@ export default function ProductModal({
           <div className="grid grid-cols-1 lg:grid-cols-12 max-h-[92vh] overflow-y-auto">
             {/* Uncropped Gallery */}
             <div className="lg:col-span-7 bg-stone-50 dark:bg-stone-950 p-4 sm:p-6 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-stone-200 dark:border-stone-800">
-              <div className="relative aspect-[3/4] max-h-[480px] w-full bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 flex items-center justify-center p-2 group">
-                {activeDisplayImage ? (
+              <div className="relative aspect-[3/4] max-h-[480px] w-full bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden flex items-center justify-center p-2 group">
+                {mediaMode === 'video' && activeProduct.video_url ? (
+                  <div className="w-full h-full flex items-center justify-center bg-black">
+                    <video
+                      src={activeProduct.video_url}
+                      controls
+                      preload="metadata"
+                      className="w-full h-full max-h-[460px] object-contain"
+                    />
+                  </div>
+                ) : activeDisplayImage ? (
                   <>
                     <img
                       src={activeDisplayImage}
                       alt={activeProduct.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-contain"
+                      onClick={() => setZoomActive((prev) => !prev)}
+                      style={zoomActive ? { transform: 'scale(1.85)' } : undefined}
+                      className={`w-full h-full object-contain transition-transform duration-200 ${
+                        zoomActive ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                      }`}
                     />
                     <div className="absolute bottom-3 left-3 bg-stone-900/80 text-white text-[11px] px-2.5 py-1">
-                      {activeSlot?.label || 'Photograph'}
-                      {gallerySlots.length > 1 && ` (${selectedImageIdx + 1}/${gallerySlots.length})`}
+                      {zoomActive ? 'Close-Up View' : activeSlot?.label || 'Front View'}
+                      {gallerySlots.length > 1 && !zoomActive && ` (${selectedImageIdx + 1}/${gallerySlots.length})`}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setLightboxImage(activeDisplayImage)}
-                      className="absolute top-3 left-3 p-2 bg-stone-900/75 text-white cursor-pointer opacity-85 hover:opacity-100"
-                      title="Expand full view"
-                    >
-                      <Maximize2 size={15} />
-                    </button>
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setZoomActive((prev) => !prev)}
+                        className={`p-2 cursor-pointer transition-colors ${
+                          zoomActive
+                            ? 'bg-amber-400 text-stone-950'
+                            : 'bg-stone-900/75 text-white opacity-85 hover:opacity-100'
+                        }`}
+                        title="Toggle close-up view"
+                      >
+                        <ZoomIn size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLightboxImage(activeDisplayImage)}
+                        className="p-2 bg-stone-900/75 text-white cursor-pointer opacity-85 hover:opacity-100"
+                        title="Expand full view"
+                      >
+                        <Maximize2 size={15} />
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-2 text-stone-400">
                     <ImageOff size={32} strokeWidth={1.5} />
                     <span className="text-xs uppercase tracking-widest">Garment Photo Pending</span>
                   </div>
+                )}
+              </div>
+
+              {/* Same-Garment Angle Switcher */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(
+                  [
+                    { key: 'front', label: 'Front' },
+                    { key: 'back', label: 'Back' },
+                    { key: 'side', label: 'Side' },
+                    { key: 'top', label: 'Top' },
+                    { key: 'closeup', label: 'Close-Up' },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const matchIdx =
+                    key === 'front'
+                      ? Math.max(0, gallerySlots.findIndex((g) => g.viewType === 'front'))
+                      : key === 'closeup'
+                        ? gallerySlots.findIndex((g) => ['closeup', 'detail', 'fabric'].includes(g.viewType))
+                        : gallerySlots.findIndex((g) => g.viewType === key);
+                  const isAvailable =
+                    key === 'front' || key === 'closeup' ? gallerySlots.length > 0 : matchIdx >= 0;
+                  const isActive =
+                    mediaMode === 'photo' &&
+                    (key === 'closeup'
+                      ? (matchIdx >= 0 && selectedImageIdx === matchIdx) || zoomActive
+                      : matchIdx >= 0 && selectedImageIdx === matchIdx && !zoomActive);
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={!isAvailable}
+                      onClick={() => {
+                        setMediaMode('photo');
+                        if (key === 'closeup') {
+                          if (matchIdx >= 0) {
+                            setSelectedImageIdx(matchIdx);
+                            setZoomActive(false);
+                          } else {
+                            setZoomActive((prev) => !prev);
+                          }
+                        } else if (matchIdx >= 0) {
+                          setSelectedImageIdx(matchIdx);
+                          setZoomActive(false);
+                        }
+                      }}
+                      title={
+                        isAvailable
+                          ? `View ${label} of ${activeProduct.name}`
+                          : `${label} view not yet uploaded for this garment`
+                      }
+                      className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider border transition-colors ${
+                        isActive
+                          ? 'bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 border-stone-900 dark:border-amber-400 cursor-pointer'
+                          : isAvailable
+                            ? 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-stone-900 cursor-pointer'
+                            : 'bg-stone-100 dark:bg-stone-900/40 text-stone-400 dark:text-stone-600 border-stone-200 dark:border-stone-800 cursor-not-allowed'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+
+                {activeProduct.video_url && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setZoomActive(false);
+                      setMediaMode('video');
+                    }}
+                    className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider border inline-flex items-center gap-1 transition-colors cursor-pointer ${
+                      mediaMode === 'video'
+                        ? 'bg-emerald-900 text-white border-emerald-900'
+                        : 'bg-white dark:bg-stone-900 text-emerald-900 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50'
+                    }`}
+                  >
+                    <Play size={10} className="fill-current" />
+                    <span>3D / Video</span>
+                  </button>
                 )}
               </div>
 

@@ -166,7 +166,7 @@ const notifyCatalogueUpdated = (detail: Record<string, any> = {}) => {
 };
 
 const normalizeViewType = (val?: string): ImageViewType => {
-  const allowed: ImageViewType[] = ['front', 'back', 'side', 'closeup', 'fabric', 'detail', 'worn', 'other'];
+  const allowed: ImageViewType[] = ['front', 'back', 'side', 'top', 'closeup', 'fabric', 'detail', 'worn', 'other'];
   if (val && allowed.includes(val as ImageViewType)) return val as ImageViewType;
   return 'front';
 };

@@ -37,7 +37,8 @@ import ProductCard from './ProductCard';
 const VIEW_TYPE_LABELS: Record<string, string> = {
   front: 'Front View',
   back: 'Back View',
-  side: 'Side Profile',
+  side: 'Side View',
+  top: 'Top View',
   closeup: 'Close-Up',
   fabric: 'Fabric Texture',
   detail: 'Craft Detail',
@@ -86,6 +87,7 @@ function resolveSwatchHex(colourName: string, explicitHex?: string): string {
 
 interface GalleryItem {
   url: string;
+  viewType: string;
   viewLabel: string;
   colourTag?: string;
   authenticityLabel?: string;
@@ -184,11 +186,11 @@ export default function ProductDetailPage() {
 
     const primaryMeta = product.images?.find((img) => img.image_url === product.main_image_url);
     if (product.main_image_url) {
+      const pType = primaryMeta?.view_type || 'front';
       pushIfNew({
         url: product.main_image_url,
-        viewLabel: primaryMeta?.view_type
-          ? VIEW_TYPE_LABELS[primaryMeta.view_type] || 'Primary View'
-          : 'Primary View',
+        viewType: pType,
+        viewLabel: VIEW_TYPE_LABELS[pType] || 'Front View',
         colourTag: primaryMeta?.colour_tag,
         authenticityLabel: primaryMeta?.authenticity_label
           ? AUTHENTICITY_LABELS[primaryMeta.authenticity_label]
@@ -198,8 +200,10 @@ export default function ProductDetailPage() {
     }
 
     (product.images || []).forEach((img, idx) => {
+      const iType = img.view_type || (idx === 0 ? 'front' : 'other');
       pushIfNew({
         url: img.image_url,
+        viewType: iType,
         viewLabel: img.view_type
           ? VIEW_TYPE_LABELS[img.view_type] || `View ${idx + 1}`
           : `View ${idx + 1}`,
@@ -613,6 +617,93 @@ export default function ProductDetailPage() {
                           </button>
                         </div>
                       </>
+                    )}
+                  </div>
+
+                  {/* Same-Garment Angle Switcher (Front, Back, Side, Top, Close-Up, 3D Video) */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        { key: 'front', label: 'Front View' },
+                        { key: 'back', label: 'Back View' },
+                        { key: 'side', label: 'Side View' },
+                        { key: 'top', label: 'Top View' },
+                        { key: 'closeup', label: 'Close-Up' },
+                      ] as const
+                    ).map(({ key, label }) => {
+                      const matchIdx =
+                        key === 'front'
+                          ? Math.max(0, galleryImages.findIndex((g) => g.viewType === 'front'))
+                          : key === 'closeup'
+                            ? galleryImages.findIndex((g) =>
+                                ['closeup', 'detail', 'fabric'].includes(g.viewType)
+                              )
+                            : galleryImages.findIndex((g) => g.viewType === key);
+                      const isAvailable =
+                        key === 'front'
+                          ? galleryImages.length > 0
+                          : key === 'closeup'
+                            ? galleryImages.length > 0
+                            : matchIdx >= 0;
+                      const isActive =
+                        mediaMode === 'photo' &&
+                        (key === 'closeup'
+                          ? (matchIdx >= 0 && selectedImageIdx === matchIdx) || zoomActive
+                          : matchIdx >= 0 && selectedImageIdx === matchIdx && !zoomActive);
+
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          disabled={!isAvailable}
+                          onClick={() => {
+                            setMediaMode('photo');
+                            if (key === 'closeup') {
+                              if (matchIdx >= 0) {
+                                setSelectedImageIdx(matchIdx);
+                                setZoomActive(false);
+                              } else {
+                                setZoomActive((prev) => !prev);
+                              }
+                            } else if (matchIdx >= 0) {
+                              setSelectedImageIdx(matchIdx);
+                              setZoomActive(false);
+                            }
+                          }}
+                          title={
+                            isAvailable
+                              ? `View ${label} of ${product.name}`
+                              : `${label} photo not yet uploaded for this garment`
+                          }
+                          className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider border transition-colors ${
+                            isActive
+                              ? 'bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 border-stone-900 dark:border-amber-400 cursor-pointer'
+                              : isAvailable
+                                ? 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:border-stone-900 cursor-pointer'
+                                : 'bg-stone-100 dark:bg-stone-900/40 text-stone-400 dark:text-stone-600 border-stone-200 dark:border-stone-800 cursor-not-allowed'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+
+                    {product.video_url && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setZoomActive(false);
+                          setMediaMode('video');
+                        }}
+                        className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider border inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+                          mediaMode === 'video'
+                            ? 'bg-emerald-900 text-white border-emerald-900'
+                            : 'bg-white dark:bg-stone-900 text-emerald-900 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50'
+                        }`}
+                      >
+                        <Play size={11} className="fill-current" />
+                        <span>3D / Video</span>
+                      </button>
                     )}
                   </div>
 

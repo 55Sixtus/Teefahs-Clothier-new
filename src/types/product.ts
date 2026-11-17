@@ -2,6 +2,7 @@ export type ImageViewType =
   | 'front'
   | 'back'
   | 'side'
+  | 'top'
   | 'closeup'
   | 'fabric'
   | 'detail'
