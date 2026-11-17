@@ -14,3 +14,52 @@ body {
 html.dark body {
   @apply bg-stone-950 text-stone-100;
 }
+
+/* Boutique button micro-interactions (pure CSS, zero JS overhead) */
+@layer base {
+  button:not(:disabled),
+  a[class*="px-"][class*="py-"] {
+    transition:
+      transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.24s ease,
+      border-color 0.24s ease,
+      color 0.24s ease,
+      opacity 0.24s ease;
+  }
+
+  button:not(:disabled):hover,
+  a[class*="px-"][class*="py-"]:hover {
+    transform: translateY(-1.5px);
+  }
+
+  button:not(:disabled):active,
+  a[class*="px-"][class*="py-"]:active {
+    transform: translateY(0) scale(0.985);
+  }
+}
+
+@keyframes boutiqueFadeIn {
+  from {
+    opacity: 0.45;
+    transform: scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.boutique-view-transition {
+  animation: boutiqueFadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a[class*="px-"][class*="py-"],
+  .boutique-view-transition {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

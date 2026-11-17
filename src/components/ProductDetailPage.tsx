@@ -534,6 +534,7 @@ export default function ProductDetailPage() {
                     ) : (
                       <>
                         <img
+                          key={activeGalleryItem?.url}
                           src={activeGalleryItem?.url}
                           alt={`${product.name} — ${activeGalleryItem?.viewLabel || 'View'}`}
                           referrerPolicy="no-referrer"
@@ -543,7 +544,7 @@ export default function ProductDetailPage() {
                               ? { transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`, transform: 'scale(1.9)' }
                               : undefined
                           }
-                          className={`w-full h-full object-contain transition-transform duration-200 ${
+                          className={`w-full h-full object-contain boutique-view-transition transition-transform duration-200 ${
                             zoomActive ? 'cursor-zoom-out' : 'cursor-zoom-in'
                           }`}
                         />

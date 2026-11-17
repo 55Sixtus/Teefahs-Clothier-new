@@ -112,23 +112,41 @@ export default function ProductCard({
         ? product.images[0].image_url
         : '';
 
+  const hoverImageSrc =
+    !imgError
+      ? product.images?.find((img) => img.image_url && img.image_url !== imageSrc)?.image_url || ''
+      : '';
+
   return (
     <>
-      <article className="flex flex-col group bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden hover:border-stone-400 dark:hover:border-stone-600 transition-colors duration-300">
+      <article className="flex flex-col group bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden hover:border-stone-400 dark:hover:border-stone-600 hover:shadow-md transition-all duration-300">
         {/* Uncropped Full-Garment Image Link */}
         <Link
           to={`/product/${product.slug || product.id}`}
           className="aspect-[3/4] bg-stone-100/80 dark:bg-stone-950 relative overflow-hidden flex items-center justify-center p-2"
         >
           {imageSrc ? (
-            <img
-              src={imageSrc}
-              alt={product.name}
-              referrerPolicy="no-referrer"
-              onError={() => setImgError(true)}
-              className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500 ease-out"
-              loading="lazy"
-            />
+            <>
+              <img
+                src={imageSrc}
+                alt={product.name}
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+                className={`w-full h-full object-contain transition-all duration-500 ease-out ${
+                  hoverImageSrc ? 'group-hover:opacity-0' : 'group-hover:scale-[1.03]'
+                }`}
+                loading="lazy"
+              />
+              {hoverImageSrc && (
+                <img
+                  src={hoverImageSrc}
+                  alt={`${product.name} — Alternate View`}
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 w-full h-full object-contain p-2 opacity-0 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-500 ease-out"
+                  loading="lazy"
+                />
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 text-stone-400 dark:text-stone-600 text-center px-4">
               <ImageOff size={28} strokeWidth={1.5} />
@@ -137,6 +155,19 @@ export default function ProductCard({
               </span>
             </div>
           )}
+
+          {/* Slide-Up Quick View Bar on Hover */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowModal(true);
+            }}
+            className="absolute inset-x-0 bottom-0 z-20 py-2.5 bg-stone-900/90 dark:bg-amber-400/95 text-white dark:text-stone-950 text-[11px] font-semibold uppercase tracking-[0.18em] text-center translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out cursor-pointer"
+          >
+            Quick View
+          </button>
 
           {/* Single subtle top-left corner status */}
           {(pricing.hasDiscount || product.is_new_arrival) && (
@@ -156,7 +187,7 @@ export default function ProductCard({
           {/* Video indicator when video exists */}
           {product.video_url && (
             <div
-              className="absolute bottom-2.5 right-2.5 z-10 bg-stone-950/75 text-white px-2 py-0.5 text-[10px] font-medium flex items-center gap-1"
+              className="absolute bottom-2.5 right-2.5 z-10 bg-stone-950/75 text-white px-2 py-0.5 text-[10px] font-medium flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-200"
               title="Product video available"
             >
               <Play size={10} className="fill-current" />

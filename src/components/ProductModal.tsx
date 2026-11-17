@@ -13,6 +13,8 @@ import {
   ImageOff,
   Play,
   ZoomIn,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Category, Product } from '../types/product';
 import { useCart } from '../context/CartContext';
@@ -303,63 +305,126 @@ export default function ProductModal({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 max-h-[92vh] overflow-y-auto">
-            {/* Uncropped Gallery */}
+            {/* Uncropped Gallery with Vertical Thumbnail Rail */}
             <div className="lg:col-span-7 bg-stone-50 dark:bg-stone-950 p-4 sm:p-6 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-stone-200 dark:border-stone-800">
-              <div className="relative aspect-[3/4] max-h-[480px] w-full bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden flex items-center justify-center p-2 group">
-                {mediaMode === 'video' && activeProduct.video_url ? (
-                  <div className="w-full h-full flex items-center justify-center bg-black">
-                    <video
-                      src={activeProduct.video_url}
-                      controls
-                      preload="metadata"
-                      className="w-full h-full max-h-[460px] object-contain"
-                    />
-                  </div>
-                ) : activeDisplayImage ? (
-                  <>
-                    <img
-                      src={activeDisplayImage}
-                      alt={activeProduct.name}
-                      referrerPolicy="no-referrer"
-                      onClick={() => setZoomActive((prev) => !prev)}
-                      style={zoomActive ? { transform: 'scale(1.85)' } : undefined}
-                      className={`w-full h-full object-contain transition-transform duration-200 ${
-                        zoomActive ? 'cursor-zoom-out' : 'cursor-zoom-in'
-                      }`}
-                    />
-                    <div className="absolute bottom-3 left-3 bg-stone-900/80 text-white text-[11px] px-2.5 py-1">
-                      {zoomActive ? 'Close-Up View' : activeSlot?.label || 'Front View'}
-                      {gallerySlots.length > 1 && !zoomActive && ` (${selectedImageIdx + 1}/${gallerySlots.length})`}
-                    </div>
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+              <div className="flex flex-col-reverse sm:flex-row gap-3">
+                {/* Vertical Thumbnail Rail (desktop) / Horizontal Strip (mobile) */}
+                {gallerySlots.length > 1 && (
+                  <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[480px] sm:w-20 flex-shrink-0 pb-1 sm:pb-0">
+                    {gallerySlots.map((slot, idx) => (
                       <button
+                        key={`${slot.url}-${idx}`}
                         type="button"
-                        onClick={() => setZoomActive((prev) => !prev)}
-                        className={`p-2 cursor-pointer transition-colors ${
-                          zoomActive
-                            ? 'bg-amber-400 text-stone-950'
-                            : 'bg-stone-900/75 text-white opacity-85 hover:opacity-100'
+                        onClick={() => {
+                          setMediaMode('photo');
+                          setSelectedImageIdx(idx);
+                          setZoomActive(false);
+                        }}
+                        className={`relative aspect-[3/4] w-16 sm:w-full flex-shrink-0 bg-stone-100 dark:bg-stone-900 border-2 p-0.5 cursor-pointer transition-all ${
+                          mediaMode === 'photo' && selectedImageIdx === idx
+                            ? 'border-stone-900 dark:border-amber-400 shadow-xs'
+                            : 'border-stone-200 dark:border-stone-800 opacity-75 hover:opacity-100'
                         }`}
-                        title="Toggle close-up view"
                       >
-                        <ZoomIn size={15} />
+                        <img
+                          src={slot.url}
+                          alt={slot.label}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-contain"
+                        />
+                        <span className="absolute inset-x-0 bottom-0 bg-stone-950/75 text-white text-[8px] px-1 py-0.5 truncate">
+                          {slot.label}
+                        </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setLightboxImage(activeDisplayImage)}
-                        className="p-2 bg-stone-900/75 text-white cursor-pointer opacity-85 hover:opacity-100"
-                        title="Expand full view"
-                      >
-                        <Maximize2 size={15} />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 text-stone-400">
-                    <ImageOff size={32} strokeWidth={1.5} />
-                    <span className="text-xs uppercase tracking-widest">Garment Photo Pending</span>
+                    ))}
                   </div>
                 )}
+
+                <div className="relative flex-1 aspect-[3/4] max-h-[480px] w-full bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden flex items-center justify-center p-2 group">
+                  {mediaMode === 'video' && activeProduct.video_url ? (
+                    <div className="w-full h-full flex items-center justify-center bg-black">
+                      <video
+                        src={activeProduct.video_url}
+                        controls
+                        preload="metadata"
+                        className="w-full h-full max-h-[460px] object-contain"
+                      />
+                    </div>
+                  ) : activeDisplayImage ? (
+                    <>
+                      <img
+                        key={activeDisplayImage}
+                        src={activeDisplayImage}
+                        alt={activeProduct.name}
+                        referrerPolicy="no-referrer"
+                        onClick={() => setZoomActive((prev) => !prev)}
+                        style={zoomActive ? { transform: 'scale(1.85)' } : undefined}
+                        className={`w-full h-full object-contain boutique-view-transition transition-transform duration-200 ${
+                          zoomActive ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                        }`}
+                      />
+                      {gallerySlots.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMediaMode('photo');
+                              setZoomActive(false);
+                              setSelectedImageIdx((prev) => (prev - 1 + gallerySlots.length) % gallerySlots.length);
+                            }}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1.5 bg-white/90 dark:bg-stone-950/85 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-white cursor-pointer"
+                            aria-label="Previous angle"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMediaMode('photo');
+                              setZoomActive(false);
+                              setSelectedImageIdx((prev) => (prev + 1) % gallerySlots.length);
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 bg-white/90 dark:bg-stone-950/85 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-white cursor-pointer"
+                            aria-label="Next angle"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </>
+                      )}
+                      <div className="absolute bottom-3 left-3 bg-stone-900/80 text-white text-[11px] px-2.5 py-1">
+                        {zoomActive ? 'Close-Up View' : activeSlot?.label || 'Front View'}
+                        {gallerySlots.length > 1 && !zoomActive && ` (${selectedImageIdx + 1}/${gallerySlots.length})`}
+                      </div>
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setZoomActive((prev) => !prev)}
+                          className={`p-2 cursor-pointer transition-colors ${
+                            zoomActive
+                              ? 'bg-amber-400 text-stone-950'
+                              : 'bg-stone-900/75 text-white opacity-85 hover:opacity-100'
+                          }`}
+                          title="Toggle close-up view"
+                        >
+                          <ZoomIn size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLightboxImage(activeDisplayImage)}
+                          className="p-2 bg-stone-900/75 text-white cursor-pointer opacity-85 hover:opacity-100"
+                          title="Expand full view"
+                        >
+                          <Maximize2 size={15} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 text-stone-400">
+                      <ImageOff size={32} strokeWidth={1.5} />
+                      <span className="text-xs uppercase tracking-widest">Garment Photo Pending</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Same-Garment Angle Switcher */}
