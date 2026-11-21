@@ -553,6 +553,29 @@ const RAW_INITIAL_PRODUCTS: Product[] = [
       { id: 'var-48-3', product_id: '00000000-0000-0000-0000-000000000048', size: 'Standard Fit', colour: 'Nude Biscotti', price_adjustment: 0, stock_quantity: 30, is_active: true },
     ],
   },
+  {
+    id: '00000000-0000-0000-0000-000000000049',
+    name: 'Teef Green Splash Hooded Abaya',
+    slug: 'teef-green-splash-hooded-abaya',
+    short_description: 'Exquisite white Dubai crepe abaya featuring bold artistic green ink splatter prints and integrated hood.',
+    description: 'An exclusive artisan creation crafted from premium flowing Dubai crepe. Designed with an attached hood, adjustable drawstring cords, smocked elastic wrist cuffs, and striking vibrant green organic ink splatters along the lower hemline.',
+    category_id: 'c0000000-0000-0000-0000-000000000001',
+    main_image_url: '/public/assets/aistudio/IMG-20261115-WA0018_f889565f.jpg',
+    base_price: 245000,
+    currency: 'NGN',
+    is_published: true,
+    is_featured: true,
+    is_new_arrival: true,
+    images: [
+      { id: 'img-49-1', image_url: '/public/assets/aistudio/IMG-20261115-WA0018_f889565f.jpg', alt_text: 'Teef Green Splash Hooded Abaya - Front View', view_type: 'front' },
+    ],
+    variations: [
+      { id: 'var-49-1', product_id: '00000000-0000-0000-0000-000000000049', size: '52', colour: 'White & Green', price_adjustment: 0, stock_quantity: 2, is_active: true },
+      { id: 'var-49-2', product_id: '00000000-0000-0000-0000-000000000049', size: '54', colour: 'White & Green', price_adjustment: 0, stock_quantity: 2, is_active: true },
+      { id: 'var-49-3', product_id: '00000000-0000-0000-0000-000000000049', size: '56', colour: 'White & Green', price_adjustment: 0, stock_quantity: 2, is_active: true },
+      { id: 'var-49-4', product_id: '00000000-0000-0000-0000-000000000049', size: '58', colour: 'White & Green', price_adjustment: 0, stock_quantity: 2, is_active: true },
+    ],
+  },
 ];
 
 /**

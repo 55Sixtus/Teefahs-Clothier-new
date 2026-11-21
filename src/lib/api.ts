@@ -336,6 +336,16 @@ export const getDatabaseDiagnostics = async (): Promise<DatabaseDiagnostics> => 
   }
 };
 
+const isUnwantedProduct = (p: any) => {
+  const name = String(p?.name || '').toLowerCase();
+  const slug = String(p?.slug || '').toLowerCase();
+  return (
+    name.includes('embroidered hoodie khimar') ||
+    slug.includes('khimar-4') ||
+    slug.includes('embroidered-hoodie-khimar')
+  );
+};
+
 // Products API — Live Supabase only (zero stale localStorage fallbacks)
 export const getPublishedProducts = async (): Promise<Product[]> => {
   const { data, error } = await supabase
@@ -351,7 +361,7 @@ export const getPublishedProducts = async (): Promise<Product[]> => {
   }
 
   return (data || [])
-    .filter((p: any) => !p.is_archived && !p.deleted_at)
+    .filter((p: any) => !p.is_archived && !p.deleted_at && !isUnwantedProduct(p))
     .map(mapSupabaseProduct);
 };
 
@@ -368,7 +378,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
   }
 
   return (data || [])
-    .filter((p: any) => !p.is_archived && !p.deleted_at)
+    .filter((p: any) => !p.is_archived && !p.deleted_at && !isUnwantedProduct(p))
     .map(mapSupabaseProduct);
 };
 
@@ -383,7 +393,7 @@ export const getArchivedProducts = async (): Promise<Product[]> => {
     throw new Error(formatSafeError(error, 'Failed to load archived products.'));
   }
 
-  return (data || []).map(mapSupabaseProduct);
+  return (data || []).filter((p: any) => !isUnwantedProduct(p)).map(mapSupabaseProduct);
 };
 
 export const getProductById = async (idOrSlug: string): Promise<Product | null> => {
@@ -400,7 +410,8 @@ export const getProductById = async (idOrSlug: string): Promise<Product | null> 
   if (error) {
     throw new Error(formatSafeError(error, 'Could not load product record.'));
   }
-  return data ? mapSupabaseProduct(data) : null;
+  if (!data || isUnwantedProduct(data)) return null;
+  return mapSupabaseProduct(data);
 };
 
 export type SaveProductResult = Product & { __schemaUpgradePending?: boolean };

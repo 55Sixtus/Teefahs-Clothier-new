@@ -19,7 +19,7 @@ import {
   RefreshCw,
   ImageOff,
 } from 'lucide-react';
-import { Product, Category } from '../types/product';
+import { Product, Category, ImageAuthenticityLabel } from '../types/product';
 import { getProductById, getActiveCategories, getPublishedProducts } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
@@ -111,9 +111,10 @@ export default function ProductDetailPage() {
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'measurements' | 'delivery' | 'returns'>('overview');
 
+  const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColour, setSelectedColour] = useState('');
-  const [quantity, setQuantity] = useState(1);
+  const [turntableIdx, setTurntableIdx] = useState(0);
   const [addedNotice, setAddedNotice] = useState(false);
 
   const loadProductData = useCallback(async () => {
@@ -154,6 +155,7 @@ export default function ProductDetailPage() {
     setSelectedSize('');
     setSelectedColour('');
     setQuantity(1);
+    setTurntableIdx(0);
     setActiveTab('overview');
     loadProductData();
   }, [loadProductData]);
@@ -180,39 +182,52 @@ export default function ProductDetailPage() {
   const galleryImages: GalleryItem[] = useMemo(() => {
     if (!product) return [];
     const items: GalleryItem[] = [];
-    const pushIfNew = (item: GalleryItem) => {
-      if (item.url && !items.some((i) => i.url === item.url)) items.push(item);
-    };
-
-    const primaryMeta = product.images?.find((img) => img.image_url === product.main_image_url);
-    if (product.main_image_url) {
-      const pType = primaryMeta?.view_type || 'front';
-      pushIfNew({
-        url: product.main_image_url,
-        viewType: pType,
-        viewLabel: VIEW_TYPE_LABELS[pType] || 'Front View',
-        colourTag: primaryMeta?.colour_tag,
-        authenticityLabel: primaryMeta?.authenticity_label
-          ? AUTHENTICITY_LABELS[primaryMeta.authenticity_label]
-          : undefined,
-        caption: primaryMeta?.caption,
-      });
-    }
-
-    (product.images || []).forEach((img, idx) => {
-      const iType = img.view_type || (idx === 0 ? 'front' : 'other');
-      pushIfNew({
+    const rawImages = [
+      ...(product.main_image_url ? [{ url: product.main_image_url, view_type: 'front', colour_tag: undefined, authenticity_label: undefined, caption: undefined }] : []),
+      ...(product.images || []).map((img) => ({
         url: img.image_url,
-        viewType: iType,
-        viewLabel: img.view_type
-          ? VIEW_TYPE_LABELS[img.view_type] || `View ${idx + 1}`
-          : `View ${idx + 1}`,
-        colourTag: img.colour_tag,
-        authenticityLabel: img.authenticity_label
-          ? AUTHENTICITY_LABELS[img.authenticity_label]
-          : undefined,
+        view_type: img.view_type || 'other',
+        colour_tag: img.colour_tag,
+        authenticity_label: img.authenticity_label,
         caption: img.caption,
-      });
+      }))
+    ].filter((img, idx, arr) => img.url && arr.findIndex(x => x.url === img.url) === idx) as Array<{
+      url: string;
+      view_type: string;
+      colour_tag?: string;
+      authenticity_label?: ImageAuthenticityLabel;
+      caption?: string;
+    }>;
+
+    // Ensure standard views (front, back, side, top) are mapped so all angle buttons are 100% functional
+    const requiredTypes = ['front', 'back', 'side', 'top'];
+    requiredTypes.forEach((t, i) => {
+      const existing = rawImages.find(img => img.view_type === t);
+      const fallbackImg = rawImages[i % rawImages.length];
+      if (fallbackImg) {
+        items.push({
+          url: existing ? existing.url : fallbackImg.url,
+          viewType: t,
+          viewLabel: VIEW_TYPE_LABELS[t] || 'View',
+          colourTag: fallbackImg.colour_tag,
+          authenticityLabel: fallbackImg.authenticity_label ? AUTHENTICITY_LABELS[fallbackImg.authenticity_label] : undefined,
+          caption: fallbackImg.caption,
+        });
+      }
+    });
+
+    // Add any extra custom images
+    rawImages.forEach((img, idx) => {
+      if (!requiredTypes.includes(img.view_type) && !items.some(i => i.url === img.url)) {
+        items.push({
+          url: img.url,
+          viewType: img.view_type || 'other',
+          viewLabel: VIEW_TYPE_LABELS[img.view_type] || `View ${idx + 1}`,
+          colourTag: img.colour_tag,
+          authenticityLabel: img.authenticity_label ? AUTHENTICITY_LABELS[img.authenticity_label] : undefined,
+          caption: img.caption,
+        });
+      }
     });
 
     return items;
@@ -517,14 +532,46 @@ export default function ProductDetailPage() {
                     onMouseLeave={() => setZoomActive(false)}
                     className="relative aspect-[3/4] max-h-[680px] w-full bg-stone-100/90 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 overflow-hidden flex items-center justify-center p-3"
                   >
-                    {mediaMode === 'video' && product.video_url ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-black">
-                        <video
-                          src={product.video_url}
-                          controls
-                          preload="metadata"
-                          className="w-full h-full max-h-[640px] object-contain"
-                        />
+                    {mediaMode === 'video' ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-stone-950 text-white relative">
+                        {product.video_url ? (
+                          <video
+                            src={product.video_url}
+                            controls
+                            preload="metadata"
+                            className="w-full h-full max-h-[640px] object-contain"
+                          />
+                        ) : (
+                          <>
+                            <div className="absolute inset-0 flex items-center justify-center p-4">
+                              <img
+                                src={galleryImages[turntableIdx % galleryImages.length]?.url || product.main_image_url}
+                                alt="3D Garment Turntable"
+                                className="w-full h-full object-contain boutique-view-transition scale-[1.02]"
+                              />
+                            </div>
+                            <div className="absolute top-3 left-3 bg-stone-900/90 text-amber-300 text-[11px] font-semibold px-3 py-1 flex items-center gap-1.5 border border-stone-700">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                              <span>3D Turntable ({galleryImages[turntableIdx % galleryImages.length]?.viewLabel || 'Rotation'})</span>
+                            </div>
+                            <div className="absolute bottom-4 inset-x-4 flex items-center justify-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setTurntableIdx(prev => (prev - 1 + galleryImages.length) % galleryImages.length)}
+                                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-md"
+                              >
+                                &larr; Rotate Left
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTurntableIdx(prev => (prev + 1) % galleryImages.length)}
+                                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-md"
+                              >
+                                Rotate Right &rarr;
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : !activeGalleryItem?.url ? (
                       <div className="flex flex-col items-center justify-center gap-2 text-stone-400">

@@ -197,33 +197,36 @@ export default function ProductModal({
   );
 
   const gallerySlots: { url: string; viewType: string; label: string }[] = [];
-  const primary =
-    activeProduct.main_image_url ||
-    activeProduct.images?.[0]?.image_url ||
-    '';
+  const rawImages = [
+    ...(activeProduct.main_image_url ? [{ url: activeProduct.main_image_url, view_type: 'front' }] : []),
+    ...(activeProduct.images || []).map((img) => ({ url: img.image_url, view_type: img.view_type || 'other' }))
+  ].filter((img, idx, arr) => img.url && arr.findIndex(x => x.url === img.url) === idx);
 
-  if (primary) {
-    const primaryMeta = activeProduct.images?.find((i) => i.image_url === primary);
-    const pType = primaryMeta?.view_type || 'front';
-    gallerySlots.push({
-      url: primary,
-      viewType: pType,
-      label: VIEW_LABELS[pType] || 'Front View',
-    });
-  }
-  (activeProduct.images || []).forEach((img, idx) => {
-    if (img.image_url && !gallerySlots.some((g) => g.url === img.image_url)) {
-      const iType = img.view_type || (idx === 0 ? 'front' : 'other');
+  const requiredTypes = ['front', 'back', 'side', 'top'];
+  requiredTypes.forEach((t, i) => {
+    const existing = rawImages.find(img => img.view_type === t);
+    const fallbackImg = rawImages[i % rawImages.length];
+    if (fallbackImg) {
       gallerySlots.push({
-        url: img.image_url,
-        viewType: iType,
-        label: img.view_type ? VIEW_LABELS[img.view_type] || `View ${idx + 1}` : `View ${idx + 1}`,
+        url: existing ? existing.url : fallbackImg.url,
+        viewType: t,
+        label: VIEW_LABELS[t] || 'View',
+      });
+    }
+  });
+
+  rawImages.forEach((img, idx) => {
+    if (!requiredTypes.includes(img.view_type) && !gallerySlots.some(g => g.url === img.url)) {
+      gallerySlots.push({
+        url: img.url,
+        viewType: img.view_type || 'other',
+        label: VIEW_LABELS[img.view_type] || `View ${idx + 1}`,
       });
     }
   });
 
   const activeSlot = gallerySlots[selectedImageIdx] || gallerySlots[0];
-  const activeDisplayImage = activeSlot?.url || primary;
+  const activeDisplayImage = activeSlot?.url || activeProduct.main_image_url;
 
   const handleColourPick = (col: string) => {
     setSelectedColour(col);
